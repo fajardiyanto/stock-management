@@ -1,31 +1,13 @@
 import React from 'react';
 import { Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import PurchaseStatusBadge from './PurchaseStatusBadge';
-
-interface Purchase {
-    id: string;
-    supplier: string;
-    stock: string;
-    purchaseDate: string;
-    totalPayment: number;
-    paid: number;
-    remainingPayment: number;
-    paymentStatus: string;
-    paymentDate: string;
-}
+import { formatRupiah } from '../../utils/FormatRupiah';
+import { Purchasing, PaymentStatusLabel } from '../../types/purchase';
+import { formatDate } from '../../utils/FormatDate';
 
 interface PurchaseTableProps {
-    data: Purchase[];
+    data: Purchasing[];
 }
-
-const formatRupiah = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount).replace('IDR', 'Rp');
-};
 
 const PurchaseTable: React.FC<PurchaseTableProps> = ({ data }) => {
     return (
@@ -48,30 +30,30 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({ data }) => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                         {data.map((item, index) => {
-                            const percentage = (item.paid / item.totalPayment) * 100;
-
+                            const percentage = (item.paid_amount / item.total_amount) * 100;
+                            const idx = index + 1;
                             return (
                                 <tr key={index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.supplier}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{idx}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.supplier.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800`}>
-                                            {item.stock}
+                                            {item.stock_entry.stock_code}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.purchaseDate}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{formatRupiah(item.totalPayment)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.paid)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.remainingPayment)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(item.purchase_date)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{formatRupiah(item.total_amount)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.paid_amount)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.remaining_amount)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <PurchaseStatusBadge
-                                            status={item.paymentStatus}
+                                            status={PaymentStatusLabel[item.payment_status]}
                                             percentage={percentage}
-                                            paidAmount={item.paid}
-                                            totalAmount={item.totalPayment}
+                                            paidAmount={item.paid_amount}
+                                            totalAmount={item.total_amount}
                                         />
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.paymentDate}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(item.last_payment)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2">
                                             <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition" title="Edit">

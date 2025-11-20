@@ -6,8 +6,9 @@ import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type PurchaseService struct {
@@ -18,8 +19,8 @@ func NewPurchaseService(userRepo repository.UserRepository) repository.PurchaseR
 	return &PurchaseService{userRepo: userRepo}
 }
 
-func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (*models.PurchaseResponse, error) {
-	db := config.GetDBConn().Orm()
+func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (*models.PurchaseDataResponse, error) {
+	db := config.GetDBConn().Orm().Debug()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -79,10 +80,14 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 	}
 
 	payment := models.Payment{
-		Uuid:   uuid.New().String(),
-		UserId: request.SupplierID,
-		Total:  totalAmount,
-		Type:   constatnts.Income,
+		Uuid:        uuid.New().String(),
+		UserId:      request.SupplierID,
+		Total:       totalAmount,
+		Type:        constatnts.Income,
+		Description: fmt.Sprintf("Hutang Buying STOCK%d", stockEntry.ID),
+		PurchaseId:  purchase.Uuid,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	if err := tx.Create(&payment).Error; err != nil {
@@ -103,9 +108,9 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		Phone: user.Phone,
 	}
 
-	response := &models.PurchaseResponse{
+	response := &models.PurchaseDataResponse{
 		PurchaseId:      purchase.Uuid,
-		PurchaseDate:    purchase.PurchaseDate,
+		PurchaseDate:    purchase.PurchaseDate.Format(time.RFC3339),
 		AgeInDay:        int(time.Since(purchase.PurchaseDate).Hours() / 24),
 		Supplier:        userDetail,
 		StockId:         stockEntry.Uuid,
@@ -138,15 +143,27 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 	return response, nil
 }
 
-func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
-	db := config.GetDBConn().Orm()
+func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseResponse, error) {
+	db := config.GetDBConn().Orm().Debug()
+
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 {
+		size = 10
+	}
+
+	offset := (page - 1) * size
 
 	var purchases []models.Purchase
-	if err := db.Find(&purchases).Error; err != nil {
+	if err := db.
+		Limit(size).
+		Offset(offset).
+		Find(&purchases).Error; err != nil {
 		return nil, err
 	}
 
-	responses := make([]models.PurchaseResponse, 0)
+	responses := make([]models.PurchaseDataResponse, 0)
 
 	for _, pur := range purchases {
 
@@ -161,8 +178,17 @@ func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
 		}
 
 		var stockItems []models.StockItem
-		if err := db.Where("uuid = ?", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
+		if err := db.Where("stock_entry_id = ?", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
 			return nil, err
+		}
+
+		var payment models.Payment
+		lastPayment := ""
+		err := db.Where("purchase_id = ? AND type = ?", pur.Uuid, constatnts.Expense).
+			Order("created_at DESC").
+			First(&payment).Error
+		if err == nil {
+			lastPayment = payment.CreatedAt.Format(time.RFC3339)
 		}
 
 		totalAmount := 0.0
@@ -176,9 +202,7 @@ func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
 		for _, item := range stockItems {
 
 			var sortir []models.StockSort
-			if err := db.Where("uuid = ?", item.Uuid).Find(&sortir).Error; err != nil {
-				return nil, err
-			}
+			db.Where("stock_item_id = ?", item.Uuid).Find(&sortir)
 
 			itemResp := models.StockItemResponse{
 				Uuid:             item.Uuid,
@@ -191,7 +215,6 @@ func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
 			}
 
 			totalAmount += item.TotalPayment
-
 			for _, s := range sortir {
 				itemResp.Sort = append(itemResp.Sort, models.StockSortResponse{
 					Uuid:             s.Uuid,
@@ -214,10 +237,10 @@ func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
 			Phone: supplier.Phone,
 		}
 
-		resp := models.PurchaseResponse{
+		resp := models.PurchaseDataResponse{
 			PurchaseId:      pur.Uuid,
 			Supplier:        userDetail,
-			PurchaseDate:    pur.PurchaseDate,
+			PurchaseDate:    pur.PurchaseDate.Format(time.RFC3339),
 			AgeInDay:        int(time.Since(pur.PurchaseDate).Hours() / 24),
 			StockId:         pur.StockId,
 			TotalAmount:     totalAmount,
@@ -225,10 +248,23 @@ func (p *PurchaseService) GetAllPurchases() ([]models.PurchaseResponse, error) {
 			RemainingAmount: totalAmount - pur.PaidAmount,
 			PaymentStatus:   pur.PaymentStatus,
 			StockEntry:      stockEntryResp,
+			LastPayment:     lastPayment,
 		}
 
 		responses = append(responses, resp)
 	}
 
-	return responses, nil
+	var total int64
+	if err := db.Model(&models.Purchase{}).Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	res := models.PurchaseResponse{
+		Size:   size,
+		PageNo: page,
+		Total:  int(total),
+		Data:   responses,
+	}
+
+	return &res, nil
 }

@@ -32,6 +32,7 @@ func (*StockItem) TableName() string {
 type StockSort struct {
 	ID               int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
 	Uuid             string    `json:"uuid" gorm:"column:uuid;size:255;unique;not null"`
+	StockItemID      string    `json:"stock_item_id" gorm:"column:stock_item_id"`
 	ItemName         string    `json:"sorted_item_name" gorm:"column:sorted_item_name"`
 	Weight           float64   `json:"weight" gorm:"column:weight"`
 	PricePerKilogram float64   `json:"price_per_kilogram" gorm:"column:price_per_kilogram"`

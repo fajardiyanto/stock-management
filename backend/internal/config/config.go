@@ -2,6 +2,7 @@ package config
 
 import (
 	"dashboard-app/internal/models"
+
 	databaseInterface "github.com/fajarardiyanto/flt-go-database/interfaces"
 	databaseLib "github.com/fajarardiyanto/flt-go-database/lib"
 	"github.com/fajarardiyanto/flt-go-logger/interfaces"

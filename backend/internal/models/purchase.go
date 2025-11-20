@@ -30,10 +30,10 @@ type UpdatePaymentRequest struct {
 	Amount float64 `json:"amount" validate:"required,gt=0"`
 }
 
-type PurchaseResponse struct {
+type PurchaseDataResponse struct {
 	PurchaseId      string             `json:"purchase_id"`
 	Supplier        GetUserDetail      `json:"supplier"`
-	PurchaseDate    time.Time          `json:"purchase_date"`
+	PurchaseDate    string             `json:"purchase_date"`
 	AgeInDay        int                `json:"age_in_day"`
 	StockId         string             `json:"stock_id"`
 	TotalAmount     float64            `json:"total_amount"`
@@ -41,4 +41,12 @@ type PurchaseResponse struct {
 	RemainingAmount float64            `json:"remaining_amount"`
 	PaymentStatus   string             `json:"payment_status"`
 	StockEntry      StockEntryResponse `json:"stock_entry"`
+	LastPayment     string             `json:"last_payment"`
+}
+
+type PurchaseResponse struct {
+	Size   int                    `json:"size"`
+	PageNo int                    `json:"page_no"`
+	Total  int                    `json:"total"`
+	Data   []PurchaseDataResponse `json:"data"`
 }

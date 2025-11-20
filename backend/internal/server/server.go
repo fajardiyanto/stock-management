@@ -6,6 +6,7 @@ import (
 	"dashboard-app/internal/middleware"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/service"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -34,7 +35,7 @@ func Run() error {
 		api.DELETE("/user/:uuid", userHandler.DeleteUserHandler)
 		api.GET("/user/:uuid", userHandler.GetUserByIdHandler)
 		api.POST("/purchase", purchaseHandler.CreatePurchaseHandler)
-		api.GET("/purchase", purchaseHandler.GetAllPurchasesHandler)
+		api.GET("/purchases", purchaseHandler.GetAllPurchasesHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

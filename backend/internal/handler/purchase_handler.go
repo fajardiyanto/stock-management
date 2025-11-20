@@ -5,10 +5,12 @@ import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"net/http"
-	"strings"
 )
 
 type Purchase struct {
@@ -68,7 +70,10 @@ func (s *Purchase) CreatePurchaseHandler(c *gin.Context) {
 }
 
 func (s *Purchase) GetAllPurchasesHandler(c *gin.Context) {
-	data, err := s.purchaseRepository.GetAllPurchases()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+
+	data, err := s.purchaseRepository.GetAllPurchases(page, size)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
