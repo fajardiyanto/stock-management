@@ -1,0 +1,18 @@
+version: v1.0.0
+name: Stock Fish Management
+port: 8000
+api_secret: 24bc50d85ad8fa9cda686145cf1f8aa
+environment: DEV
+database:
+  mysql:
+    enable: true
+    driver: postgresql
+    host: 127.0.0.1
+    port: 5432
+    username: postgres
+    password: postgres
+    database: stock_fish_management
+    autoReconnect: true
+    startInterval: 2 #second
+    maxError: 5
+    timeoutConnection: 5000 #milisecond
