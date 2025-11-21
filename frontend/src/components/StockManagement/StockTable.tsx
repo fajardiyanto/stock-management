@@ -24,33 +24,33 @@ const StockTable: React.FC<StockTableProps> = ({ data, currentPage, pageSize, to
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SUPPLIER</th>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TANGGAL DIBUAT</th>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">UMUR</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[5rem]">ID</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[10rem]">SUPPLIER</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[12rem]">TANGGAL DIBUAT</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[8rem]">UMUR</th>
 
-                            <th colSpan={5} className="px-2 py-2 text-center text-xs font-semibold text-gray-600 bg-gray-100 border-l border-r">
+                            <th colSpan={4} className="px-2 py-2 text-center text-xs font-semibold text-gray-700 bg-blue-50 border-l border-r">
                                 Items
                             </th>
-                            <th colSpan={5} className="px-2 py-2 text-center text-xs font-semibold text-gray-600 bg-gray-100 border-l border-r">
+                            <th colSpan={6} className="px-2 py-2 text-center text-xs font-semibold text-gray-700 bg-green-50 border-l border-r">
                                 Sortir
                             </th>
 
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sortir Item</th>
-                            <th rowSpan={2} className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[7rem]">SORTIR ITEM</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[6rem]">Aksi</th>
                         </tr>
                         <tr>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Nama</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Berat (kg)</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Harga (per kg)</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Total</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-blue-50 min-w-[7rem]">Nama</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-blue-50 min-w-[4rem]">Berat (kg)</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-blue-50 min-w-[8rem]">Harga (per kg)</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-blue-50 min-w-[9rem]">Total</th>
 
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Nama</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Harga (per kg)</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Berat (kg)</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Berat Tersedia (kg)</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Total</th>
-                            <th className="px-2 py-1 text-xs text-left text-gray-500">Susut</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[7rem]">Nama</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[8rem]">Harga (per kg)</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[4rem]">Berat (kg)</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[7rem]">Berat Tersedia (kg)</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[9rem]">Total</th>
+                            <th className="px-2 py-1 text-xs text-center text-gray-700 bg-green-50 min-w-[5rem]">Susut</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
