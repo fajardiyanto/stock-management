@@ -111,7 +111,6 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 	response := &models.PurchaseDataResponse{
 		PurchaseId:      purchase.Uuid,
 		PurchaseDate:    purchase.PurchaseDate.Format(time.RFC3339),
-		AgeInDay:        int(time.Since(purchase.PurchaseDate).Hours() / 24),
 		Supplier:        userDetail,
 		StockId:         stockEntry.Uuid,
 		TotalAmount:     totalAmount,
@@ -119,21 +118,23 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		RemainingAmount: 0,
 		PaymentStatus:   purchase.PaymentStatus,
 		StockEntry: models.StockEntryResponse{
-			Uuid:      stockEntry.Uuid,
-			StockCode: fmt.Sprintf("STOCK%d", stockEntry.ID),
-			Items:     make([]models.StockItemResponse, 0),
+			Uuid:              stockEntry.Uuid,
+			StockCode:         fmt.Sprintf("STOCK%d", stockEntry.ID),
+			AgeInDay:          int(time.Since(purchase.PurchaseDate).Hours() / 24),
+			StockItemResponse: make([]models.StockItemResponse, 0),
 		},
 	}
 
 	for _, item := range stockItems {
-		response.StockEntry.Items = append(response.StockEntry.Items, models.StockItemResponse{
-			Uuid:             item.Uuid,
-			StockEntryID:     stockEntry.Uuid,
-			ItemName:         item.ItemName,
-			Weight:           item.Weight,
-			PricePerKilogram: item.PricePerKilogram,
-			TotalPayment:     item.TotalPayment,
-			Sort:             []models.StockSortResponse{},
+		response.StockEntry.StockItemResponse = append(response.StockEntry.StockItemResponse, models.StockItemResponse{
+			Uuid:               item.Uuid,
+			StockEntryID:       stockEntry.Uuid,
+			ItemName:           item.ItemName,
+			Weight:             item.Weight,
+			PricePerKilogram:   item.PricePerKilogram,
+			TotalPayment:       item.TotalPayment,
+			IsSorted:           false,
+			StockSortResponses: []models.StockSortResponse{},
 		})
 
 		response.TotalAmount += item.TotalPayment
@@ -194,15 +195,16 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 		totalAmount := 0.0
 
 		stockEntryResp := models.StockEntryResponse{
-			Uuid:      stockEntry.Uuid,
-			StockCode: fmt.Sprintf("STOCK%d", stockEntry.ID),
-			Items:     make([]models.StockItemResponse, 0),
+			Uuid:              stockEntry.Uuid,
+			StockCode:         fmt.Sprintf("STOCK%d", stockEntry.ID),
+			AgeInDay:          int(time.Since(pur.PurchaseDate).Hours() / 24),
+			StockItemResponse: make([]models.StockItemResponse, 0),
 		}
 
 		for _, item := range stockItems {
 
-			var sortir []models.StockSort
-			db.Where("stock_item_id = ?", item.Uuid).Find(&sortir)
+			var sorted []models.StockSort
+			db.Where("stock_item_id = ?", item.Uuid).Find(&sorted)
 
 			itemResp := models.StockItemResponse{
 				Uuid:             item.Uuid,
@@ -211,12 +213,15 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 				Weight:           item.Weight,
 				PricePerKilogram: item.PricePerKilogram,
 				TotalPayment:     item.TotalPayment,
-				Sort:             make([]models.StockSortResponse, 0),
+			}
+
+			if len(sorted) > 0 {
+				itemResp.IsSorted = true
 			}
 
 			totalAmount += item.TotalPayment
-			for _, s := range sortir {
-				itemResp.Sort = append(itemResp.Sort, models.StockSortResponse{
+			for _, s := range sorted {
+				itemResp.StockSortResponses = append(itemResp.StockSortResponses, models.StockSortResponse{
 					Uuid:             s.Uuid,
 					StockItemID:      item.Uuid,
 					ItemName:         s.ItemName,
@@ -228,7 +233,7 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 				})
 			}
 
-			stockEntryResp.Items = append(stockEntryResp.Items, itemResp)
+			stockEntryResp.StockItemResponse = append(stockEntryResp.StockItemResponse, itemResp)
 		}
 
 		userDetail := models.GetUserDetail{
@@ -241,7 +246,6 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 			PurchaseId:      pur.Uuid,
 			Supplier:        userDetail,
 			PurchaseDate:    pur.PurchaseDate.Format(time.RFC3339),
-			AgeInDay:        int(time.Since(pur.PurchaseDate).Hours() / 24),
 			StockId:         pur.StockId,
 			TotalAmount:     totalAmount,
 			PaidAmount:      pur.PaidAmount,

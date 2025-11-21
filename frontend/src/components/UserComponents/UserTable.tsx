@@ -1,6 +1,7 @@
 import React from 'react';
 import { User } from '../../types';
 import { Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import Pagination from "../Pagination";
 
 interface UserTableProps {
     users: User[];
@@ -13,6 +14,7 @@ interface UserTableProps {
     onEdit: (user: User) => void;
     onDelete: (user: User) => void;
     onPageChange: (newPage: number) => void;
+    onPageSizeChange: (newSize: number) => void;
 }
 
 const getRoleStyle = (role: string) => {
@@ -38,27 +40,10 @@ const UserTable: React.FC<UserTableProps> = ({
     onViewDetail,
     onEdit,
     onDelete,
-    onPageChange
+    onPageChange,
+    onPageSizeChange
 }) => {
     const startIdx = ((currentPage - 1) * pageSize) + 1;
-    const endIdx = Math.min(currentPage * pageSize, totalUsers);
-
-    const paginationRange = [];
-    const maxPages = Math.min(totalPages, 5);
-    const startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
-    const endPage = Math.min(totalPages, startPage + maxPages - 1);
-
-    for (let i = startPage; i <= endPage; i++) {
-        paginationRange.push(i);
-    }
-
-    if (loading) {
-        return (
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-center h-40">
-                <p className="text-gray-500">Refreshing user list...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -136,51 +121,16 @@ const UserTable: React.FC<UserTableProps> = ({
                 </table>
             </div>
 
-            {/* Pagination */}
-            <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-100">
-                <div className="text-sm text-gray-700">
-                    Showing <span className="font-semibold">{startIdx}</span> to{' '}
-                    <span className="font-semibold">{endIdx}</span> of{' '}
-                    <span className="font-semibold">{totalUsers}</span> users
-                </div>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition"
-                    >
-                        <ChevronLeft size={16} />
-                        Previous
-                    </button>
-
-                    <div className="flex gap-1">
-                        {paginationRange.map(pageNum => (
-                            <button
-                                key={pageNum}
-                                onClick={() => onPageChange(pageNum)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${currentPage === pageNum
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'border border-gray-300 hover:bg-gray-100'
-                                    }`}
-                            >
-                                {pageNum}
-                            </button>
-                        ))}
-                        {totalPages > endPage && (
-                            <span className="px-4 py-2 text-gray-500">...</span>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition"
-                    >
-                        Next
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
+            <Pagination
+                entryName="users"
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalData={totalUsers}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
+            />
         </div>
     );
 };

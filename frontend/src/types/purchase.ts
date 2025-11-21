@@ -27,14 +27,13 @@ export interface Purchasing {
   purchase_id: string;
   supplier: Supplier;
   purchase_date: string;
-  age_in_day: number;
   stock_id: string;
   total_amount: number;
   paid_amount: number;
   remaining_amount: number;
   payment_status: PaymentStatus;
   stock_entry: StockEntry;
-  last_payment: string;
+  last_payment: string | null;
 }
 
 export interface Supplier {
@@ -46,7 +45,8 @@ export interface Supplier {
 export interface StockEntry {
   uuid: string;
   stock_code: string;
-  items: StockItem[];
+  age_in_day: number;
+  stock_items: StockItem[];
 }
 
 export interface StockItem {
@@ -56,7 +56,8 @@ export interface StockItem {
   weight: number;
   price_per_kilogram: number;
   total_payment: number;
-  sort: StockSortResponse[];
+  is_sorted: boolean;
+  stock_sorts: StockSortResponse[];
 }
 
 export interface StockSortResponse {

@@ -54,19 +54,23 @@ type StockItemRequest struct {
 }
 
 type StockEntryResponse struct {
-	Uuid      string              `json:"uuid"`
-	StockCode string              `json:"stock_code"`
-	Items     []StockItemResponse `json:"items"`
+	Uuid              string              `json:"uuid"`
+	StockCode         string              `json:"stock_code"`
+	AgeInDay          int                 `json:"age_in_day"`
+	PurchaseId        string              `json:"purchase_id"`
+	Supplier          GetUserDetail       `json:"supplier"`
+	StockItemResponse []StockItemResponse `json:"stock_items"`
 }
 
 type StockItemResponse struct {
-	Uuid             string              `json:"uuid"`
-	StockEntryID     string              `json:"stock_entry_id"`
-	ItemName         string              `json:"item_name"`
-	Weight           float64             `json:"weight"`
-	PricePerKilogram float64             `json:"price_per_kilogram"`
-	TotalPayment     float64             `json:"total_payment"`
-	Sort             []StockSortResponse `json:"sort"`
+	Uuid               string              `json:"uuid"`
+	StockEntryID       string              `json:"stock_entry_id"`
+	ItemName           string              `json:"item_name"`
+	Weight             float64             `json:"weight"`
+	PricePerKilogram   float64             `json:"price_per_kilogram"`
+	TotalPayment       float64             `json:"total_payment"`
+	IsSorted           bool                `json:"is_sorted"`
+	StockSortResponses []StockSortResponse `json:"stock_sorts"`
 }
 
 type StockSortResponse struct {
@@ -78,4 +82,11 @@ type StockSortResponse struct {
 	CurrentWeight    float64 `json:"current_weight"`
 	TotalCost        float64 `json:"total_cost"`
 	IsShrinkage      bool    `json:"is_shrinkage"`
+}
+
+type StockResponse struct {
+	Size   int                  `json:"size"`
+	PageNo int                  `json:"page_no"`
+	Total  int                  `json:"total"`
+	Data   []StockEntryResponse `json:"data"`
 }

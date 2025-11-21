@@ -34,7 +34,6 @@ type PurchaseDataResponse struct {
 	PurchaseId      string             `json:"purchase_id"`
 	Supplier        GetUserDetail      `json:"supplier"`
 	PurchaseDate    string             `json:"purchase_date"`
-	AgeInDay        int                `json:"age_in_day"`
 	StockId         string             `json:"stock_id"`
 	TotalAmount     float64            `json:"total_amount"`
 	PaidAmount      float64            `json:"paid_amount"`

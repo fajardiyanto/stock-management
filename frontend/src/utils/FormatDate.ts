@@ -1,11 +1,20 @@
-export const formatDate = (dateStr: string) => {
-  if (dateStr === '') return '';
-  const date = new Date(dateStr);
+export const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) {
+    return '';
+  }
 
-  // convert to UTC+7 (Indonesia WIB)
-  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  let date: Date;
+  try {
+    date = new Date(dateStr);
+  } catch (error) {
+    console.error("Invalid date string provided:", dateStr, error);
+    return 'Invalid Date';
+  }
 
-  // format
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+
   const formatted = new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -13,8 +22,8 @@ export const formatDate = (dateStr: string) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  })
-    .format(wibDate)
+    timeZone: 'Asia/Jakarta',
+  }).format(date);
 
   return formatted;
 };

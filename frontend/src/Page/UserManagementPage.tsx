@@ -18,11 +18,11 @@ const UserManagementPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalUsers, setTotalUsers] = useState(0);
     const [error, setError] = useState<string>('');
+    const [pageSize, setPageSize] = useState(10);
 
     const [modalType, setModalType] = useState<'ADD' | 'EDIT' | 'DETAIL' | 'DELETE' | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-    const pageSize = 20;
     const { showToast } = useToast();
 
     // State for Add/Edit forms
@@ -104,6 +104,11 @@ const UserManagementPage: React.FC = () => {
     const handleCloseModal = () => {
         setModalType(null);
         setSelectedUser(null);
+    };
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setCurrentPage(1);
     };
 
     const handleCreateUser = async () => {
@@ -259,6 +264,7 @@ const UserManagementPage: React.FC = () => {
                 onEdit={handleOpenEdit}
                 onDelete={handleOpenDelete}
                 onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
             />
 
             {/* Modals */}

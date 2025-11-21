@@ -41,7 +41,7 @@ const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) =>
                 <span className="text-gray-500 font-normal ml-2">Filter data berdasarkan pembelian, tanggal bayar, dan kriteria lainnya</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Pencarian (Search Input) */}
                 <div className="col-span-1 md:col-span-2">
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Pencarian</label>
@@ -103,7 +103,7 @@ const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) =>
                     </div>
                 </div>
 
-                {/* Keterlambatan Bayar (Payment Term) */}
+                {/* Keterlambatan Bayar (Payment Term) 
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Keterlambatan Bayar</label>
                     <div className="relative">
@@ -118,7 +118,7 @@ const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) =>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
-                </div>
+                </div> */}
 
                 {/* Status Pembayaran (Payment Status) */}
                 <div>

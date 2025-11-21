@@ -1,17 +1,23 @@
 import React from 'react';
 import StockRowDetails from './StockRowDetails';
-import { Stock } from "../../types/stock";
-
+import { Purchasing } from '../../types/purchase';
+import Pagination from "../Pagination";
 
 interface StockTableProps {
-    data: Stock[];
+    data: Purchasing[];
+    currentPage: number;
+    pageSize: number;
+    totalPurchases: number;
+    totalPages: number;
+    loading: boolean;
     onSortItem: (stockId: string, itemIndex: number) => void;
     onEditStock: (stockId: string) => void;
     onDeleteStock: (stockId: string) => void;
+    onPageSizeChange: (newSize: number) => void;
+    onPageChange: (newPage: number) => void;
 }
 
-const StockTable: React.FC<StockTableProps> = ({ data, onSortItem, onEditStock, onDeleteStock }) => {
-
+const StockTable: React.FC<StockTableProps> = ({ data, currentPage, pageSize, totalPurchases, totalPages, loading, onSortItem, onEditStock, onDeleteStock, onPageSizeChange, onPageChange }) => {
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
@@ -23,8 +29,11 @@ const StockTable: React.FC<StockTableProps> = ({ data, onSortItem, onEditStock, 
                             <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TANGGAL DIBUAT</th>
                             <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">UMUR</th>
 
-                            <th colSpan={9} className="px-2 py-2 text-center text-xs font-semibold text-gray-600 bg-gray-100 border-l border-r">
+                            <th colSpan={5} className="px-2 py-2 text-center text-xs font-semibold text-gray-600 bg-gray-100 border-l border-r">
                                 Items
+                            </th>
+                            <th colSpan={5} className="px-2 py-2 text-center text-xs font-semibold text-gray-600 bg-gray-100 border-l border-r">
+                                Sortir
                             </th>
 
                             <th rowSpan={2} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sortir Item</th>
@@ -38,6 +47,7 @@ const StockTable: React.FC<StockTableProps> = ({ data, onSortItem, onEditStock, 
 
                             <th className="px-2 py-1 text-xs text-left text-gray-500">Nama</th>
                             <th className="px-2 py-1 text-xs text-left text-gray-500">Harga (per kg)</th>
+                            <th className="px-2 py-1 text-xs text-left text-gray-500">Berat (kg)</th>
                             <th className="px-2 py-1 text-xs text-left text-gray-500">Berat Tersedia (kg)</th>
                             <th className="px-2 py-1 text-xs text-left text-gray-500">Total</th>
                             <th className="px-2 py-1 text-xs text-left text-gray-500">Susut</th>
@@ -45,15 +55,15 @@ const StockTable: React.FC<StockTableProps> = ({ data, onSortItem, onEditStock, 
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                         {data.map((stockEntry) => (
-                            // Iterate over the nested items
-                            stockEntry.items.map((item, itemIndex) => (
+                            stockEntry.stock_entry.stock_items?.map((item, itemIndex) => (
                                 <StockRowDetails
-                                    key={`${stockEntry.id}-${itemIndex}`}
+                                    key={`${item.uuid}-${itemIndex}`}
                                     item={item}
-                                    stockEntry={stockEntry}
+                                    stockEntry={stockEntry.stock_entry}
+                                    purchase={stockEntry}
                                     itemIndex={itemIndex}
-                                    totalItems={stockEntry.items.length}
-                                    onSort={() => onSortItem(stockEntry.id, itemIndex)}
+                                    totalItems={stockEntry.stock_entry.stock_items.length}
+                                    onSort={() => onSortItem(stockEntry.stock_entry.uuid, itemIndex)}
                                     onEditStock={onEditStock}
                                     onDeleteStock={onDeleteStock}
                                 />
@@ -63,21 +73,16 @@ const StockTable: React.FC<StockTableProps> = ({ data, onSortItem, onEditStock, 
                 </table>
             </div>
 
-            {/* Pagination/Show Entries */}
-            <div className="flex justify-between items-center p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <span className='mr-2'>Show</span>
-                    <select className='border rounded-md px-2 py-1'>
-                        <option>10</option>
-                        <option>25</option>
-                        <option>50</option>
-                    </select>
-                    <span>entries</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                    Showing 1 to {data.length} of {data.length} entries
-                </div>
-            </div>
+            <Pagination
+                entryName="stock"
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalData={totalPurchases}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
+            />
         </div>
     );
 };
