@@ -191,8 +191,8 @@ func (s *User) UpdateUserHandler(c *gin.Context) {
 	}
 
 	if err := s.userRepo.UpdateUser(uuid, req); err != nil {
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
 		})
 		return
@@ -209,8 +209,8 @@ func (s *User) DeleteUserHandler(c *gin.Context) {
 	uuid := c.Param("uuid")
 
 	if err := s.userRepo.SoftDeleteUser(uuid); err != nil {
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
 		})
 		return
@@ -219,5 +219,23 @@ func (s *User) DeleteUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
 		StatusCode: http.StatusOK,
 		Message:    "user deleted",
+	})
+}
+
+func (s *User) GetAllUserByRoleHandler(c *gin.Context) {
+	role := c.Param("role")
+	users, err := s.userRepo.GetAllUserByRole(role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("Get All User By Role %s Success", role),
+		Data:       users,
 	})
 }

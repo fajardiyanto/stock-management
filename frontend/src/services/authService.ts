@@ -87,6 +87,11 @@ export const authService = {
         });
 
         return response;
+    },
+
+    getListUserRoles: async (role: string): Promise<ApiResponse<User[]>> => {
+        const response = await apiCall<ApiResponse<User[]>>(`/user/role/${role}`);
+        return response;
     }
 };
 

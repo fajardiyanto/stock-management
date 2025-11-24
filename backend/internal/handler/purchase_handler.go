@@ -6,7 +6,6 @@ import (
 	"dashboard-app/internal/repository"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -70,10 +69,24 @@ func (s *Purchase) CreatePurchaseHandler(c *gin.Context) {
 }
 
 func (s *Purchase) GetAllPurchasesHandler(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+	var filter models.PurchaseFilter
 
-	data, err := s.purchaseRepository.GetAllPurchases(page, size)
+	if err := c.BindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    "invalid query params: " + err.Error(),
+		})
+		return
+	}
+
+	if filter.PageNo == 0 {
+		filter.PageNo = 1
+	}
+	if filter.Size == 0 {
+		filter.Size = 10
+	}
+
+	data, err := s.purchaseRepository.GetAllPurchases(filter)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{

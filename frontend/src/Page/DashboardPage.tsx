@@ -8,6 +8,7 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import SalesManagementPage from './SalesManagementPage';
 import PurchasingManagementPage from './PurchasingManagementPage';
 import StockManagementPage from './StockManagementPage';
+import CreatePurchasingPage from './CreatePurchasingPage';
 
 interface DashboardProps {
     onLogout: () => void;
@@ -53,6 +54,7 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route path="sales" element={<SalesManagementPage />} />
                             <Route path="purchase" element={<PurchasingManagementPage />} />
                             <Route path="stock" element={<StockManagementPage />} />
+                            <Route path="purchase/create" element={<CreatePurchasingPage />} />
                         </Routes>
                     </div>
                 </main>

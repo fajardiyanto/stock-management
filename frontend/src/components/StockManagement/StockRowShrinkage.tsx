@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { formatRupiah } from '../../utils/FormatRupiah';
-import { StockSortResponse } from '../../types/purchase';
+import { StockSortResponse } from '../../types/stock';
 
-interface StockRowSusutProps {
+interface StockRowShrinkageProps {
     shrinkageItem: StockSortResponse;
-    onToggleSusut: () => void;
+    onToggleShrinkage: () => void;
 }
 
-const StockRowSusut: React.FC<StockRowSusutProps> = ({ shrinkageItem, onToggleSusut }) => {
+const StockRowShrinkage: React.FC<StockRowShrinkageProps> = ({ shrinkageItem, onToggleShrinkage }) => {
     const [showDeleteTooltip, setShowDeleteTooltip] = useState(false);
 
     const weightShrinkage = shrinkageItem.weight;
@@ -33,7 +33,7 @@ const StockRowSusut: React.FC<StockRowSusutProps> = ({ shrinkageItem, onToggleSu
             <td className="px-2 py-3 text-sm text-center">
                 <div className="relative inline-block">
                     <button
-                        onClick={onToggleSusut}
+                        onClick={onToggleShrinkage}
                         onMouseEnter={() => setShowDeleteTooltip(true)}
                         onMouseLeave={() => setShowDeleteTooltip(false)}
                         className="px-4 py-1.5 text-xs font-bold rounded-lg transition bg-red-600 text-white hover:bg-red-700"
@@ -53,4 +53,4 @@ const StockRowSusut: React.FC<StockRowSusutProps> = ({ shrinkageItem, onToggleSu
     );
 }
 
-export default StockRowSusut;
+export default StockRowShrinkage;

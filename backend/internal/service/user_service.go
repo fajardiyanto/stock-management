@@ -10,6 +10,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -188,4 +189,12 @@ func (s *UserService) SoftDeleteUser(uuid string) error {
 		Model(&models.User{}).
 		Where("uuid = ? AND status = true", uuid).
 		Update("status", false).Error
+}
+
+func (s *UserService) GetAllUserByRole(role string) ([]models.User, error) {
+	var users []models.User
+	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("role = ?", strings.ToUpper(role)).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }

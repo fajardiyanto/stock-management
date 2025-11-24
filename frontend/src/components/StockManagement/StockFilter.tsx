@@ -1,30 +1,76 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Search, ChevronDown, Calendar, X } from 'lucide-react';
-
-const MOCK_SUPPLIERS = ["Semua Supplier", "PT. Nelayan Nusantara", "CV. Sumber Laut Jaya"];
-const MOCK_AGE = ["Semua Umur", "1 Hari", "3 Hari", "7 Hari"];
+import { useToast } from '../../contexts/ToastContext';
+import { User } from '../../types';
+import { authService } from '../../services/authService';
+import { StockEntriesFilters } from '../../types/stock';
+import { AGE_FILTER_OPTIONS } from '../../constants/constants';
 
 interface StockFilterProps {
-    onSearch: (filters: any) => void;
+    onSearch: (filters: StockEntriesFilters) => void;
     onReset: () => void;
 }
 
 const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [supplier, setSupplier] = useState(MOCK_SUPPLIERS[0]);
+    const [stockId, setStockId] = useState('');
+    const [supplierId, setSupplierId] = useState('');
     const [date, setDate] = useState('');
-    const [stockAge, setStockAge] = useState(MOCK_AGE[0]);
+    const [ageInDayKey, setAgeInDayKey] = useState(AGE_FILTER_OPTIONS[0].key);
+    const [supplierOptions, setSupplierOptions] = useState<User[]>([]);
+    const [error, setError] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [isFiltering, setIsFiltering] = useState(false);
+
+    const { showToast } = useToast();
+
+    const fetchSuppliers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await authService.getListUserRoles('supplier');
+            if (response.status_code === 200) {
+                const defaultSupplier: any = { uuid: '', name: 'Semua Supplier' };
+                setSupplierOptions([defaultSupplier, ...response.data]);
+            } else {
+                setError(response.message || "Failed to fetch supplier data");
+                showToast(response.message || "Failed to fetch supplier data", "error");
+            }
+        } catch (err) {
+            setError("Failed to fetch supplier data. Please try again");
+            showToast("Failed to fetch supplier data. Please try again", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    useEffect(() => {
+        fetchSuppliers();
+    }, [fetchSuppliers]);
 
     const handleSearch = () => {
-        onSearch({ searchQuery, supplier, date, stockAge });
+        setIsFiltering(true);
+        const filters: StockEntriesFilters = {
+            stock_id: stockId || undefined,
+            supplier_id: supplierId || undefined,
+            purchase_date: date || undefined,
+            age_in_day: ageInDayKey === '0' ? undefined : ageInDayKey,
+        };
+
+        onSearch(filters);
+        setIsFiltering(false);
     };
 
     const handleReset = () => {
-        setSearchQuery('');
-        setSupplier(MOCK_SUPPLIERS[0]);
+        setStockId('');
+        setSupplierId('');
         setDate('');
-        setStockAge(MOCK_AGE[0]);
+        setAgeInDayKey('0');
         onReset();
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
     };
 
     return (
@@ -37,8 +83,9 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
                 <span className="text-gray-500 font-normal ml-2">Filter data stok berdasarkan kriteria tertentu</span>
             </div>
 
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* (Search Input) */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Pencarian</label>
                     <div className="relative">
@@ -46,30 +93,34 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
                         <input
                             type="text"
                             placeholder="Cari ID Stok"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={stockId}
+                            onChange={(e) => setStockId(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                            onKeyPress={handleKeyPress}
+                            disabled={isFiltering || loading}
                         />
                     </div>
                 </div>
 
-                {/* Supplier Dropdown */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Supplier</label>
                     <div className="relative">
                         <select
-                            value={supplier}
-                            onChange={(e) => setSupplier(e.target.value)}
+                            value={supplierId}
+                            onChange={(e) => setSupplierId(e.target.value)}
                             className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8"
+                            disabled={isFiltering || loading}
                         >
-                            {MOCK_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {supplierOptions.map(s => (
+                                <option key={s.uuid || 'all'} value={s.uuid}>
+                                    {s.name}
+                                </option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
                 </div>
 
-                {/* Tanggal (Date) */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal</label>
                     <div className="relative">
@@ -84,23 +135,23 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
                     </div>
                 </div>
 
-                {/* Umur Stok (Stock Age) */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Umur Stok</label>
                     <div className="relative">
                         <select
-                            value={stockAge}
-                            onChange={(e) => setStockAge(e.target.value)}
+                            value={ageInDayKey}
+                            onChange={(e) => setAgeInDayKey(e.target.value)}
                             className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8"
                         >
-                            {MOCK_AGE.map(a => <option key={a} value={a}>{a}</option>)}
+                            {AGE_FILTER_OPTIONS.map(opt => (
+                                <option key={opt.key} value={opt.key}>{opt.label}</option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
                 </div>
             </div>
 
-            {/* Reset Button */}
             <div className="flex justify-end pt-4">
                 <button
                     onClick={handleReset}

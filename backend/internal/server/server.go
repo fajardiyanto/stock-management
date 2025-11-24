@@ -20,9 +20,11 @@ func Run() error {
 
 	userService := service.NewUserService()
 	purchaseService := service.NewPurchaseService(userService)
+	stockService := service.NewStockService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
+	stockHandler := handler.NewStockHandler(stockService, validate)
 
 	api := app.Group("/v1/api")
 	api.POST("/login", userHandler.LoginHandler)
@@ -34,8 +36,12 @@ func Run() error {
 		api.PUT("/user/:uuid", userHandler.UpdateUserHandler)
 		api.DELETE("/user/:uuid", userHandler.DeleteUserHandler)
 		api.GET("/user/:uuid", userHandler.GetUserByIdHandler)
+		api.GET("/user/role/:role", userHandler.GetAllUserByRoleHandler)
+
 		api.POST("/purchase", purchaseHandler.CreatePurchaseHandler)
 		api.GET("/purchases", purchaseHandler.GetAllPurchasesHandler)
+
+		api.GET("/stock-entries", stockHandler.GetAllStockEntriesHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

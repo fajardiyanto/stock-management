@@ -11,4 +11,5 @@ type UserRepository interface {
 	GetAllUser(int, int, string, string, string) (*models.GetAllUserResponse, error)
 	UpdateUser(string, models.UpdateUserRequest) error
 	SoftDeleteUser(string) error
+	GetAllUserByRole(string) ([]models.User, error)
 }

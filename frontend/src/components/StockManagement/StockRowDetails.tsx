@@ -1,18 +1,16 @@
 import React from "react";
 import { ChevronRight, Edit2, Trash2 } from "lucide-react";
-import StockRowSusut from "./StockRowSusut";
+import StockRowShrinkage from "./StockRowShrinkage";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import {
-    Purchasing,
     StockEntry,
     StockItem,
-} from "../../types/purchase";
+} from "../../types/stock";
 import { formatDate } from "../../utils/FormatDate";
 
 interface StockRowDetailsProps {
     item: StockItem;
     stockEntry: StockEntry;
-    purchase: Purchasing;
     itemIndex: number;
     totalItems: number;
     onSort: () => void;
@@ -23,7 +21,6 @@ interface StockRowDetailsProps {
 const StockRowDetails: React.FC<StockRowDetailsProps> = ({
     item,
     stockEntry,
-    purchase,
     itemIndex,
     totalItems,
     onSort,
@@ -59,7 +56,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
 
     const ageColor = stockEntry.age_in_day > 100 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
 
-    const handleToggleSusut = () => {
+    const onToggleShrinkage = () => {
         console.log("Toggle Susut status");
     };
 
@@ -69,10 +66,10 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                 {stockEntry.stock_code}
             </td>
             <td rowSpan={rowSpan} className="px-6 py-4 text-sm text-gray-700 align-middle text-center border-r border-gray-200">
-                {purchase.supplier.name}
+                {stockEntry.supplier.name}
             </td>
             <td rowSpan={rowSpan} className="px-6 py-4 text-sm text-gray-600 align-middle text-center border-r border-gray-200">
-                {formatDate(purchase.purchase_date)}
+                {formatDate(stockEntry.purchase_date)}
             </td>
             <td rowSpan={rowSpan} className="px-6 py-4 align-middle text-center border-r border-gray-200">
                 <span className={`px-3 py-1 inline-flex text-xs font-bold rounded-full ${ageColor}`}>
@@ -151,7 +148,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
 
                 <td className="px-2 py-4 text-sm text-gray-700 text-center">
                     <button
-                        onClick={handleToggleSusut}
+                        onClick={onToggleShrinkage}
                         className="px-4 py-1.5 text-xs font-semibold rounded-lg transition bg-gray-100 text-gray-700 hover:bg-gray-200"
                     >
                         Tidak
@@ -189,7 +186,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                 </td>
                 <td className="px-2 py-4 text-sm text-center">
                     <button
-                        onClick={handleToggleSusut}
+                        onClick={onToggleShrinkage}
                         className="px-4 py-1.5 text-xs font-bold rounded-lg transition bg-red-600 text-white hover:bg-red-700"
                     >
                         Ya
@@ -234,7 +231,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                         </td>
                         <td className="px-2 py-4 text-sm text-center">
                             <button
-                                onClick={handleToggleSusut}
+                                onClick={onToggleShrinkage}
                                 className="px-4 py-1.5 text-xs font-semibold rounded-lg transition bg-gray-100 text-gray-700 hover:bg-gray-200"
                             >
                                 Tidak
@@ -249,9 +246,9 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
             })}
 
             {shrinkageSort && marketableSorts.length > 0 && (
-                <StockRowSusut
+                <StockRowShrinkage
                     shrinkageItem={shrinkageSort}
-                    onToggleSusut={handleToggleSusut}
+                    onToggleShrinkage={onToggleShrinkage}
                 />
             )}
         </React.Fragment>

@@ -1,10 +1,10 @@
 import React from 'react';
 import StockRowDetails from './StockRowDetails';
-import { Purchasing } from '../../types/purchase';
+import { StockEntry } from '../../types/stock';
 import Pagination from "../Pagination";
 
 interface StockTableProps {
-    data: Purchasing[];
+    data: StockEntry[];
     currentPage: number;
     pageSize: number;
     totalPurchases: number;
@@ -24,7 +24,7 @@ const StockTable: React.FC<StockTableProps> = ({ data, currentPage, pageSize, to
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[5rem]">ID</th>
+                            <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[7rem]">ID</th>
                             <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[10rem]">SUPPLIER</th>
                             <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[12rem]">TANGGAL DIBUAT</th>
                             <th rowSpan={2} className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[8rem]">UMUR</th>
@@ -55,15 +55,14 @@ const StockTable: React.FC<StockTableProps> = ({ data, currentPage, pageSize, to
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                         {data.map((stockEntry) => (
-                            stockEntry.stock_entry.stock_items?.map((item, itemIndex) => (
+                            stockEntry.stock_items?.map((item, itemIndex) => (
                                 <StockRowDetails
                                     key={`${item.uuid}-${itemIndex}`}
                                     item={item}
-                                    stockEntry={stockEntry.stock_entry}
-                                    purchase={stockEntry}
+                                    stockEntry={stockEntry}
                                     itemIndex={itemIndex}
-                                    totalItems={stockEntry.stock_entry.stock_items.length}
-                                    onSort={() => onSortItem(stockEntry.stock_entry.uuid, itemIndex)}
+                                    totalItems={stockEntry.stock_items.length}
+                                    onSort={() => onSortItem(stockEntry.uuid, itemIndex)}
                                     onEditStock={onEditStock}
                                     onDeleteStock={onDeleteStock}
                                 />

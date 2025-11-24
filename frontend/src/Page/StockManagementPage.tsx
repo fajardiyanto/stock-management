@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import StockFilter from "../components/StockManagement/StockFilter";
 import StockTable from "../components/StockManagement/StockTable";
-import { Purchasing } from "../types/purchase";
+import { StockEntry } from "../types/stock";
 import { useToast } from "../contexts/ToastContext";
-import { purchaseService } from "../services/purchaseService";
+import { stockService } from "../services/stockService";
 
 
 const StockManagementPage: React.FC = () => {
-    const [stockData, setStockData] = useState<Purchasing[]>([]);
+    const [stockData, setStockData] = useState<StockEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [error, setError] = useState<string>("");
@@ -22,7 +22,7 @@ const StockManagementPage: React.FC = () => {
         setError("");
 
         try {
-            const response = await purchaseService.getAllPurchases({
+            const response = await stockService.getStockEntries({
                 page: currentPage,
                 size: pageSize,
             });

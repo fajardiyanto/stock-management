@@ -113,16 +113,20 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		PurchaseDate:    purchase.PurchaseDate.Format(time.RFC3339),
 		Supplier:        userDetail,
 		StockId:         stockEntry.Uuid,
+		StockCode:       fmt.Sprintf("STOCK%d", stockEntry.ID),
 		TotalAmount:     totalAmount,
 		PaidAmount:      0,
 		RemainingAmount: 0,
 		PaymentStatus:   purchase.PaymentStatus,
-		StockEntry: models.StockEntryResponse{
-			Uuid:              stockEntry.Uuid,
-			StockCode:         fmt.Sprintf("STOCK%d", stockEntry.ID),
-			AgeInDay:          int(time.Since(purchase.PurchaseDate).Hours() / 24),
-			StockItemResponse: make([]models.StockItemResponse, 0),
-		},
+	}
+
+	response.StockEntry = &models.StockEntryResponse{
+		Uuid:              stockEntry.Uuid,
+		StockCode:         fmt.Sprintf("STOCK-%d", stockEntry.ID),
+		AgeInDay:          int(time.Since(stockEntry.CreatedAt).Hours() / 24),
+		PurchaseId:        purchase.Uuid,
+		Supplier:          userDetail,
+		StockItemResponse: make([]models.StockItemResponse, 0),
 	}
 
 	for _, item := range stockItems {
@@ -144,22 +148,59 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 	return response, nil
 }
 
-func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseResponse, error) {
+func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models.PurchaseResponse, error) {
 	db := config.GetDBConn().Orm().Debug()
 
-	if page < 1 {
-		page = 1
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
 	}
-	if size < 1 {
-		size = 10
+	if filter.Size < 1 {
+		filter.Size = 10
 	}
 
-	offset := (page - 1) * size
+	offset := (filter.PageNo - 1) * filter.Size
+
+	query := db.Model(&models.Purchase{})
+
+	if filter.PurchaseId != "" {
+		query = query.Where("id = ?", filter.PurchaseId)
+	}
+
+	if filter.PaymentStatus != "ALL" && filter.PaymentStatus != "" {
+		query = query.Where("payment_status = ?", filter.PaymentStatus)
+	}
+
+	if filter.PurchaseDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", filter.PurchaseDate)
+		if err == nil {
+			query = query.Where("DATE(purchase_date) = ?", parsedDate.Format("2006-01-02"))
+		}
+	}
+
+	if filter.AgeInDay != "" {
+		now := time.Now()
+
+		switch filter.AgeInDay {
+		case "LT_1": // LessThan1Day
+			query = query.Where("purchase_date >= ?", now.Add(-24*time.Hour))
+		case "GT_1": // MoreThan1Day
+			query = query.Where("purchase_date <= ?", now.Add(-24*time.Hour))
+		case "GT_10": // MoreThan10Day
+			query = query.Where("purchase_date <= ?", now.Add(-240*time.Hour))
+		case "GT_30": // MoreThan30Day
+			query = query.Where("purchase_date <= ?", now.Add(-720*time.Hour))
+		}
+	}
+
+	if filter.SupplierId != "" {
+		query = query.Where("supplier_id = ?", filter.SupplierId)
+	}
 
 	var purchases []models.Purchase
-	if err := db.
-		Limit(size).
+	if err := query.
+		Limit(filter.Size).
 		Offset(offset).
+		Order("created_at desc").
 		Find(&purchases).Error; err != nil {
 		return nil, err
 	}
@@ -167,19 +208,8 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 	responses := make([]models.PurchaseDataResponse, 0)
 
 	for _, pur := range purchases {
-
 		var supplier models.User
 		if err := db.Where("uuid = ?", pur.SupplierID).First(&supplier).Error; err != nil {
-			return nil, err
-		}
-
-		var stockEntry models.StockEntry
-		if err := db.Where("uuid = ?", pur.StockId).First(&stockEntry).Error; err != nil {
-			return nil, err
-		}
-
-		var stockItems []models.StockItem
-		if err := db.Where("stock_entry_id = ?", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
 			return nil, err
 		}
 
@@ -194,52 +224,23 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 
 		totalAmount := 0.0
 
-		stockEntryResp := models.StockEntryResponse{
-			Uuid:              stockEntry.Uuid,
-			StockCode:         fmt.Sprintf("STOCK%d", stockEntry.ID),
-			AgeInDay:          int(time.Since(pur.PurchaseDate).Hours() / 24),
-			StockItemResponse: make([]models.StockItemResponse, 0),
-		}
-
-		for _, item := range stockItems {
-
-			var sorted []models.StockSort
-			db.Where("stock_item_id = ?", item.Uuid).Find(&sorted)
-
-			itemResp := models.StockItemResponse{
-				Uuid:             item.Uuid,
-				StockEntryID:     item.StockEntryID,
-				ItemName:         item.ItemName,
-				Weight:           item.Weight,
-				PricePerKilogram: item.PricePerKilogram,
-				TotalPayment:     item.TotalPayment,
-			}
-
-			if len(sorted) > 0 {
-				itemResp.IsSorted = true
-			}
-
-			totalAmount += item.TotalPayment
-			for _, s := range sorted {
-				itemResp.StockSortResponses = append(itemResp.StockSortResponses, models.StockSortResponse{
-					Uuid:             s.Uuid,
-					StockItemID:      item.Uuid,
-					ItemName:         s.ItemName,
-					Weight:           s.Weight,
-					PricePerKilogram: s.PricePerKilogram,
-					CurrentWeight:    s.CurrentWeight,
-					TotalCost:        s.TotalCost,
-					IsShrinkage:      s.IsShrinkage,
-				})
-			}
-
-			stockEntryResp.StockItemResponse = append(stockEntryResp.StockItemResponse, itemResp)
-		}
-
 		userDetail := models.GetUserDetail{
 			Uuid:  supplier.Uuid,
 			Name:  supplier.Name,
 			Phone: supplier.Phone,
+		}
+
+		var stockEntry models.StockEntry
+		if err = db.Where("uuid = ?", pur.StockId).First(&stockEntry).Error; err != nil {
+			return nil, err
+		}
+
+		var stockItems []models.StockItem
+		if err = db.Where("stock_entry_id = ?", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
+			return nil, err
+		}
+		for _, item := range stockItems {
+			totalAmount += item.TotalPayment
 		}
 
 		resp := models.PurchaseDataResponse{
@@ -247,25 +248,26 @@ func (p *PurchaseService) GetAllPurchases(page, size int) (*models.PurchaseRespo
 			Supplier:        userDetail,
 			PurchaseDate:    pur.PurchaseDate.Format(time.RFC3339),
 			StockId:         pur.StockId,
+			StockCode:       fmt.Sprintf("STOCK-%d", stockEntry.ID),
 			TotalAmount:     totalAmount,
 			PaidAmount:      pur.PaidAmount,
 			RemainingAmount: totalAmount - pur.PaidAmount,
 			PaymentStatus:   pur.PaymentStatus,
-			StockEntry:      stockEntryResp,
 			LastPayment:     lastPayment,
 		}
+		resp.StockEntry = nil
 
 		responses = append(responses, resp)
 	}
 
 	var total int64
-	if err := db.Model(&models.Purchase{}).Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, err
 	}
 
 	res := models.PurchaseResponse{
-		Size:   size,
-		PageNo: page,
+		Size:   filter.Size,
+		PageNo: filter.PageNo,
 		Total:  int(total),
 		Data:   responses,
 	}

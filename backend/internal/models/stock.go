@@ -4,7 +4,7 @@ import "time"
 
 type StockEntry struct {
 	ID        int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid      string    `json:"uuid" gorm:"column:uuid;size:255;unique;not null"`
+	Uuid      string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
@@ -15,8 +15,8 @@ func (*StockEntry) TableName() string {
 
 type StockItem struct {
 	ID               int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid             string    `json:"uuid" gorm:"column:uuid;size:255;unique;not null"`
-	StockEntryID     string    `json:"stock_entry_id" gorm:"column:stock_entry_id"`
+	Uuid             string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
+	StockEntryID     string    `json:"stock_entry_id" gorm:"column:stock_entry_id;type:varchar(36)"`
 	ItemName         string    `json:"item_name" gorm:"column:item_name"`
 	Weight           float64   `json:"weight" gorm:"column:weight"`
 	PricePerKilogram float64   `json:"price_per_kilogram" gorm:"column:price_per_kilogram"`
@@ -31,8 +31,8 @@ func (*StockItem) TableName() string {
 
 type StockSort struct {
 	ID               int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid             string    `json:"uuid" gorm:"column:uuid;size:255;unique;not null"`
-	StockItemID      string    `json:"stock_item_id" gorm:"column:stock_item_id"`
+	Uuid             string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
+	StockItemID      string    `json:"stock_item_id" gorm:"column:stock_item_id;type:varchar(36)"`
 	ItemName         string    `json:"sorted_item_name" gorm:"column:sorted_item_name"`
 	Weight           float64   `json:"weight" gorm:"column:weight"`
 	PricePerKilogram float64   `json:"price_per_kilogram" gorm:"column:price_per_kilogram"`
@@ -59,6 +59,7 @@ type StockEntryResponse struct {
 	AgeInDay          int                 `json:"age_in_day"`
 	PurchaseId        string              `json:"purchase_id"`
 	Supplier          GetUserDetail       `json:"supplier"`
+	PurchaseDate      string              `json:"purchase_date"`
 	StockItemResponse []StockItemResponse `json:"stock_items"`
 }
 
@@ -89,4 +90,13 @@ type StockResponse struct {
 	PageNo int                  `json:"page_no"`
 	Total  int                  `json:"total"`
 	Data   []StockEntryResponse `json:"data"`
+}
+
+type StockEntryFilter struct {
+	Size         int    `form:"size"`
+	PageNo       int    `form:"page_no"`
+	StockId      string `form:"stock_id"`
+	SupplierId   string `form:"supplier_id"`
+	PurchaseDate string `form:"purchase_date"`
+	AgeInDay     string `form:"age_in_day"`
 }

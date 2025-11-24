@@ -33,7 +33,7 @@ func (s *StockService) GetAllStockEntries(page int, size int) (*models.StockResp
 	if err := db.
 		Limit(size).
 		Offset(offset).
-		Order("created_at DESC").
+		Order("created_at desc").
 		Find(&stockEntries).Error; err != nil {
 		return nil, err
 	}
@@ -59,10 +59,11 @@ func (s *StockService) GetAllStockEntries(page int, size int) (*models.StockResp
 
 		stockEntryResp := models.StockEntryResponse{
 			Uuid:              stockEntry.Uuid,
-			StockCode:         fmt.Sprintf("STOCK%d", stockEntry.ID),
+			StockCode:         fmt.Sprintf("STOCK-%d", stockEntry.ID),
 			AgeInDay:          int(time.Since(stockEntry.CreatedAt).Hours() / 24),
 			PurchaseId:        purchase.Uuid,
 			Supplier:          supplierDetail,
+			PurchaseDate:      purchase.PurchaseDate.Format(time.RFC3339),
 			StockItemResponse: make([]models.StockItemResponse, 0),
 		}
 

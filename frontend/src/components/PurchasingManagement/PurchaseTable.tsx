@@ -69,7 +69,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                         {data.map((item, index) => {
-                            const percentage = (item.paid_amount / item.total_amount) * 100;
+                            const percentage = item.total_amount > 0
+                                ? (item.paid_amount / item.total_amount) * 100
+                                : 0;
                             return (
                                 <tr key={index} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -82,7 +84,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                         <span
                                             className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800`}
                                         >
-                                            {item.stock_entry.stock_code}
+                                            {item.stock_code}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

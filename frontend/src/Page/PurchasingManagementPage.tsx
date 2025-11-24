@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import PurchaseFilter from "../components/PurchasingManagement/PurchaseFilter";
 import PurchaseTable from "../components/PurchasingManagement/PurchaseTable";
 import { Plus } from "lucide-react";
-import { Purchasing } from "../types/purchase";
+import { Purchasing, PurchaseFilters } from "../types/purchase";
 import { purchaseService } from "../services/purchaseService";
 import { useToast } from "../contexts/ToastContext";
+import { useNavigate } from "react-router-dom";
+
+// Define the shape of the filters received from PurchaseFilter
 
 const PurchasingManagementPage: React.FC = () => {
     const [purchaseData, setPurchaseData] = useState<Purchasing[]>([]);
@@ -13,19 +16,30 @@ const PurchasingManagementPage: React.FC = () => {
     const [error, setError] = useState<string>("");
     const [totalPurchases, setTotalPurchases] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-    const [filters, setFilters] = useState({});
+    // State to hold the active search criteria
+    const [filters, setFilters] = useState<PurchaseFilters>({});
 
     const { showToast } = useToast();
+    const navigate = useNavigate();
 
     const fetchPurchases = useCallback(async () => {
         setLoading(true);
         setError("");
 
+        // 1. Clean up filters: Remove undefined or empty string values
+        const activeFilters = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v)
+        );
+
         try {
+            // 2. Pass filters along with pagination params
+            console.log("Fetching purchases with filters:", activeFilters);
             const response = await purchaseService.getAllPurchases({
                 page: currentPage,
                 size: pageSize,
+                ...activeFilters,
             });
+
             if (response.status_code === 200) {
                 setPurchaseData(response.data.data);
                 setTotalPurchases(response.data.total);
@@ -43,7 +57,7 @@ const PurchasingManagementPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, pageSize, showToast]);
+    }, [currentPage, pageSize, filters, showToast]); // DEPENDENCY: Rerun on filter change!
 
     useEffect(() => {
         fetchPurchases();
@@ -54,25 +68,33 @@ const PurchasingManagementPage: React.FC = () => {
         setCurrentPage(1);
     }
 
-    const handleSearch = (newFilters: any) => {
+    // --- Filter Handlers ---
+
+    const handleSearch = (newFilters: PurchaseFilters) => {
+        setCurrentPage(1);
         setFilters(newFilters);
-        console.log("Applying filters:", newFilters);
+        // fetchPurchases will run automatically due to the 'filters' dependency update
     };
 
     const handleReset = () => {
+        // Clear all filters and reset pagination
+        if (Object.keys(filters).length === 0 && currentPage === 1) return;
+
         setFilters({});
-        setPurchaseData(purchaseData);
         setCurrentPage(1);
+        // fetchPurchases will run automatically due to the 'filters' dependency update
     };
 
+    // --- Navigation and Pagination ---
+
     const handleAddStock = () => {
-        console.log("Opening Add Stock Modal/Page...");
+        navigate("/dashboard/purchase/create");
     };
 
     const totalPages = Math.ceil(totalPurchases / pageSize);
 
     const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 || newPage <= totalPages) {
+        if (newPage >= 1 && newPage <= totalPages) {
             setCurrentPage(newPage);
         }
     };
@@ -116,6 +138,7 @@ const PurchasingManagementPage: React.FC = () => {
                 </button>
             </header>
 
+            {/* Pass handleSearch and handleReset functions to the filter component */}
             <PurchaseFilter onSearch={handleSearch} onReset={handleReset} />
 
             <PurchaseTable

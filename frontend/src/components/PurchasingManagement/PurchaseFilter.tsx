@@ -1,34 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, X } from 'lucide-react';
-
-const MOCK_SUPPLIERS = ["Semua Supplier", "PT. Melayani Nusantara", "CV. Sumber Laut Jaya", "UD. Laut Biru"];
-const MOCK_STATUS = ["Semua Status", "Lunas", "Sebagian", "Belum Dibayar"];
+import { User } from '../../types/index';
+import { MOCK_FILTER_STATUS_OPTIONS, PaymentStatus, PurchaseFilters } from '../../types/purchase';
+import { authService } from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
+import { AGE_FILTER_OPTIONS } from '../../constants/constants';
 
 interface PurchaseFilterProps {
-    onSearch: (filters: any) => void;
+    onSearch: (filters: PurchaseFilters) => void;
     onReset: () => void;
 }
 
 const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) => {
-    const [name, setName] = useState('');
-    const [supplier, setSupplier] = useState(MOCK_SUPPLIERS[0]);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [paymentStatus, setPaymentStatus] = useState(MOCK_STATUS[0]);
-    const [paymentTerm, setPaymentTerm] = useState('Semua Keterlambatan');
+    const [purchaseId, setPurchaseId] = useState('');
+    const [supplierId, setSupplierId] = useState('');
+    const [purchaseDate, setPurchaseDate] = useState('');
+    const [ageInDayKey, setAgeInDayKey] = useState(AGE_FILTER_OPTIONS[0].key);
+    const [paymentStatusKey, setPaymentStatusKey] = useState(MOCK_FILTER_STATUS_OPTIONS[0].key);
+    const [supplierOptions, setSupplierOptions] = useState<User[]>([]);
+    const [error, setError] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [isFiltering, setIsFiltering] = useState(false);
+
+    const { showToast } = useToast();
+
+    const fetchSuppliers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await authService.getListUserRoles('supplier');
+            if (response.status_code === 200) {
+                const defaultSupplier: any = { uuid: '', name: 'Semua Supplier' };
+                setSupplierOptions([defaultSupplier, ...response.data]);
+            } else {
+                setError(response.message || "Failed to fetch supplier data");
+                showToast(response.message || "Failed to fetch supplier data", "error");
+            }
+        } catch (err) {
+            setError("Failed to fetch supplier data. Please try again");
+            showToast("Failed to fetch supplier data. Please try again", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    useEffect(() => {
+        fetchSuppliers();
+    }, [fetchSuppliers]);
 
     const handleSearch = () => {
-        onSearch({ name, supplier, startDate, endDate, paymentStatus, paymentTerm });
+        setIsFiltering(true);
+        const filters: PurchaseFilters = {
+            purchase_id: purchaseId || undefined,
+            supplier_id: supplierId || undefined,
+            purchase_date: purchaseDate || undefined,
+            payment_status: paymentStatusKey === '' ? undefined : (paymentStatusKey as PaymentStatus),
+            age_in_day: ageInDayKey === '0' ? undefined : ageInDayKey,
+        };
+
+        onSearch(filters);
+        setIsFiltering(false);
     };
 
     const handleReset = () => {
-        setName('');
-        setSupplier(MOCK_SUPPLIERS[0]);
-        setStartDate('');
-        setEndDate('');
-        setPaymentStatus(MOCK_STATUS[0]);
-        setPaymentTerm('Semua Keterlambatan');
+        setPurchaseId('');
+        setSupplierId('');
+        setPurchaseDate('');
+        setAgeInDayKey('0');
+        setPaymentStatusKey('ALL');
         onReset();
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
     };
 
     return (
@@ -41,106 +86,111 @@ const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) =>
                 <span className="text-gray-500 font-normal ml-2">Filter data berdasarkan pembelian, tanggal bayar, dan kriteria lainnya</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Pencarian (Search Input) */}
-                <div className="col-span-1 md:col-span-2">
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <div className="col-span-1 md:col-span-2 lg:col-span-1">
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Pencarian</label>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="ID atau nama supplier"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Stock ID atau Nama Supplier"
+                            value={purchaseId}
+                            onChange={(e) => setPurchaseId(e.target.value)}
+                            onKeyPress={handleKeyPress}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                            disabled={isFiltering || loading}
                         />
                     </div>
                 </div>
 
-                {/* Supplier Dropdown */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Supplier</label>
                     <div className="relative">
                         <select
-                            value={supplier}
-                            onChange={(e) => setSupplier(e.target.value)}
-                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8"
+                            value={supplierId}
+                            onChange={(e) => setSupplierId(e.target.value)}
+                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
+                            disabled={isFiltering || loading}
                         >
-                            {MOCK_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {supplierOptions.map(s => (
+                                <option key={s.uuid || 'all'} value={s.uuid}>
+                                    {s.name}
+                                </option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
                 </div>
 
-                {/* Tanggal Pembelian (Start Date) */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Pembelian</label>
                     <div className="relative">
                         <input
                             type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            placeholder="dd/mm/yyyy"
+                            value={purchaseDate}
+                            onChange={(e) => setPurchaseDate(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
+                            disabled={isFiltering || loading}
                         />
                         <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                     </div>
                 </div>
 
-                {/* Tanggal Bayar (End Date) */}
                 <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Bayar</label>
-                    <div className="relative">
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            placeholder="dd/mm/yyyy"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
-                        />
-                        <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    </div>
-                </div>
-
-                {/* Keterlambatan Bayar (Payment Term) 
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Keterlambatan Bayar</label>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Umur Pembelian</label>
                     <div className="relative">
                         <select
-                            value={paymentTerm}
-                            onChange={(e) => setPaymentTerm(e.target.value)}
-                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8"
+                            value={ageInDayKey}
+                            onChange={(e) => setAgeInDayKey(e.target.value)}
+                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
+                            disabled={isFiltering || loading}
                         >
-                            <option>Semua Keterlambatan</option>
-                            <option>Tertunda</option>
-                            <option>Tepat Waktu</option>
+                            {AGE_FILTER_OPTIONS.map(opt => (
+                                <option key={opt.key} value={opt.key}>{opt.label}</option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
-                </div> */}
+                </div>
 
-                {/* Status Pembayaran (Payment Status) */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Status Pembayaran</label>
                     <div className="relative">
                         <select
-                            value={paymentStatus}
-                            onChange={(e) => setPaymentStatus(e.target.value)}
-                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8"
+                            value={paymentStatusKey}
+                            onChange={(e) => setPaymentStatusKey(e.target.value)}
+                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
+                            disabled={isFiltering || loading}
                         >
-                            {MOCK_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {MOCK_FILTER_STATUS_OPTIONS.map(status => (
+                                <option key={status.key} value={status.key}>
+                                    {status.label}
+                                </option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
                 </div>
+
+                <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end">
+                    <button
+                        onClick={handleSearch}
+                        className="w-full bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md disabled:opacity-50"
+                        disabled={isFiltering || loading}
+                    >
+                        {isFiltering ? 'Searching...' : 'Search'}
+                    </button>
+                </div>
             </div>
 
-            {/* Reset Button */}
             <div className="flex justify-end pt-4">
                 <button
                     onClick={handleReset}
                     className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-800 transition"
+                    disabled={isFiltering || loading}
                 >
                     <X size={16} className="mr-1" />
                     Reset Filter

@@ -4,13 +4,13 @@ import "time"
 
 type Payment struct {
 	ID          int       `json:"id"`
-	Uuid        string    `json:"uuid" gorm:"column:uuid"`
-	UserId      string    `json:"user_id" gorm:"column:user_id"`
+	Uuid        string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
+	UserId      string    `json:"user_id" gorm:"column:user_id;type:varchar(36)"`
 	Total       float64   `json:"total" gorm:"column:total"`
 	Type        string    `json:"type" gorm:"column:type"`
 	Description string    `json:"description" gorm:"column:description"`
-	SalesId     string    `json:"sales_id" gorm:"column:sales_id"`
-	PurchaseId  string    `json:"purchase_id" gorm:"column:purchase_id"`
+	SalesId     string    `json:"sales_id" gorm:"column:sales_id;type:varchar(36)"`
+	PurchaseId  string    `json:"purchase_id" gorm:"column:purchase_id;type:varchar(36)"`
 	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }

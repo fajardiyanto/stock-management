@@ -6,7 +6,7 @@ import (
 
 type User struct {
 	ID              int       `json:"id"`
-	Uuid            string    `json:"uuid" gorm:"column:uuid"`
+	Uuid            string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
 	Name            string    `json:"name" gorm:"column:name"`
 	Phone           string    `json:"phone" gorm:"column:phone"`
 	Password        string    `json:"-" gorm:"column:password"`
