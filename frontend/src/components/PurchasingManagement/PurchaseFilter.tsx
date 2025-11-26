@@ -96,7 +96,7 @@ const PurchaseFilter: React.FC<PurchaseFilterProps> = ({ onSearch, onReset }) =>
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Stock ID atau Nama Supplier"
+                            placeholder="Stock ID"
                             value={purchaseId}
                             onChange={(e) => setPurchaseId(e.target.value)}
                             onKeyPress={handleKeyPress}

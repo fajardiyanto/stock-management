@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import StockFilter from "../components/StockManagement/StockFilter";
 import StockTable from "../components/StockManagement/StockTable";
-import { StockEntry } from "../types/stock";
+import { StockEntriesFilters, StockEntry, StockConfirmRequest } from "../types/stock";
 import { useToast } from "../contexts/ToastContext";
 import { stockService } from "../services/stockService";
+import { useNavigate } from "react-router-dom";
+import StockModalDelete from "../components/StockManagement/StockModalDelete";
 
 
 const StockManagementPage: React.FC = () => {
@@ -13,18 +15,26 @@ const StockManagementPage: React.FC = () => {
     const [error, setError] = useState<string>("");
     const [totalStockData, setTotalStockData] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-    const [filters, setFilters] = useState({});
+    const [filters, setFilters] = useState<StockEntriesFilters>({});
+    const [modalType, setModalType] = useState<'DELETE' | null>(null);
+    const [stockConfirmData, setStockConfirmData] = useState<StockConfirmRequest | null>();
 
     const { showToast } = useToast();
+    const navigate = useNavigate();
 
     const fetchStockEntries = useCallback(async () => {
         setLoading(true);
         setError("");
 
+        const activeFilters = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v)
+        );
+
         try {
             const response = await stockService.getStockEntries({
                 page: currentPage,
                 size: pageSize,
+                ...activeFilters,
             });
             if (response.status_code === 200) {
                 setStockData(response.data.data);
@@ -37,38 +47,63 @@ const StockManagementPage: React.FC = () => {
                 );
             }
         } catch (err) {
-            console.log("Error fetching purchasing", err);
-            setError("Failed to fetch purchases. Please try again");
-            showToast("Failed to fetch purchases. Please try again", "error");
+            setError("Failed to fetch stock entries. Please try again");
+            showToast("Failed to fetch stock entries. Please try again", "error");
         } finally {
             setLoading(false);
         }
-    }, [currentPage, pageSize, showToast]);
+    }, [currentPage, pageSize, filters, showToast]);
 
     useEffect(() => {
         fetchStockEntries();
     }, [fetchStockEntries]);
 
-    const handleSearch = (newFilters: any) => {
+    const handleSearch = (newFilters: StockEntriesFilters) => {
+        setCurrentPage(1);
         setFilters(newFilters);
-        console.log("Applying filters:", newFilters);
     };
 
     const handleReset = () => {
+        if (Object.keys(filters).length === 0 && currentPage === 1) return;
+
         setFilters({});
-        setStockData(stockData);
+        setCurrentPage(1);
     };
 
-    const handleSortItem = (stockId: string, itemIndex: number) => {
-        console.log(`Sorting item index ${itemIndex} in stock ID ${stockId}`);
+    const handleSortItem = (stockItemId: string, itemIndex: number) => {
+        navigate(`/dashboard/stock/sort/${stockItemId}`);
     };
 
     const handleEditStock = (stockId: string) => {
-        console.log(`Editing stock ID ${stockId}`);
+        navigate(`/dashboard/stock/update/${stockId}`);
     };
 
-    const handleDeleteStock = (stockId: string) => {
-        console.log(`Deleting stock ID ${stockId}`);
+    const handleDeleteStock = (stockId: string, stockCode: string) => {
+        setStockConfirmData({
+            stock_id: stockId,
+            stock_code: stockCode
+        });
+        setModalType('DELETE');
+    };
+
+    const handleConfirmDeleted = async () => {
+        try {
+            const response = await stockService.deleteStock(stockConfirmData?.stock_id || '');
+
+            if (response.status_code === 200) {
+                showToast('Stock deleted successfully!', 'success');
+                handleCloseModal();
+                fetchStockEntries();
+            } else {
+                showToast(`Failed to delete stock: ${response.message}`, 'error');
+            }
+        } catch (err) {
+            showToast('Failed to delete stock. Please try again.', 'error');
+        }
+    }
+
+    const handleCloseModal = () => {
+        setModalType(null);
     };
 
     const totalPages = Math.ceil(totalStockData / pageSize);
@@ -131,6 +166,10 @@ const StockManagementPage: React.FC = () => {
                 onEditStock={handleEditStock}
                 onDeleteStock={handleDeleteStock}
             />
+
+            {modalType === 'DELETE' && (
+                <StockModalDelete item={stockConfirmData} onConfirm={handleConfirmDeleted} onClose={handleCloseModal} />
+            )}
         </div>
     );
 };

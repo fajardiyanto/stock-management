@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { CreateStockItem } from '../../types/stock';
+import { formatRupiah } from '../../utils/FormatRupiah';
 
 interface StockItemInputProps {
     index: number;
@@ -10,24 +11,13 @@ interface StockItemInputProps {
     canRemove: boolean;
 }
 
-const formatRupiahInput = (amount: number): string => {
-    if (amount === 0) return '';
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount).replace('IDR', 'Rp');
-};
-
 const cleanNumber = (value: string): number => {
     const cleaned = value.replace(/[^0-9]/g, '');
     return parseInt(cleaned, 10) || 0;
 };
 
 const StockItemInput: React.FC<StockItemInputProps> = ({ index, item, onChange, onRemove, canRemove }) => {
-
-    const [formattedPrice, setFormattedPrice] = useState<string>(formatRupiahInput(item.price_per_kilogram));
+    const [formattedPrice, setFormattedPrice] = useState<string>(formatRupiah(item.price_per_kilogram));
 
     const handleValueChange = (field: keyof CreateStockItem, value: string) => {
         const parsedValue = (field === 'item_name') ? value : parseFloat(value) || 0;
@@ -51,7 +41,7 @@ const StockItemInput: React.FC<StockItemInputProps> = ({ index, item, onChange, 
     };
 
     const handlePriceBlur = () => {
-        setFormattedPrice(formatRupiahInput(item.price_per_kilogram));
+        setFormattedPrice(formatRupiah(item.price_per_kilogram));
     };
 
     const handlePriceFocus = () => {

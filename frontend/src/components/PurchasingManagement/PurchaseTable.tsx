@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit2, Trash2 } from "lucide-react";
+import { Calendar, Edit2, Trash2 } from "lucide-react";
 import PurchaseStatusBadge from "./PurchaseStatusBadge";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { Purchasing, PaymentStatusLabel } from "../../types/purchase";
@@ -120,9 +120,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                             </button>
                                             <button
                                                 className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition"
-                                                title="Delete"
+                                                title="Payment"
                                             >
-                                                <Trash2 size={18} />
+                                                <Calendar size={18} />
                                             </button>
                                         </div>
                                     </td>

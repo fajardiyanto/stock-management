@@ -15,7 +15,7 @@ interface StockRowDetailsProps {
     totalItems: number;
     onSort: () => void;
     onEditStock: (stockId: string) => void;
-    onDeleteStock: (stockId: string) => void;
+    onDeleteStock: (stockId: string, stockCode: string) => void;
 }
 
 const StockRowDetails: React.FC<StockRowDetailsProps> = ({
@@ -122,7 +122,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                     <Edit2 size={18} />
                 </button>
                 <button
-                    onClick={() => onDeleteStock(stockEntry.uuid)}
+                    onClick={() => onDeleteStock(stockEntry.uuid, stockEntry.stock_code)}
                     className="border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-red-600 transition"
                     title="Delete Stock"
                 >

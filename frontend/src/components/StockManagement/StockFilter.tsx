@@ -150,6 +150,15 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
                 </div>
+                <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end">
+                    <button
+                        onClick={handleSearch}
+                        className="w-full bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md disabled:opacity-50"
+                        disabled={isFiltering || loading}
+                    >
+                        {isFiltering ? 'Searching...' : 'Search'}
+                    </button>
+                </div>
             </div>
 
             <div className="flex justify-end pt-4">

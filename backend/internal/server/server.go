@@ -42,6 +42,14 @@ func Run() error {
 		api.GET("/purchases", purchaseHandler.GetAllPurchasesHandler)
 
 		api.GET("/stock-entries", stockHandler.GetAllStockEntriesHandler)
+		api.GET("/stock-entry/:stockId", stockHandler.GetStockEntryByIdHandler)
+		api.PUT("/stock-entry/:stockId", stockHandler.UpdateStockEntryHandler)
+		api.DELETE("/stock-entry/:stockId", stockHandler.DeleteStockEntryByIdHandler)
+
+		api.GET("/stock-item/:stockItemId", stockHandler.GetStockItemByIdHandler)
+
+		api.POST("/stock-sort/:stockItemId", stockHandler.CreateStockSortHandler)
+		api.PUT("/stock-sort/:stockItemId", stockHandler.UpdateStockSortHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

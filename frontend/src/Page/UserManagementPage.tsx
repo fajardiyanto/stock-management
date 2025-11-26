@@ -25,7 +25,6 @@ const UserManagementPage: React.FC = () => {
 
     const { showToast } = useToast();
 
-    // State for Add/Edit forms
     const initialFormData: UpdateUserRequest = { name: '', phone: '', role: 'BUYER', address: '', shipping_address: '', password: '' };
     const [editFormData, setEditFormData] = useState<UpdateUserRequest>(initialFormData);
     const initialAddUserFormData: CreateUserRequest = {
@@ -178,7 +177,6 @@ const UserManagementPage: React.FC = () => {
                 showToast(`Failed to delete user: ${response.message}`, 'error');
             }
         } catch (err) {
-            console.error('Error deleting user:', err);
             showToast('Failed to delete user. Please try again.', 'error');
         }
     };
@@ -228,7 +226,6 @@ const UserManagementPage: React.FC = () => {
 
     return (
         <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-            {/* Header */}
             <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-800">User Management</h1>
@@ -242,7 +239,6 @@ const UserManagementPage: React.FC = () => {
                 </button>
             </header>
 
-            {/* Search & Filter */}
             <UserFilter
                 searchName={searchName}
                 setSearchName={setSearchName}
@@ -252,7 +248,6 @@ const UserManagementPage: React.FC = () => {
                 onClear={handleClearSearch}
             />
 
-            {/* Users Table */}
             <UserTable
                 users={users}
                 loading={loading}
@@ -267,7 +262,6 @@ const UserManagementPage: React.FC = () => {
                 onPageSizeChange={handlePageSizeChange}
             />
 
-            {/* Modals */}
             {modalType === 'DETAIL' && selectedUser && (
                 <UserModalDetail
                     user={selectedUser}

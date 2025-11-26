@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, ArrowLeft, Calendar, ChevronDown } from 'lucide-react';
 import StockItemInput from '../components/StockManagement/StockItemInput';
-import { CreateStockItem } from '../types/stock';
+import { CreateStockItem, StockEntry, SupplierOption } from '../types/stock';
 import { CreatePurchasingRequest } from '../types/purchase';
-import { purchaseService } from "../services/purchaseService";
 import { useToast } from "../contexts/ToastContext";
 import { User } from '../types';
 import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { stockService } from '../services/stockService';
 
 const getDefaultDate = (): string => {
     const now = new Date();
@@ -21,7 +21,7 @@ const initialItem: CreateStockItem = {
     price_per_kilogram: 0,
 };
 
-const CreatePurchasingPage: React.FC = () => {
+const UpdateStockPage: React.FC = () => {
     const [formData, setFormData] = useState<CreatePurchasingRequest>({
         supplier_id: '',
         purchase_date: getDefaultDate(),
@@ -32,9 +32,45 @@ const CreatePurchasingPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierOptions, setSupplierOptions] = useState<User[]>([]);
+    const [getStockEntry, setGetStockEntry] = useState<StockEntry>({} as StockEntry);
 
     const { showToast } = useToast();
     const navigate = useNavigate();
+    const { stockId } = useParams<{ stockId: string }>();
+
+    const fetchStockEntry = useCallback(async () => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await stockService.getStockEntryById(stockId || '');
+            if (response.status_code === 200) {
+                const entry = response.data;
+                setGetStockEntry(entry);
+                setFormData({
+                    supplier_id: entry.supplier.uuid,
+                    purchase_date: entry.purchase_date.slice(0, 16),
+                    stock_items: entry.stock_items.map(item => ({
+                        item_name: item.item_name,
+                        weight: item.weight,
+                        price_per_kilogram: item.price_per_kilogram,
+                    }))
+                });
+            } else {
+                setError(response.message || "Failed to fetch stock entry");
+                showToast(
+                    response.message || "Failed to fetch stock entry",
+                    "error"
+                );
+            }
+        } catch (error) {
+            setError("Failed to fetch stock entry. Please try again");
+            showToast("Failed to fetch stock entry.", "error");
+        } finally {
+            setLoading(false);
+        }
+
+    }, [stockId, showToast]);
 
     const handleItemChange = (
         index: number,
@@ -54,10 +90,7 @@ const CreatePurchasingPage: React.FC = () => {
     };
 
     const handleRemoveItem = (index: number) => {
-        if (formData.stock_items.length <= 1) {
-            console.error("Minimal 1 stock item must remain.");
-            return;
-        }
+        if (formData.stock_items.length <= 1) return;
         const newItems = formData.stock_items.filter((_, i) => i !== index);
         setFormData({ ...formData, stock_items: newItems });
     };
@@ -70,21 +103,10 @@ const CreatePurchasingPage: React.FC = () => {
         setFormData({ ...formData, purchase_date: date });
     };
 
-
-    const handleReset = () => {
-        setFormData({
-            supplier_id: '',
-            purchase_date: getDefaultDate(),
-            stock_items: [initialItem],
-        });
-        setError('');
-        showToast("Form berhasil di-reset", "warning");
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (isSubmitting) return;
+        if (isSubmitting || loading) return;
         setError('');
 
         if (!formData.supplier_id) {
@@ -112,11 +134,10 @@ const CreatePurchasingPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const response = await purchaseService.createPurchase(finalPayload);
+            const response = await stockService.updateStockEntry(stockId || '', finalPayload);
 
             if (response.status_code === 201 || response.status_code === 200) {
                 showToast("Stok berhasil disimpan!", "success");
-                handleReset();
             } else {
                 const errorMessage = response.message || "Gagal menyimpan stok. Coba lagi.";
                 setError(errorMessage);
@@ -154,21 +175,30 @@ const CreatePurchasingPage: React.FC = () => {
     }, [showToast]);
 
     useEffect(() => {
+        fetchStockEntry();
         fetchSuppliers();
-    }, [fetchSuppliers]);
+    }, [fetchStockEntry, fetchSuppliers]);
 
     const canRemoveItem = formData.stock_items.length > 1;
-    const submitButtonText = isSubmitting ? 'Menyimpan...' : 'Simpan Stok';
+    const submitButtonText = isSubmitting ? 'Menyimpan...' : 'Update Stok';
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 p-4 sm:p-10 font-sans flex items-center justify-center">
+                <p className="text-gray-500">Memuat data stok...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10 font-sans">
             <header className="mb-8">
-                <button onClick={() => navigate('/dashboard/purchase')} className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium">
+                <button onClick={() => navigate('/dashboard/stock')} className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium">
                     <ArrowLeft size={18} className="mr-2" />
                     Kembali
                 </button>
-                <h1 className="text-3xl font-extrabold text-gray-900">Tambah Stok</h1>
-                <p className="text-gray-500 mt-1">Buat stok baru dari supplier</p>
+                <h1 className="text-3xl font-extrabold text-gray-900">Edit Stok</h1>
+                <p className="text-gray-500 mt-1">{getStockEntry ? `Edit stok ${getStockEntry.stock_code}` : ''}</p>
             </header>
 
             <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-2xl p-6 lg:p-8 space-y-8">
@@ -249,16 +279,8 @@ const CreatePurchasingPage: React.FC = () => {
 
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
                     <button
-                        type="button"
-                        onClick={handleReset}
-                        className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition font-medium disabled:opacity-50"
-                        disabled={isSubmitting || loading}
-                    >
-                        Reset
-                    </button>
-                    <button
                         type="submit"
-                        className="px-6 py-2 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-lg disabled:opacity-50"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg disabled:opacity-50"
                         disabled={isSubmitting || loading}
                     >
                         {submitButtonText}
@@ -269,4 +291,4 @@ const CreatePurchasingPage: React.FC = () => {
     );
 };
 
-export default CreatePurchasingPage;
+export default UpdateStockPage;

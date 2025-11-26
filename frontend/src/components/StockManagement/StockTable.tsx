@@ -10,9 +10,9 @@ interface StockTableProps {
     totalPurchases: number;
     totalPages: number;
     loading: boolean;
-    onSortItem: (stockId: string, itemIndex: number) => void;
+    onSortItem: (stockItemId: string, itemIndex: number) => void;
     onEditStock: (stockId: string) => void;
-    onDeleteStock: (stockId: string) => void;
+    onDeleteStock: (stockId: string, stockCode: string) => void;
     onPageSizeChange: (newSize: number) => void;
     onPageChange: (newPage: number) => void;
 }
@@ -62,7 +62,7 @@ const StockTable: React.FC<StockTableProps> = ({ data, currentPage, pageSize, to
                                     stockEntry={stockEntry}
                                     itemIndex={itemIndex}
                                     totalItems={stockEntry.stock_items.length}
-                                    onSort={() => onSortItem(stockEntry.uuid, itemIndex)}
+                                    onSort={() => onSortItem(stockEntry.stock_items[itemIndex].uuid, itemIndex)}
                                     onEditStock={onEditStock}
                                     onDeleteStock={onDeleteStock}
                                 />

@@ -29,6 +29,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 
 	stockEntry := models.StockEntry{
 		Uuid:      uuid.New().String(),
+		Deleted:   false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -39,7 +40,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 	}
 
 	stockItems := make([]models.StockItem, 0)
-	var totalAmount float64
+	var totalAmount int
 	for _, v := range request.StockItems {
 		totalPayment := v.Weight * v.PricePerKilogram
 		stockItem := models.StockItem{
@@ -49,6 +50,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 			Weight:           v.Weight,
 			PricePerKilogram: v.PricePerKilogram,
 			TotalPayment:     totalPayment,
+			Deleted:          false,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -70,6 +72,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		PaymentStatus: constatnts.PaymentNotMadeYet,
 		TotalAmount:   totalAmount,
 		StockId:       stockEntry.Uuid,
+		Deleted:       false,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -86,6 +89,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		Type:        constatnts.Income,
 		Description: fmt.Sprintf("Hutang Buying STOCK%d", stockEntry.ID),
 		PurchaseId:  purchase.Uuid,
+		Deleted:     false,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -120,7 +124,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		PaymentStatus:   purchase.PaymentStatus,
 	}
 
-	response.StockEntry = &models.StockEntryResponse{
+	response.StockEntry = &models.StockEntriesResponse{
 		Uuid:              stockEntry.Uuid,
 		StockCode:         fmt.Sprintf("STOCK-%d", stockEntry.ID),
 		AgeInDay:          int(time.Since(stockEntry.CreatedAt).Hours() / 24),
@@ -196,6 +200,8 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 		query = query.Where("supplier_id = ?", filter.SupplierId)
 	}
 
+	query = query.Where("deleted = false")
+
 	var purchases []models.Purchase
 	if err := query.
 		Limit(filter.Size).
@@ -209,20 +215,20 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 
 	for _, pur := range purchases {
 		var supplier models.User
-		if err := db.Where("uuid = ?", pur.SupplierID).First(&supplier).Error; err != nil {
+		if err := db.Where("uuid = ? AND status = true", pur.SupplierID).First(&supplier).Error; err != nil {
 			return nil, err
 		}
 
 		var payment models.Payment
 		lastPayment := ""
-		err := db.Where("purchase_id = ? AND type = ?", pur.Uuid, constatnts.Expense).
+		err := db.Where("purchase_id = ? AND type = ? AND deleted = false", pur.Uuid, constatnts.Expense).
 			Order("created_at DESC").
 			First(&payment).Error
 		if err == nil {
 			lastPayment = payment.CreatedAt.Format(time.RFC3339)
 		}
 
-		totalAmount := 0.0
+		var totalAmount int
 
 		userDetail := models.GetUserDetail{
 			Uuid:  supplier.Uuid,
@@ -231,12 +237,12 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 		}
 
 		var stockEntry models.StockEntry
-		if err = db.Where("uuid = ?", pur.StockId).First(&stockEntry).Error; err != nil {
+		if err = db.Where("uuid = ? AND deleted = false", pur.StockId).First(&stockEntry).Error; err != nil {
 			return nil, err
 		}
 
 		var stockItems []models.StockItem
-		if err = db.Where("stock_entry_id = ?", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
+		if err = db.Where("stock_entry_id = ? AND deleted = false", stockEntry.Uuid).Find(&stockItems).Error; err != nil {
 			return nil, err
 		}
 		for _, item := range stockItems {

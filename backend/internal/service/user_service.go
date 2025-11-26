@@ -90,7 +90,7 @@ func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse,
 
 func (s *UserService) GetUserById(id string) (*models.User, error) {
 	var user models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ?", id).First(&user).Error; err != nil {
+	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = true", id).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user not found")
 		}
@@ -107,7 +107,7 @@ func (s *UserService) GetUserByIdFromToken(token string) (*models.User, error) {
 	}
 
 	var user models.User
-	if err = config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ?", userId).First(&user).Error; err != nil {
+	if err = config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = true", userId).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user not found")
 		}

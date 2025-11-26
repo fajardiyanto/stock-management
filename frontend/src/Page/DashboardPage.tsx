@@ -9,6 +9,8 @@ import SalesManagementPage from './SalesManagementPage';
 import PurchasingManagementPage from './PurchasingManagementPage';
 import StockManagementPage from './StockManagementPage';
 import CreatePurchasingPage from './CreatePurchasingPage';
+import UpdateStockPage from './UpdateStockPage';
+import StockSortManagementPage from './StockSortManagementPage';
 
 interface DashboardProps {
     onLogout: () => void;
@@ -55,6 +57,8 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route path="purchase" element={<PurchasingManagementPage />} />
                             <Route path="stock" element={<StockManagementPage />} />
                             <Route path="purchase/create" element={<CreatePurchasingPage />} />
+                            <Route path="stock/update/:stockId" element={<UpdateStockPage />} />
+                            <Route path="stock/sort/:stockItemId" element={<StockSortManagementPage />} />
                         </Routes>
                     </div>
                 </main>
