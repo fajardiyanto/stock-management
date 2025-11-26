@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { StockSortRequest } from '../../types/stock';
 import { formatRupiah } from '../../utils/FormatRupiah';
+import { cleanNumber } from '../../utils/CleanNumber';
 
 interface StockSortResultInputProps {
     index: number;
@@ -10,11 +11,6 @@ interface StockSortResultInputProps {
     onRemove: (uuidToRemove: string) => void;
     canRemove: boolean;
 }
-
-const cleanNumber = (value: string): number => {
-    const cleaned = value.replace(/[^0-9]/g, '');
-    return parseInt(cleaned, 10) || 0;
-};
 
 const StockSortResultInput: React.FC<StockSortResultInputProps> = ({ index, result, onChange, onRemove, canRemove }) => {
     const [formattedPrice, setFormattedPrice] = useState<string>(formatRupiah(result.price_per_kilogram));

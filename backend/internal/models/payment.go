@@ -16,10 +16,14 @@ type Payment struct {
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
+func (*Payment) TableName() string {
+	return "payment"
+}
+
 type PaymentResponse struct {
 	Uuid        string    `json:"uuid"`
 	UserId      string    `json:"user_id"`
-	Total       string    `json:"total"`
+	Total       int       `json:"total"`
 	Type        string    `json:"type"`
 	Description string    `json:"description"`
 	SalesId     string    `json:"sales_id"`
@@ -28,6 +32,13 @@ type PaymentResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func (*Payment) TableName() string {
-	return "payment"
+type CashFlowResponse struct {
+	Balance int               `json:"balance"`
+	Payment []PaymentResponse `json:"payment"`
+}
+
+type CreatePaymentRequest struct {
+	Total       int    `json:"total"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }

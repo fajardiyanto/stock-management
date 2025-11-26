@@ -18,13 +18,15 @@ func Run() error {
 	app := gin.Default()
 	app.Use(middleware.CORSMiddleware())
 
-	userService := service.NewUserService()
+	paymentService := service.NewPaymentService()
+	userService := service.NewUserService(paymentService)
 	purchaseService := service.NewPurchaseService(userService)
 	stockService := service.NewStockService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
 	stockHandler := handler.NewStockHandler(stockService, validate)
+	paymentHandler := handler.NewPaymentHandler(paymentService, validate)
 
 	api := app.Group("/v1/api")
 	api.POST("/login", userHandler.LoginHandler)
@@ -50,6 +52,10 @@ func Run() error {
 
 		api.POST("/stock-sort/:stockItemId", stockHandler.CreateStockSortHandler)
 		api.PUT("/stock-sort/:stockItemId", stockHandler.UpdateStockSortHandler)
+
+		api.GET("/payments/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
+		api.POST("/payment/manual/:userId", paymentHandler.CreateManualPaymentHandler)
+		api.DELETE("/payment/manual/:paymentId", paymentHandler.DeleteManualPaymentHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

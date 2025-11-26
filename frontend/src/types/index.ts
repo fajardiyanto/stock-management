@@ -7,6 +7,7 @@ export interface User {
     status: boolean;
     address: string;
     shipping_address: string;
+    balance: number;
     created_at: string;
     updated_at: string;
 }

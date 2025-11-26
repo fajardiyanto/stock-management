@@ -50,7 +50,8 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                 <Navbar activeMenu={activeMenu} userData={userData} />
 
                 <main className="flex-1 overflow-y-auto p-6">
-                    <div className="max-w-7xl mx-auto">
+                    {/* max-w-9xl  */}
+                    <div className="mx-auto">
                         <Routes>
                             <Route path="users" element={<UserManagementPage />} />
                             <Route path="sales" element={<SalesManagementPage />} />

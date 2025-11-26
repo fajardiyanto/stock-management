@@ -28,6 +28,20 @@ type LoginResponse struct {
 	User  User   `json:"user"`
 }
 
+type UserResponse struct {
+	ID              int       `json:"id"`
+	Uuid            string    `json:"uuid"`
+	Name            string    `json:"name"`
+	Phone           string    `json:"phone"`
+	Role            string    `json:"role"`
+	Status          bool      `json:"status"`
+	Address         string    `json:"address"`
+	ShippingAddress string    `json:"shipping_address"`
+	Balance         int       `json:"balance"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
 type UserRequest struct {
 	Name            string `json:"name" validate:"required,min=3"`
 	Phone           string `json:"phone" validate:"required"`
@@ -57,10 +71,10 @@ type CreateUserResponse struct {
 }
 
 type GetAllUserResponse struct {
-	Size   int    `json:"size"`
-	PageNo int    `json:"page_no"`
-	Data   []User `json:"data"`
-	Total  int    `json:"total"`
+	Size   int            `json:"size"`
+	PageNo int            `json:"page_no"`
+	Data   []UserResponse `json:"data"`
+	Total  int            `json:"total"`
 }
 
 type GetUserDetail struct {

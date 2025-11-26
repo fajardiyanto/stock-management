@@ -14,10 +14,12 @@ import (
 	"time"
 )
 
-type UserService struct{}
+type UserService struct {
+	paymentRepository repository.PaymentRepository
+}
 
-func NewUserService() repository.UserRepository {
-	return &UserService{}
+func NewUserService(paymentRepository repository.PaymentRepository) repository.UserRepository {
+	return &UserService{paymentRepository: paymentRepository}
 }
 
 func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResponse, error) {
@@ -158,10 +160,32 @@ func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*mod
 		return nil, err
 	}
 
+	usersResponse := make([]models.UserResponse, 0)
+	for _, user := range users {
+		balance, err := s.paymentRepository.GetAllBalance(user.Uuid)
+		if err != nil {
+			return nil, err
+		}
+
+		usersResponse = append(usersResponse, models.UserResponse{
+			ID:              user.ID,
+			Uuid:            user.Uuid,
+			Name:            user.Name,
+			Phone:           user.Phone,
+			Role:            user.Role,
+			Status:          user.Status,
+			Address:         user.Address,
+			ShippingAddress: user.ShippingAddress,
+			Balance:         balance,
+			CreatedAt:       user.CreatedAt,
+			UpdatedAt:       user.UpdatedAt,
+		})
+	}
+
 	res := models.GetAllUserResponse{
 		Size:   size,
 		PageNo: page,
-		Data:   users,
+		Data:   usersResponse,
 		Total:  int(total),
 	}
 

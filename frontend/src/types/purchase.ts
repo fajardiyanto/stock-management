@@ -1,25 +1,5 @@
 import { CreateStockItem } from "./stock";
-
-export type PaymentStatus =
-  | "ALL"
-  | "PAYMENT_NOT_MADE_YET"
-  | "PAYMENT_IN_FULL"
-  | "PARTIAL_PAYMENT"
-  ;
-
-export const PaymentStatusLabel: Record<PaymentStatus, string> = {
-  "ALL": "Semua Status",
-  PAYMENT_NOT_MADE_YET: "Belum dibayar",
-  PAYMENT_IN_FULL: "Lunas",
-  PARTIAL_PAYMENT: "Sebagian",
-};
-
-export const MOCK_FILTER_STATUS_OPTIONS = [
-  { key: 'ALL', label: 'Semua Status' },
-  { key: 'PAYMENT_IN_FULL', label: PaymentStatusLabel.PAYMENT_IN_FULL },
-  { key: 'PARTIAL_PAYMENT', label: PaymentStatusLabel.PARTIAL_PAYMENT },
-  { key: 'PAYMENT_NOT_MADE_YET', label: PaymentStatusLabel.PAYMENT_NOT_MADE_YET },
-];
+import { PaymentStatus } from "./payment";
 
 export interface PurchasingListResponse {
   status_code: number;

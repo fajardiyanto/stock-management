@@ -1,7 +1,9 @@
 import React from 'react';
 import { User } from '../../types';
-import { Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Eye, PencilIcon } from 'lucide-react';
 import Pagination from "../Pagination";
+import { CashFlowResponse } from '../../types/payment';
+import { formatRupiah } from '../../utils/FormatRupiah';
 
 interface UserTableProps {
     users: User[];
@@ -30,6 +32,11 @@ const getStatusStyle = (status: boolean) => {
     return status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
 };
 
+const getBalanceStyle = (balance: number) => {
+    if (balance > 0) return 'bg-green-100 text-green-800'
+    else return 'bg-red-100 text-red-800'
+}
+
 const UserTable: React.FC<UserTableProps> = ({
     users,
     loading,
@@ -51,7 +58,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            {['#', 'User', 'Phone', 'Role', 'Status', 'Address', 'Created At', 'Actions'].map(header => (
+                            {['#', 'User', 'Phone', 'Role', 'Status', 'Address', 'Saldo', 'Created At', 'Actions'].map(header => (
                                 <th
                                     key={header}
                                     className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${header === 'Actions' ? 'text-right' : 'text-left'}`}
@@ -92,6 +99,11 @@ const UserTable: React.FC<UserTableProps> = ({
                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={`Home: ${user.address} | Shipping: ${user.shipping_address}`}>
                                         <div className="truncate">{user.address}</div>
                                         <div className="text-xs text-gray-400 truncate">Ship: {user.shipping_address}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getBalanceStyle(user.balance)}`}>
+                                            {formatRupiah(user?.balance)}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}

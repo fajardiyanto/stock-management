@@ -3,7 +3,8 @@ import { Plus } from 'lucide-react';
 import { authService } from '../services/authService';
 import { CreateUserRequest, User, UpdateUserRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
-
+import { CashFlowResponse } from '../types/payment';
+import { paymentService } from '../services/paymentService';
 import UserTable from '../components/UserComponents/UserTable';
 import UserFilter from '../components/UserComponents/UserFilter';
 import UserModalForm from '../components/UserComponents/UserModalForm';
@@ -19,9 +20,9 @@ const UserManagementPage: React.FC = () => {
     const [totalUsers, setTotalUsers] = useState(0);
     const [error, setError] = useState<string>('');
     const [pageSize, setPageSize] = useState(10);
-
     const [modalType, setModalType] = useState<'ADD' | 'EDIT' | 'DETAIL' | 'DELETE' | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [cashFlows, setCashFlows] = useState<CashFlowResponse>({} as CashFlowResponse);
 
     const { showToast } = useToast();
 
@@ -59,7 +60,6 @@ const UserManagementPage: React.FC = () => {
                 showToast(response.message || 'Failed to fetch users', 'error');
             }
         } catch (err) {
-            console.error('Error fetching users:', err);
             setError('Failed to fetch users. Please try again.');
             showToast('Failed to fetch users. Please try again.', 'error');
         } finally {
@@ -90,8 +90,25 @@ const UserManagementPage: React.FC = () => {
         setModalType('EDIT');
     };
 
-    const handleOpenDetail = (user: User) => {
+    const refreshCashFlows = async (userId: string) => {
+        try {
+            const response = await paymentService.getAllPaymentByUserId(userId);
+
+            if (response.status_code === 200) {
+                setCashFlows(response.data);
+            } else {
+                setError(response.message || 'Failed to fetch cash flows');
+                showToast(response.message || 'Failed to fetch cash flows', 'error');
+            }
+        } catch (err) {
+            setError('Failed to fetch cash flows. Please try again.');
+            showToast('Failed to fetch cash flows. Please try again.', 'error');
+        }
+    };
+
+    const handleOpenDetail = async (user: User) => {
         setSelectedUser(user);
+        await refreshCashFlows(user.uuid);
         setModalType('DETAIL');
     };
 
@@ -103,6 +120,7 @@ const UserManagementPage: React.FC = () => {
     const handleCloseModal = () => {
         setModalType(null);
         setSelectedUser(null);
+        fetchUsers();
     };
 
     const handlePageSizeChange = (newSize: number) => {
@@ -128,7 +146,6 @@ const UserManagementPage: React.FC = () => {
                 showToast(`Failed to create user: ${response.message}`, 'error');
             }
         } catch (err) {
-            console.error('Error creating user:', err);
             showToast('Failed to create user. Please try again.', 'error');
         }
     };
@@ -158,7 +175,6 @@ const UserManagementPage: React.FC = () => {
                 showToast(`Failed to update user: ${response.message}`, 'error');
             }
         } catch (err) {
-            console.error('Error updating user:', err);
             showToast('Failed to update user. Please try again.', 'error');
         }
     };
@@ -180,7 +196,6 @@ const UserManagementPage: React.FC = () => {
             showToast('Failed to delete user. Please try again.', 'error');
         }
     };
-
 
     const handleSearch = () => {
         setCurrentPage(1);
@@ -265,11 +280,13 @@ const UserManagementPage: React.FC = () => {
             {modalType === 'DETAIL' && selectedUser && (
                 <UserModalDetail
                     user={selectedUser}
+                    cashFlows={cashFlows}
                     onClose={handleCloseModal}
                     onEdit={() => {
                         handleCloseModal();
                         handleOpenEdit(selectedUser);
                     }}
+                    onRefresh={() => refreshCashFlows(selectedUser.uuid)}
                 />
             )}
 

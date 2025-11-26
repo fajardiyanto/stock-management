@@ -1,8 +1,9 @@
 import React from "react";
-import { Calendar, Edit2, Trash2 } from "lucide-react";
+import { Calendar, Edit2 } from "lucide-react";
 import PurchaseStatusBadge from "./PurchaseStatusBadge";
 import { formatRupiah } from "../../utils/FormatRupiah";
-import { Purchasing, PaymentStatusLabel } from "../../types/purchase";
+import { Purchasing } from "../../types/purchase";
+import { PaymentStatusLabel } from '../../types/payment';
 import { formatDate } from "../../utils/FormatDate";
 import Pagination from "../Pagination";
 
