@@ -1,6 +1,6 @@
 import { CashFlowResponse, ManualEntryFormRequest } from "../types/payment";
 import { ApiResponse } from "../types";
-import { apiCall } from "./authService";
+import { apiCall } from "./";
 
 export const paymentService = {
     getAllPaymentByUserId: async (id: string): Promise<ApiResponse<CashFlowResponse>> => {

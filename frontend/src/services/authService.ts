@@ -1,5 +1,7 @@
-import { ApiResponse, CreateUserRequest, LoginRequest, LoginResponse, UpdateUserRequest, User, UserFilters, UserPaginatedData } from "../types";
+import { CreateUserRequest, LoginRequest, LoginResponse, UpdateUserRequest, User, UserFilters, UserPaginatedData } from "../types/user";
+import { ApiResponse } from "../types";
 import { API_BASE_URL } from "../constants/constants";
+import { apiCall } from ".";
 
 export const authService = {
     login: async (phone: string, password: string): Promise<LoginResponse> => {
@@ -93,32 +95,4 @@ export const authService = {
         const response = await apiCall<ApiResponse<User[]>>(`/user/role/${role}`);
         return response;
     }
-};
-
-export const apiCall = async <T = any>(
-    endpoint: string,
-    options: RequestInit = {}
-): Promise<T> => {
-    const token = authService.getToken();
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            ...options.headers,
-        },
-    });
-
-    if (response.status === 401) {
-        authService.logout();
-        window.location.reload();
-    }
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "API call failed");
-    }
-
-    return response.json();
 };

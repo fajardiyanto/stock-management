@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { authService } from '../services/authService';
-import { CreateUserRequest, User, UpdateUserRequest } from '../types';
+import { CreateUserRequest, User, UpdateUserRequest } from '../types/user';
 import { useToast } from '../contexts/ToastContext';
 import { CashFlowResponse } from '../types/payment';
 import { paymentService } from '../services/paymentService';

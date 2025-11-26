@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from '../../types';
+import { User } from '../../types/user';
 import { X, Edit2, Plus } from 'lucide-react';
 import { formatDate } from '../../utils/FormatDate';
 import CashFlowHistoryTable from '../Payment/CashFlowHistoryTable';

@@ -47,8 +47,3 @@ export interface ManualEntryFormRequest {
     type: PaymentType
     description: string;
 }
-
-export interface PaymentConfirmation {
-    uuid: string;
-    total: string;
-}

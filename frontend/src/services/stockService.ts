@@ -1,5 +1,5 @@
 import { ApiResponse } from "../types/index";
-import { apiCall } from "./authService";
+import { apiCall } from "./";
 import { StockEntriesFilters, StockEntriesPagination, StockEntry, StockSortInfoCardResponse, SubmitSortRequest } from "../types/stock";
 import { CreatePurchasingRequest, Purchasing } from "../types/purchase";
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User } from '../../types';
+import React from 'react';
+import { User } from '../../types/user';
 import { CashFlowResponse, PaymentType, PaymentResponse } from '../../types/payment';
 import { formatRupiah } from '../../utils/FormatRupiah';
 import { formatDate } from '../../utils/FormatDate';

@@ -5,7 +5,7 @@ import { CreateStockItem } from '../types/stock';
 import { CreatePurchasingRequest } from '../types/purchase';
 import { purchaseService } from "../services/purchaseService";
 import { useToast } from "../contexts/ToastContext";
-import { User } from '../types';
+import { User } from '../types/user';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 

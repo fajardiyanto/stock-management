@@ -4,7 +4,7 @@ import StockItemInput from '../components/StockManagement/StockItemInput';
 import { CreateStockItem, StockEntry, SupplierOption } from '../types/stock';
 import { CreatePurchasingRequest } from '../types/purchase';
 import { useToast } from "../contexts/ToastContext";
-import { User } from '../types';
+import { User } from '../types/user';
 import { authService } from '../services/authService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { stockService } from '../services/stockService';

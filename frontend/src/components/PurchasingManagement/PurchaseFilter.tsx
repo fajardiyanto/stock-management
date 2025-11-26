@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, X } from 'lucide-react';
-import { User } from '../../types/index';
+import { User } from '../../types/user';
 import { PurchaseFilters } from '../../types/purchase';
 import { MOCK_FILTER_STATUS_OPTIONS, PaymentStatus } from '../../types/payment';
 import { authService } from '../../services/authService';

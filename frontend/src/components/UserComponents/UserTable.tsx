@@ -1,8 +1,7 @@
 import React from 'react';
-import { User } from '../../types';
-import { Trash2, Eye, PencilIcon } from 'lucide-react';
+import { User } from '../../types/user';
+import { Trash2, Eye } from 'lucide-react';
 import Pagination from "../Pagination";
-import { CashFlowResponse } from '../../types/payment';
 import { formatRupiah } from '../../utils/FormatRupiah';
 
 interface UserTableProps {

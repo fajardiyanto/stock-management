@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { CreateUserRequest, UpdateUserRequest } from '../../types';
+import { CreateUserRequest, UpdateUserRequest } from '../../types/user';
 
 type FormData = CreateUserRequest | UpdateUserRequest;
 

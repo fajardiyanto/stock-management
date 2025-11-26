@@ -1,6 +1,6 @@
 import { Purchasing, PurchasingPagination, CreatePurchasingRequest, PurchaseFilters } from "../types/purchase";
 import { ApiResponse } from "../types/index";
-import { apiCall } from "./authService";
+import { apiCall } from "./";
 
 export const purchaseService = {
     createPurchase: async (data: CreatePurchasingRequest): Promise<ApiResponse<Purchasing>> => {

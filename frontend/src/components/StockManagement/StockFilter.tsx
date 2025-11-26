@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Search, ChevronDown, Calendar, X } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-import { User } from '../../types';
+import { User } from '../../types/user';
 import { authService } from '../../services/authService';
 import { StockEntriesFilters } from '../../types/stock';
 import { AGE_FILTER_OPTIONS } from '../../constants/constants';
