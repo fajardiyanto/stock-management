@@ -44,17 +44,17 @@ const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({ user, cashF
                             </tr>
                         ) : (
                             cashFlows?.payment?.map((entry, index) => (
-                                <>
-                                    <tr key={index} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(entry.created_at)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{entry.description}</td>
-                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${entry.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatRupiah(entry.total)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getTipeBadge(entry.type)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(entry.created_at)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{entry.description}</td>
+                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${entry.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatRupiah(entry.total)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {getTipeBadge(entry.type)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        {entry.purchase_id === "" ? (
                                             <button
                                                 type="button"
                                                 onClick={() => onRemove(entry)}
@@ -63,10 +63,9 @@ const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({ user, cashF
                                             >
                                                 <Trash2 size={20} />
                                             </button>
-                                        </td>
-                                    </tr>
-                                </>
-
+                                        ) : null}
+                                    </td>
+                                </tr>
                             ))
                         )}
                     </tbody>

@@ -18,10 +18,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     onLogout
 }) => {
     const menuItems: MenuItem[] = [
-        { id: 'users', label: 'Management Akun', icon: Users },
         { id: 'sales', label: 'Management Penjualan', icon: ShoppingBag },
         { id: 'purchase', label: 'Management Pembelian', icon: ShoppingBasket },
         { id: 'stock', label: 'Management Stok', icon: Warehouse },
+        { id: 'users', label: 'Management Akun', icon: Users },
+
     ];
 
     return (
