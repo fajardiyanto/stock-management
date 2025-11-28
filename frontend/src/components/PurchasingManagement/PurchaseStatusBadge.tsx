@@ -3,11 +3,9 @@ import React from 'react';
 interface PurchaseStatusBadgeProps {
     status: string;
     percentage: number;
-    paidAmount: number;
-    totalAmount: number;
 }
 
-const PurchaseStatusBadge: React.FC<PurchaseStatusBadgeProps> = ({ status, percentage, paidAmount, totalAmount }) => {
+const PurchaseStatusBadge: React.FC<PurchaseStatusBadgeProps> = ({ status, percentage }) => {
     let statusClass = '';
     let barColor = '';
 

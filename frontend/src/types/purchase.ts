@@ -48,3 +48,7 @@ export interface PurchaseFilters {
   payment_status?: PaymentStatus;
   age_in_day?: string;
 }
+
+export interface UpdatePurchaseRequest {
+  purchase_date: string;
+}

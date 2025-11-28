@@ -7,7 +7,6 @@ export const formatDate = (dateStr: string | null | undefined): string => {
   try {
     date = new Date(dateStr);
   } catch (error) {
-    console.error("Invalid date string provided:", dateStr, error);
     return 'Invalid Date';
   }
 

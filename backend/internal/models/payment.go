@@ -37,8 +37,15 @@ type CashFlowResponse struct {
 	Payment []PaymentResponse `json:"payment"`
 }
 
-type CreatePaymentRequest struct {
+type CreateManualPaymentRequest struct {
 	Total       int    `json:"total"`
 	Type        string `json:"type"`
 	Description string `json:"description"`
+}
+
+type CreatePaymentRequest struct {
+	PurchaseId   string    `json:"purchase_id" validate:"required"`
+	PurchaseDate time.Time `json:"purchase_date" validate:"required"`
+	StockCode    string    `json:"stock_code" validate:"required"`
+	Total        int       `json:"total" validate:"required"`
 }

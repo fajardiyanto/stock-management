@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, LogOut, X, Menu, ShoppingBasket, ShoppingBag, Warehouse } from 'lucide-react';
+import { Users, LogOut, X, Menu, ShoppingBasket, ShoppingBag, Warehouse, BoxIcon } from 'lucide-react';
 import { MenuId, MenuItem } from '../types';
 
 interface SidebarProps {
@@ -18,11 +18,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     onLogout
 }) => {
     const menuItems: MenuItem[] = [
+        { id: 'fiber', label: 'Management Fiber', icon: BoxIcon },
         { id: 'sales', label: 'Management Penjualan', icon: ShoppingBag },
         { id: 'purchase', label: 'Management Pembelian', icon: ShoppingBasket },
         { id: 'stock', label: 'Management Stok', icon: Warehouse },
         { id: 'users', label: 'Management Akun', icon: Users },
-
     ];
 
     return (

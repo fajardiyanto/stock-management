@@ -19,6 +19,31 @@ const PurchasingManagementPage: React.FC = () => {
     const { showToast } = useToast();
     const navigate = useNavigate();
 
+    const refreshPurchases = async () => {
+        try {
+            const response = await purchaseService.getAllPurchases({
+                page: currentPage,
+                size: pageSize,
+            });
+
+            if (response.status_code === 200) {
+                setPurchaseData(response.data.data);
+                setTotalPurchases(response.data.total);
+            } else {
+                setError(response.message || "Failed to fetch purchasing data");
+                showToast(
+                    response.message || "Failed to fetch purchasing data",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch purchases. Please try again");
+            showToast("Failed to fetch purchases. Please try again", "error");
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const fetchPurchases = useCallback(async () => {
         setLoading(true);
         setError("");
@@ -136,6 +161,7 @@ const PurchasingManagementPage: React.FC = () => {
                 loading={loading}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
+                onRefresh={refreshPurchases}
             />
         </div>
     );

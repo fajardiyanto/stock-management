@@ -12,6 +12,7 @@ import StockManagementPage from './StockManagementPage';
 import CreatePurchasingPage from './CreatePurchasingPage';
 import UpdateStockPage from './UpdateStockPage';
 import StockSortManagementPage from './StockSortManagementPage';
+import FiberManagementPage from './FiberManagementPage';
 
 interface DashboardProps {
     onLogout: () => void;
@@ -61,6 +62,7 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route path="purchase/create" element={<CreatePurchasingPage />} />
                             <Route path="stock/update/:stockId" element={<UpdateStockPage />} />
                             <Route path="stock/sort/:stockItemId" element={<StockSortManagementPage />} />
+                            <Route path="fiber" element={<FiberManagementPage />} />
                         </Routes>
                     </div>
                 </main>

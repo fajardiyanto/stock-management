@@ -221,7 +221,7 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 
 		var payment models.Payment
 		lastPayment := ""
-		err := db.Where("purchase_id = ? AND type = ? AND deleted = false", pur.Uuid, constatnts.Expense).
+		err := db.Where("purchase_id = ? AND deleted = false", pur.Uuid).
 			Order("created_at DESC").
 			First(&payment).Error
 		if err == nil {
@@ -254,7 +254,7 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 			Supplier:        userDetail,
 			PurchaseDate:    pur.PurchaseDate.Format(time.RFC3339),
 			StockId:         pur.StockId,
-			StockCode:       fmt.Sprintf("STOCK-%d", stockEntry.ID),
+			StockCode:       fmt.Sprintf("STOCK%d", stockEntry.ID),
 			TotalAmount:     totalAmount,
 			PaidAmount:      pur.PaidAmount,
 			RemainingAmount: totalAmount - pur.PaidAmount,
@@ -279,4 +279,18 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 	}
 
 	return &res, nil
+}
+
+func (p *PurchaseService) UpdatePurchase(purchaseId string, request models.UpdatePurchaseRequest) error {
+	purchaseRequest := map[string]interface{}{
+		"purchase_date": request.PurchaseDate,
+		"updated_at":    time.Now(),
+	}
+
+	var purchase models.Purchase
+	if err := config.GetDBConn().Orm().Debug().Model(&purchase).Where("uuid = ? AND deleted = false", purchaseId).Updates(purchaseRequest).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

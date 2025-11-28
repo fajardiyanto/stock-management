@@ -42,6 +42,7 @@ func Run() error {
 
 		api.POST("/purchase", purchaseHandler.CreatePurchaseHandler)
 		api.GET("/purchases", purchaseHandler.GetAllPurchasesHandler)
+		api.PUT("/purchase/:purchaseId", purchaseHandler.UpdatePurchaseHandler)
 
 		api.GET("/stock-entries", stockHandler.GetAllStockEntriesHandler)
 		api.GET("/stock-entry/:stockId", stockHandler.GetStockEntryByIdHandler)
@@ -53,9 +54,11 @@ func Run() error {
 		api.POST("/stock-sort/:stockItemId", stockHandler.CreateStockSortHandler)
 		api.PUT("/stock-sort/:stockItemId", stockHandler.UpdateStockSortHandler)
 
-		api.GET("/payments/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
-		api.POST("/payment/manual/:userId", paymentHandler.CreateManualPaymentHandler)
-		api.DELETE("/payment/manual/:paymentId", paymentHandler.DeleteManualPaymentHandler)
+		api.GET("/payments/user/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
+		api.POST("/payment/user/:userId/manual", paymentHandler.CreateManualPaymentHandler)
+		api.DELETE("/payment/:paymentId/manual", paymentHandler.DeleteManualPaymentHandler)
+		api.GET("/purchase/:purchaseId/payments", paymentHandler.GetAllPaymentFromPurchaseIdHandler)
+		api.POST("/payment", paymentHandler.CreatePaymentByPurchaseIdHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

@@ -102,3 +102,47 @@ func (s *Purchase) GetAllPurchasesHandler(c *gin.Context) {
 		Data:       data,
 	})
 }
+
+func (s *Purchase) UpdatePurchaseHandler(c *gin.Context) {
+	purchaseId := c.Param("purchaseId")
+
+	var req models.UpdatePurchaseRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	if err := s.validator.Struct(req); err != nil {
+		var errs []string
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
+		}
+		errMsg := strings.Join(errs, ", ")
+
+		config.GetLogger().Error(errMsg)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    errMsg,
+		})
+		return
+	}
+
+	if err := s.purchaseRepository.UpdatePurchase(purchaseId, req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("Successfully update purchase from purchase id %s", purchaseId),
+	})
+}

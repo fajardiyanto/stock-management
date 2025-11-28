@@ -43,7 +43,7 @@ func (s *Payment) GetAllPaymentFromUserIdHandler(c *gin.Context) {
 func (s *Payment) CreateManualPaymentHandler(c *gin.Context) {
 	userId := c.Param("userId")
 
-	var req []models.CreatePaymentRequest
+	var req []models.CreateManualPaymentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		config.GetLogger().Error(err)
@@ -107,5 +107,67 @@ func (s *Payment) DeleteManualPaymentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
 		StatusCode: http.StatusOK,
 		Message:    fmt.Sprintf("successfully delete manual payment from paymentId id %s", paymentId),
+	})
+}
+
+func (s *Payment) GetAllPaymentFromPurchaseIdHandler(c *gin.Context) {
+	purchaseId := c.Param("purchaseId")
+
+	data, err := s.paymentRepository.GetAllPaymentFromPurchaseId(purchaseId)
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("get all payment from purchase id %s", purchaseId),
+		Data:       data,
+	})
+}
+
+func (s *Payment) CreatePaymentByPurchaseIdHandler(c *gin.Context) {
+	var req models.CreatePaymentRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	if err := s.validator.Struct(req); err != nil {
+		var errs []string
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
+		}
+		errMsg := strings.Join(errs, ", ")
+
+		config.GetLogger().Error(errMsg)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    errMsg,
+		})
+		return
+	}
+
+	if err := s.paymentRepository.CreatePaymentByPurchaseId(req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("create payment from purchase id %s", req.PurchaseId),
 	})
 }

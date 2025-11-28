@@ -1,4 +1,4 @@
-import { Purchasing, PurchasingPagination, CreatePurchasingRequest, PurchaseFilters } from "../types/purchase";
+import { Purchasing, PurchasingPagination, CreatePurchasingRequest, PurchaseFilters, UpdatePurchaseRequest } from "../types/purchase";
 import { ApiResponse } from "../types/index";
 import { apiCall } from "./";
 
@@ -45,4 +45,18 @@ export const purchaseService = {
         );
         return response;
     },
+
+    updatePurchase: async (purchaseId: string, data: UpdatePurchaseRequest): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<Purchasing>>(
+            `/purchase/${purchaseId}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    }
 };

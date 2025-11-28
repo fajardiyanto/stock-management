@@ -8,12 +8,7 @@ import { useToast } from "../contexts/ToastContext";
 import { User } from '../types/user';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-
-const getDefaultDate = (): string => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-};
+import { getDefaultDate } from '../utils/DefaultDate';
 
 const initialItem: CreateStockItem = {
     item_name: '',

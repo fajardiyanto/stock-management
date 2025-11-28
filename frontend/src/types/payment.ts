@@ -47,3 +47,10 @@ export interface ManualEntryFormRequest {
     type: PaymentType
     description: string;
 }
+
+export interface CreatePaymentReqeust {
+    purchase_id: string;
+    purchase_date: string;
+    stock_code: string;
+    total: number;
+}

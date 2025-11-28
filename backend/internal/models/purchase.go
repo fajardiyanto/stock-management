@@ -27,8 +27,8 @@ type CreatePurchaseRequest struct {
 	StockItems   []StockItemRequest `json:"stock_items" validate:"required,dive,required"`
 }
 
-type UpdatePaymentRequest struct {
-	Amount float64 `json:"amount" validate:"required,gt=0"`
+type UpdatePurchaseRequest struct {
+	PurchaseDate time.Time `json:"purchase_date"`
 }
 
 type PurchaseDataResponse struct {

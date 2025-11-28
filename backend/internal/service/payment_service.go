@@ -2,9 +2,12 @@ package service
 
 import (
 	"dashboard-app/internal/config"
+	"dashboard-app/internal/constatnts"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
+	"fmt"
 	"github.com/google/uuid"
+	"time"
 )
 
 type PaymentService struct {
@@ -77,7 +80,7 @@ func (p *PaymentService) GetAllBalance(userId string) (int, error) {
 	return balance, nil
 }
 
-func (p *PaymentService) CreateManualPayment(userId string, requests []models.CreatePaymentRequest) error {
+func (p *PaymentService) CreateManualPayment(userId string, requests []models.CreateManualPaymentRequest) error {
 	db := config.GetDBConn().Orm().Debug()
 
 	tx := db.Begin()
@@ -111,8 +114,138 @@ func (p *PaymentService) CreateManualPayment(userId string, requests []models.Cr
 }
 
 func (p *PaymentService) DeleteManualPayment(paymentId string) error {
-	return config.GetDBConn().Orm().Debug().
-		Model(&models.Payment{}).
+	db := config.GetDBConn().Orm().Debug()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var payment models.Payment
+	if err := tx.Model(&models.Payment{}).Where("uuid = ? AND deleted = false", paymentId).First(&payment).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Model(&models.Payment{}).
 		Where("uuid = ? AND deleted = false", paymentId).
-		Update("deleted", true).Error
+		Update("deleted", true).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if payment.PurchaseId != "" {
+		var purchase models.Purchase
+		if err := tx.Model(&models.Purchase{}).Where("uuid = ? AND deleted = false", payment.PurchaseId).First(&purchase).Error; err != nil {
+			return err
+		}
+
+		paidAmount := purchase.PaidAmount - payment.Total
+		remainingAmount := purchase.RemainingAmount + payment.Total
+
+		purchaseRequest := map[string]interface{}{
+			"remaining_amount": remainingAmount,
+			"paid_amount":      paidAmount,
+			"updated_at":       time.Now(),
+		}
+
+		if err := tx.Model(&purchase).Where("uuid = ? AND deleted = false", purchase.Uuid).Updates(purchaseRequest).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (p *PaymentService) GetAllPaymentFromPurchaseId(purchaseId string) (*models.CashFlowResponse, error) {
+	var payments []models.Payment
+	if err := config.GetDBConn().Orm().Debug().Model(&models.Payment{}).Where("purchase_id = ? AND deleted = false", purchaseId).Find(&payments).Error; err != nil {
+		return nil, err
+	}
+
+	var results models.CashFlowResponse
+	var totalIncome, totalOutcome int
+
+	for _, payment := range payments {
+		if payment.Type == "INCOME" {
+			totalIncome += payment.Total
+		} else if payment.Type == "EXPENSE" {
+			totalOutcome += payment.Total
+		}
+
+		result := models.PaymentResponse{
+			Uuid:        payment.Uuid,
+			UserId:      payment.UserId,
+			Total:       payment.Total,
+			Type:        payment.Type,
+			Description: payment.Description,
+			SalesId:     payment.SalesId,
+			PurchaseId:  payment.PurchaseId,
+			CreatedAt:   payment.CreatedAt,
+			UpdatedAt:   payment.UpdatedAt,
+		}
+
+		results.Payment = append(results.Payment, result)
+	}
+
+	results.Balance = totalIncome - totalOutcome
+
+	return &results, nil
+}
+
+func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentRequest) error {
+	db := config.GetDBConn().Orm().Debug()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var purchase models.Purchase
+	if err := tx.Model(&models.Purchase{}).Where("uuid = ? AND deleted = false", request.PurchaseId).First(&purchase).Error; err != nil {
+		return err
+	}
+
+	paidAmount := purchase.PaidAmount + request.Total
+	remainingAmount := purchase.TotalAmount - paidAmount
+
+	paymentStatus := constatnts.PartialPayment
+	if purchase.TotalAmount == paidAmount {
+		paymentStatus = constatnts.PaymentInFull
+	}
+
+	purchaseRequest := map[string]interface{}{
+		"purchase_date":    request.PurchaseDate,
+		"remaining_amount": remainingAmount,
+		"payment_status":   paymentStatus,
+		"paid_amount":      paidAmount,
+		"updated_at":       time.Now(),
+	}
+
+	if err := tx.Model(&purchase).Where("uuid = ? AND deleted = false", purchase.Uuid).Updates(purchaseRequest).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	payment := models.Payment{
+		Uuid:        uuid.New().String(),
+		PurchaseId:  purchase.Uuid,
+		UserId:      purchase.SupplierID,
+		Description: fmt.Sprintf("Pembayaran Buying %s", request.StockCode),
+		Total:       request.Total,
+		Type:        "EXPENSE",
+		Deleted:     false,
+		CreatedAt:   request.PurchaseDate,
+	}
+
+	if err := tx.Create(&payment).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
 }

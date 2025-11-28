@@ -1,8 +1,8 @@
+export type MenuId = "dashboard" | "sales" | "purchase" | "stock" | "users" | "fiber";
+
 export interface ApiError {
     message: string;
 }
-
-export type MenuId = "dashboard" | "sales" | "purchase" | "stock" | "users";
 
 export interface MenuItem {
     id: MenuId;

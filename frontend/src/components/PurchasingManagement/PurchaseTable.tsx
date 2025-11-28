@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Calendar, Edit2 } from "lucide-react";
 import PurchaseStatusBadge from "./PurchaseStatusBadge";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { Purchasing } from "../../types/purchase";
-import { PaymentStatusLabel } from '../../types/payment';
+import { CashFlowResponse, PaymentResponse, PaymentStatusLabel } from '../../types/payment';
 import { formatDate } from "../../utils/FormatDate";
 import Pagination from "../Pagination";
+import RecordPaymentModal from "./RecordPaymentModal";
+import { paymentService } from "../../services/paymentService";
+import { useToast } from "../../contexts/ToastContext";
+import PurchaseEditModal from "./PurchaseEditModal";
 
 interface PurchaseTableProps {
     data: Purchasing[];
@@ -16,6 +20,7 @@ interface PurchaseTableProps {
     loading: boolean;
     onPageChange: (newPage: number) => void;
     onPageSizeChange: (newSize: number) => void;
+    onRefresh: () => void;
 }
 
 const PurchaseTable: React.FC<PurchaseTableProps> = ({
@@ -27,8 +32,45 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
     loading,
     onPageChange,
     onPageSizeChange,
+    onRefresh,
 }) => {
+    const [purchase, setPurchase] = useState<Purchasing>({} as Purchasing);
+    const [modalType, setModalType] = useState<'ADD' | 'EDIT' | null>(null);
+    const [payments, setPayments] = useState<PaymentResponse[]>([]);
+    const [error, setError] = useState<string>('');
+
+    const { showToast } = useToast();
+
+
     const startIdx = ((currentPage - 1) * pageSize) + 1;
+
+    const handleOpenPayment = async (data: Purchasing) => {
+        setModalType('ADD');
+        setPurchase(data)
+
+        try {
+            const response = await paymentService.getAllPaymentByPurchaseId(data.purchase_id);
+
+            if (response.status_code === 200) {
+                setPayments(response.data.payment);
+            } else {
+                setError(response.message || 'Failed to fetch cash flows');
+                showToast(response.message || 'Failed to fetch cash flows', 'error');
+            }
+        } catch (err) {
+            setError('Failed to fetch cash flows. Please try again.');
+            showToast('Failed to fetch cash flows. Please try again.', 'error');
+        }
+    }
+
+    const handleEditPurchase = async (data: Purchasing) => {
+        setModalType('EDIT');
+        setPurchase(data)
+    }
+
+    const handleCloseModal = () => {
+        setModalType(null);
+    }
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -36,36 +78,14 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                ID
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Supplier
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Stock
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Tanggal Pembelian
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Total Bayar
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Dibayar
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Sisa
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Status Pembayaran
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Tanggal Bayar
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Aksi
-                            </th>
+                            {['ID', 'Supplier', 'Stock', 'Tanggal Pembelian', 'Total Bayar', 'Dibayar', 'Sisa', 'Status Pembayaran', 'Tanggal Bayar', 'Actions'].map(header => (
+                                <th
+                                    key={header}
+                                    className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${header === 'Actions' ? 'text-right' : 'text-left'}`}
+                                >
+                                    {header}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -104,8 +124,6 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                         <PurchaseStatusBadge
                                             status={PaymentStatusLabel[item.payment_status]}
                                             percentage={percentage}
-                                            paidAmount={item.paid_amount}
-                                            totalAmount={item.total_amount}
                                         />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -114,12 +132,14 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2">
                                             <button
+                                                onClick={() => handleEditPurchase(item)}
                                                 className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition"
                                                 title="Edit"
                                             >
                                                 <Edit2 size={18} />
                                             </button>
                                             <button
+                                                onClick={() => handleOpenPayment(item)}
                                                 className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition"
                                                 title="Payment"
                                             >
@@ -133,6 +153,20 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     </tbody>
                 </table>
             </div>
+
+            {modalType === 'ADD' && (
+                <RecordPaymentModal
+                    purchase={purchase}
+                    payments={payments}
+                    error={error}
+                    onClose={handleCloseModal}
+                    onRefresh={onRefresh}
+                />
+            )}
+
+            {modalType === 'EDIT' && (
+                < PurchaseEditModal purchase={purchase} onClose={handleCloseModal} />
+            )}
 
             <Pagination
                 entryName="purchases"
