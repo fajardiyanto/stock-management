@@ -3,7 +3,7 @@ import { Calendar, Edit2 } from "lucide-react";
 import PurchaseStatusBadge from "./PurchaseStatusBadge";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { Purchasing } from "../../types/purchase";
-import { CashFlowResponse, PaymentResponse, PaymentStatusLabel } from '../../types/payment';
+import { PaymentResponse, PaymentStatusLabel } from '../../types/payment';
 import { formatDate } from "../../utils/FormatDate";
 import Pagination from "../Pagination";
 import RecordPaymentModal from "./RecordPaymentModal";
