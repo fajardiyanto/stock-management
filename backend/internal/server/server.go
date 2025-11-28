@@ -22,11 +22,13 @@ func Run() error {
 	userService := service.NewUserService(paymentService)
 	purchaseService := service.NewPurchaseService(userService)
 	stockService := service.NewStockService()
+	fiberService := service.NewFiberService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
 	stockHandler := handler.NewStockHandler(stockService, validate)
 	paymentHandler := handler.NewPaymentHandler(paymentService, validate)
+	fiberHandler := handler.NewFiberHandler(fiberService, validate)
 
 	api := app.Group("/v1/api")
 	api.POST("/login", userHandler.LoginHandler)
@@ -59,6 +61,13 @@ func Run() error {
 		api.DELETE("/payment/:paymentId/manual", paymentHandler.DeleteManualPaymentHandler)
 		api.GET("/purchase/:purchaseId/payments", paymentHandler.GetAllPaymentFromPurchaseIdHandler)
 		api.POST("/payment", paymentHandler.CreatePaymentByPurchaseIdHandler)
+
+		api.GET("/fibers", fiberHandler.GetAllFibersHandler)
+		api.GET("/fiber/:fiberId", fiberHandler.GetFiberByIdHandler)
+		api.POST("/fiber", fiberHandler.CreateFiberHandler)
+		api.PUT("/fiber/:fiberId/mark", fiberHandler.MarkFiberAvailableHandler)
+		api.DELETE("/fiber/:fiberId", fiberHandler.DeleteFiberHandler)
+		api.PUT("/fiber/:fiberId", fiberHandler.UpdateFiberHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

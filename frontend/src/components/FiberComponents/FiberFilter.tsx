@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, ChevronDown, Plus } from 'lucide-react';
-import { STATUS_OPTIONS } from '../../types/fiber';
+import { Search, ChevronDown } from 'lucide-react';
+import { STATUS_OPTIONS_LIST } from '../../types/fiber';
 
 interface FiberFilterProps {
     searchName: string;
@@ -8,7 +8,6 @@ interface FiberFilterProps {
     statusFilter: string;
     setStatusFilter: (status: string) => void;
     onSearch: () => void;
-    onOpenAddModal: () => void;
 }
 
 const FiberFilter: React.FC<FiberFilterProps> = ({
@@ -17,7 +16,6 @@ const FiberFilter: React.FC<FiberFilterProps> = ({
     statusFilter,
     setStatusFilter,
     onSearch,
-    onOpenAddModal,
 }) => {
     return (
         <div className="flex justify-between items-end p-4 bg-white rounded-xl shadow-md border border-gray-100">
@@ -40,20 +38,13 @@ const FiberFilter: React.FC<FiberFilterProps> = ({
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
                     >
-                        {STATUS_OPTIONS.map(opt => (
+                        {STATUS_OPTIONS_LIST.map(opt => (
                             <option key={opt.key} value={opt.key}>{opt.label}</option>
                         ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                 </div>
             </div>
-
-            <button
-                onClick={onOpenAddModal}
-                className="flex items-center gap-1 bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition shadow-lg"
-            >
-                <Plus size={18} /> Tambah Fiber
-            </button>
         </div>
     );
 };

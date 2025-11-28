@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Purchase struct {
-	ID              int       `json:"id"`
+	ID              int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
 	Uuid            string    `json:"uuid" gorm:"column:uuid"`
 	SupplierID      string    `json:"supplier_id" gorm:"column:supplier_id;type:varchar(36)"`
 	PurchaseDate    time.Time `json:"purchase_date" gorm:"column:purchase_date"`

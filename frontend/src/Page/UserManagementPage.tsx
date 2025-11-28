@@ -240,42 +240,44 @@ const UserManagementPage: React.FC = () => {
     }
 
     return (
-        <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-            <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
-                <div>
-                    <h1 className="text-3xl font-extrabold text-gray-800">User Management</h1>
-                </div>
-                <button
-                    onClick={handleOpenAdd}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition transform hover:scale-105"
-                >
-                    <Plus size={20} />
-                    Add New User
-                </button>
-            </header>
+        <div>
+            <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
+                <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-gray-800">User Management</h1>
+                    </div>
+                    <button
+                        onClick={handleOpenAdd}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition transform hover:scale-105"
+                    >
+                        <Plus size={20} />
+                        Add New User
+                    </button>
+                </header>
 
-            <UserFilter
-                searchName={searchName}
-                setSearchName={setSearchName}
-                searchPhone={searchPhone}
-                setSearchPhone={setSearchPhone}
-                onSearch={handleSearch}
-                onClear={handleClearSearch}
-            />
+                <UserFilter
+                    searchName={searchName}
+                    setSearchName={setSearchName}
+                    searchPhone={searchPhone}
+                    setSearchPhone={setSearchPhone}
+                    onSearch={handleSearch}
+                    onClear={handleClearSearch}
+                />
 
-            <UserTable
-                users={users}
-                loading={loading}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                totalUsers={totalUsers}
-                totalPages={totalPages}
-                onViewDetail={handleOpenDetail}
-                onEdit={handleOpenEdit}
-                onDelete={handleOpenDelete}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-            />
+                <UserTable
+                    users={users}
+                    loading={loading}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalUsers={totalUsers}
+                    totalPages={totalPages}
+                    onViewDetail={handleOpenDetail}
+                    onEdit={handleOpenEdit}
+                    onDelete={handleOpenDelete}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                />
+            </div>
 
             {modalType === 'DETAIL' && selectedUser && (
                 <UserModalDetail

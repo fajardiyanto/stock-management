@@ -1,16 +1,44 @@
-export const STATUS_OPTIONS = [
+export const STATUS_OPTIONS_LIST = [
     { key: '', label: 'Semua Status' },
-    { key: 'TERSEDIA', label: 'Tersedia' },
-    { key: 'DIGUNAKAN', label: 'Digunakan' },
+    { key: 'FREE', label: 'Tersedia' },
+    { key: 'USED', label: 'Digunakan' },
 ];
 
-export interface FiberUnit {
-    id: number;
-    no: number;
+export const STATUS_MAP = {
+    '': 'Semua Status',
+    FREE: 'Tersedia',
+    USED: 'Digunakan'
+} as const;
+
+type FiberStatus = 'FREE' | 'USED';
+
+export interface FiberRequest {
     name: string;
-    status: 'Tersedia' | 'Digunakan';
-    can_edit: boolean;
-    can_delete: boolean;
-    can_check_in: boolean;
-    can_check_out: boolean;
+    status: FiberStatus;
+}
+
+export interface FiberResponse {
+    uuid: string;
+    name: string;
+    status: FiberStatus;
+    deleted: boolean;
+    created_at: string;
+}
+
+export interface FiberPaginationResponse {
+    size: number;
+    page_no: number;
+    total: number;
+    data: FiberResponse[];
+}
+
+export interface BulkFiberRequest {
+    data: FiberRequest[];
+}
+
+export interface FiberFilter {
+    size?: number;
+    page_no?: number;
+    name?: string;
+    status?: string;
 }

@@ -70,7 +70,6 @@ const PurchasingManagementPage: React.FC = () => {
                 );
             }
         } catch (err) {
-            console.log("Error fetching purchasing", err);
             setError("Failed to fetch purchases. Please try again");
             showToast("Failed to fetch purchases. Please try again", "error");
         } finally {
