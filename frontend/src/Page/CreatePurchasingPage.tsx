@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, ArrowLeft, Calendar, ChevronDown } from 'lucide-react';
-import StockItemInput from '../components/StockManagement/StockItemInput';
+import StockItemInput from '../components/StockComponents/StockItemInput';
 import { CreateStockItem } from '../types/stock';
 import { CreatePurchasingRequest } from '../types/purchase';
 import { purchaseService } from "../services/purchaseService";

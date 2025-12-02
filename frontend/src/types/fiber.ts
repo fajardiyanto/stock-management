@@ -42,3 +42,8 @@ export interface FiberFilter {
     name?: string;
     status?: string;
 }
+
+export interface FiberList {
+    uuid: string;
+    name: string;
+}

@@ -13,7 +13,7 @@ interface CashFlowHistoryTableProps {
 
 const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({ user, cashFlows, onRemove }) => {
     const getTipeBadge = (tipe: PaymentType) => {
-        const style = tipe === 'INCOME' ? 'bg-green-700 text-white' : 'bg-gray-700 text-white';
+        const style = tipe === 'INCOME' ? 'bg-green-700 text-white' : 'bg-red-700 text-white';
         return <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${style}`}>{tipe}</span>;
     };
 
@@ -54,7 +54,7 @@ const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({ user, cashF
                                         {getTipeBadge(entry.type)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                                        {entry.purchase_id === "" || entry.type === 'EXPENSE' ? (
+                                        {entry.purchase_id === "" || entry.type === 'EXPENSE' || entry.sales_id === "" ? (
                                             <button
                                                 type="button"
                                                 onClick={() => onRemove(entry)}

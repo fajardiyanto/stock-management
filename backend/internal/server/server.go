@@ -23,12 +23,14 @@ func Run() error {
 	purchaseService := service.NewPurchaseService(userService)
 	stockService := service.NewStockService()
 	fiberService := service.NewFiberService()
+	salesService := service.NewSalesService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
 	stockHandler := handler.NewStockHandler(stockService, validate)
 	paymentHandler := handler.NewPaymentHandler(paymentService, validate)
 	fiberHandler := handler.NewFiberHandler(fiberService, validate)
+	salesHandler := handler.NewSalesHandler(salesService, validate)
 
 	api := app.Group("/v1/api")
 	api.POST("/login", userHandler.LoginHandler)
@@ -55,6 +57,7 @@ func Run() error {
 
 		api.POST("/stock-sort/:stockItemId", stockHandler.CreateStockSortHandler)
 		api.PUT("/stock-sort/:stockItemId", stockHandler.UpdateStockSortHandler)
+		api.GET("/stock-sorts", stockHandler.GetAllStockSortsHandler)
 
 		api.GET("/payments/user/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
 		api.POST("/payment/user/:userId/manual", paymentHandler.CreateManualPaymentHandler)
@@ -68,6 +71,10 @@ func Run() error {
 		api.PUT("/fiber/:fiberId/mark", fiberHandler.MarkFiberAvailableHandler)
 		api.DELETE("/fiber/:fiberId", fiberHandler.DeleteFiberHandler)
 		api.PUT("/fiber/:fiberId", fiberHandler.UpdateFiberHandler)
+
+		api.POST("/sales", salesHandler.CreateSalesHandler)
+		api.GET("/sales", salesHandler.GetAllSalesHandler)
+		api.DELETE("/sale/:saleId", salesHandler.DeleteSaleHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

@@ -29,11 +29,14 @@ export interface StockItem {
 }
 
 export interface StockSortResponse {
+    id: number;
     uuid: string;
     stock_item_id: string;
     sorted_item_name: string;
     weight: number;
     price_per_kilogram: number;
+    stock_entry_id: string;
+    stock_code: string;
     current_weight: number;
     total_cost: number;
     is_shrinkage: boolean;

@@ -46,3 +46,14 @@ type FiberFilter struct {
 	Name   string `form:"name"`
 	Status string `form:"status"`
 }
+
+type FiberAllocationRequest struct {
+	ItemId    string `json:"item_id"`
+	FiberId   string `json:"fiber_id"`
+	FiberName string `json:"fiber_name"`
+}
+
+type FiberUsedList struct {
+	FiberId   string `json:"uuid"`
+	FiberName string `json:"name"`
+}

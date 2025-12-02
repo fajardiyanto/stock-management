@@ -10,4 +10,5 @@ type StockRepository interface {
 	CreateStockSort(models.SubmitSortRequest) error
 	UpdateStockSort(models.SubmitSortRequest) error
 	DeleteStockEntryById(string) error
+	GetAllStockSorts() ([]models.StockSortResponse, error)
 }

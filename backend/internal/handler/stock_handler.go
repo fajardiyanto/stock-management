@@ -250,3 +250,21 @@ func (s *Stock) DeleteStockEntryByIdHandler(c *gin.Context) {
 		Message:    fmt.Sprintf("delete sort for id %s", stockId),
 	})
 }
+
+func (s *Stock) GetAllStockSortsHandler(c *gin.Context) {
+	data, err := s.stockRepository.GetAllStockSorts()
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get all stock sorts",
+		Data:       data,
+	})
+}

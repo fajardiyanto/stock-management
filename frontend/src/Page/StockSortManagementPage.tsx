@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Plus } from 'lucide-react';
-import StockSortInfoCard from '../components/StockManagement/StockSortInfoCard';
-import StockSortTotalsSummary from '../components/StockManagement/StockSortTotalsSummary';
-import StockSortResultInput from '../components/StockManagement/StockSortResultInput';
-import { StockSortInfoCardResponse, StockSortResponse, SubmitSortRequest, StockSortRequest } from '../types/stock';
+import StockSortInfoCard from '../components/StockComponents/StockSortInfoCard';
+import StockSortTotalsSummary from '../components/StockComponents/StockSortTotalsSummary';
+import StockSortResultInput from '../components/StockComponents/StockSortResultInput';
+import { StockSortInfoCardResponse, SubmitSortRequest, StockSortRequest } from '../types/stock';
 import { useNavigate, useParams } from 'react-router-dom';
 import { stockService } from '../services/stockService';
 import { useToast } from "../contexts/ToastContext";
@@ -213,13 +213,11 @@ const StockSortManagementPage: React.FC = () => {
                     "success"
                 );
 
-                // Re-fetch data to reflect changes
                 await fetchStockItem();
             } else {
-                throw new Error(response.message || "Failed to submit sort results");
+                showToast(response.message || "Failed to submit sort results", "error");
             }
         } catch (err) {
-            console.error("Error submitting sort results:", err);
             const errorMessage = err instanceof Error ? err.message : "Gagal menyimpan hasil sortir. Coba lagi.";
             setError(errorMessage);
             showToast(errorMessage, "error");

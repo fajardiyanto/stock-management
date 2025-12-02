@@ -1,6 +1,6 @@
 import { ApiResponse } from "../types/index";
 import { apiCall } from "./";
-import { StockEntriesFilters, StockEntriesPagination, StockEntry, StockSortInfoCardResponse, SubmitSortRequest } from "../types/stock";
+import { StockEntriesFilters, StockEntriesPagination, StockEntry, StockSortInfoCardResponse, SubmitSortRequest, StockSortResponse } from "../types/stock";
 import { CreatePurchasingRequest, Purchasing } from "../types/purchase";
 
 export const stockService = {
@@ -91,5 +91,12 @@ export const stockService = {
         });
 
         return response;
-    }
+    },
+
+    getAllStockSorts: async (): Promise<ApiResponse<StockSortResponse[]>> => {
+        const response = await apiCall<ApiResponse<StockSortResponse[]>>(
+            `/stock-sorts`
+        );
+        return response;
+    },
 };

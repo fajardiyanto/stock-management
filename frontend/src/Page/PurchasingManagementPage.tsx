@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import PurchaseFilter from "../components/PurchasingManagement/PurchaseFilter";
-import PurchaseTable from "../components/PurchasingManagement/PurchaseTable";
+import PurchaseFilter from "../components/PurchasingComponents/PurchaseFilter";
+import PurchaseTable from "../components/PurchasingComponents/PurchaseTable";
 import { Plus } from "lucide-react";
 import { Purchasing, PurchaseFilters } from "../types/purchase";
 import { purchaseService } from "../services/purchaseService";

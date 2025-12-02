@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { Purchasing } from '../../types/purchase'
 import { PaymentResponse, CreatePaymentReqeust } from '../../types/payment';
-import PaymentHistoryTable from '../Payment/PaymentHistoryTable';
+import PaymentHistoryTable from '../PaymentComponents/PaymentHistoryTable';
 import { formatRupiah } from '../../utils/FormatRupiah';
 import { cleanNumber } from '../../utils/CleanNumber';
 import { useToast } from '../../contexts/ToastContext';

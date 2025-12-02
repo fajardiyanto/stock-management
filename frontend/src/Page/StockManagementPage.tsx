@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import StockFilter from "../components/StockManagement/StockFilter";
-import StockTable from "../components/StockManagement/StockTable";
+import StockFilter from "../components/StockComponents/StockFilter";
+import StockTable from "../components/StockComponents/StockTable";
 import { StockEntriesFilters, StockEntry, StockConfirmRequest } from "../types/stock";
 import { useToast } from "../contexts/ToastContext";
 import { stockService } from "../services/stockService";
 import { useNavigate } from "react-router-dom";
-import StockModalDelete from "../components/StockManagement/StockModalDelete";
+import StockModalDelete from "../components/StockComponents/StockModalDelete";
 
 
 const StockManagementPage: React.FC = () => {

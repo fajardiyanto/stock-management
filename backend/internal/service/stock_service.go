@@ -116,7 +116,7 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 
 		resp := models.StockEntriesResponse{
 			Uuid:         stockEntry.Uuid,
-			StockCode:    fmt.Sprintf("STOCK-%d", stockEntry.ID),
+			StockCode:    fmt.Sprintf("STOCK%d", stockEntry.ID),
 			AgeInDay:     int(time.Since(stockEntry.CreatedAt).Hours() / 24),
 			PurchaseId:   purchase.Uuid,
 			Supplier:     supplierDetail,
@@ -607,4 +607,52 @@ func (s *StockService) DeleteStockEntryById(stockEntryId string) error {
 	}
 
 	return nil
+}
+
+func (s *StockService) GetAllStockSorts() ([]models.StockSortResponse, error) {
+	db := config.GetDBConn().Orm().Debug()
+
+	var stockSorts []models.StockSort
+	if err := db.
+		Model(&models.StockSort{}).
+		Where("deleted = false AND is_shrinkage = false AND current_weight != 0").
+		Find(&stockSorts).Error; err != nil {
+		return nil, err
+	}
+
+	response := make([]models.StockSortResponse, 0, len(stockSorts))
+
+	for _, ss := range stockSorts {
+		var stockItem models.StockItem
+		if err := db.
+			Model(&models.StockItem{}).
+			Where("uuid = ? AND deleted = false", ss.StockItemID).
+			First(&stockItem).Error; err != nil {
+			return nil, err
+		}
+
+		var stockEntry models.StockEntry
+		if err := db.
+			Model(&models.StockEntry{}).
+			Where("uuid = ? AND deleted = false", stockItem.StockEntryID).
+			First(&stockEntry).Error; err != nil {
+			return nil, err
+		}
+
+		response = append(response, models.StockSortResponse{
+			ID:               ss.ID,
+			Uuid:             ss.Uuid,
+			StockItemID:      ss.StockItemID,
+			ItemName:         ss.ItemName,
+			Weight:           ss.Weight,
+			PricePerKilogram: ss.PricePerKilogram,
+			StockEntryID:     stockEntry.Uuid,
+			StockCode:        fmt.Sprintf("STOCK%d", stockEntry.ID),
+			CurrentWeight:    ss.CurrentWeight,
+			TotalCost:        ss.TotalCost,
+			IsShrinkage:      ss.IsShrinkage,
+		})
+	}
+
+	return response, nil
 }

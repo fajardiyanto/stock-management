@@ -7,7 +7,7 @@ export type PaymentStatus =
 
 export const PaymentStatusLabel: Record<PaymentStatus, string> = {
     "ALL": "Semua Status",
-    PAYMENT_NOT_MADE_YET: "Belum dibayar",
+    PAYMENT_NOT_MADE_YET: "Belum Dibayar",
     PAYMENT_IN_FULL: "Lunas",
     PARTIAL_PAYMENT: "Sebagian",
 };

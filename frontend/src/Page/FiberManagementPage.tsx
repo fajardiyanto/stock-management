@@ -184,7 +184,7 @@ const FiberManagementPage: React.FC = () => {
     };
 
 
-    if (error && data.data.length === 0) {
+    if (error && data.data?.length === 0) {
         return (
             <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
                 <p className="font-bold mb-2">Error Loading Data</p>

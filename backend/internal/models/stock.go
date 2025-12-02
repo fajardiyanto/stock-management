@@ -87,9 +87,12 @@ type StockItemResponse struct {
 }
 
 type StockSortResponse struct {
+	ID               int    `json:"id"`
 	Uuid             string `json:"uuid"`
 	StockItemID      string `json:"stock_item_id"`
 	ItemName         string `json:"sorted_item_name"`
+	StockEntryID     string `json:"stock_entry_id"`
+	StockCode        string `json:"stock_code"`
 	Weight           int    `json:"weight"`
 	PricePerKilogram int    `json:"price_per_kilogram"`
 	CurrentWeight    int    `json:"current_weight"`

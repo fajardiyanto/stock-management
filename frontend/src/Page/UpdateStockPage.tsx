@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, ArrowLeft, Calendar, ChevronDown } from 'lucide-react';
-import StockItemInput from '../components/StockManagement/StockItemInput';
-import { CreateStockItem, StockEntry, SupplierOption } from '../types/stock';
+import StockItemInput from '../components/StockComponents/StockItemInput';
+import { CreateStockItem, StockEntry } from '../types/stock';
 import { CreatePurchasingRequest } from '../types/purchase';
 import { useToast } from "../contexts/ToastContext";
 import { User } from '../types/user';

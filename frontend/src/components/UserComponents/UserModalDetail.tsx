@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { User } from '../../types/user';
 import { X, Edit2, Plus } from 'lucide-react';
 import { formatDate } from '../../utils/FormatDate';
-import CashFlowHistoryTable from '../Payment/CashFlowHistoryTable';
+import CashFlowHistoryTable from '../PaymentComponents/CashFlowHistoryTable';
 import { CashFlowResponse, ManualEntryFormRequest, PaymentResponse } from '../../types/payment';
-import ManualEntryForm from '../Payment/ManualEntryForm';
+import ManualEntryForm from '../PaymentComponents/ManualEntryForm';
 import { paymentService } from '../../services/paymentService';
 import { useToast } from '../../contexts/ToastContext';
-import PaymentModalDelete from '../Payment/PaymentModalDelete'
+import PaymentModalDelete from '../PaymentComponents/PaymentModalDelete'
 
 interface UserModalDetailProps {
     user: User;

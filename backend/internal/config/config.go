@@ -37,6 +37,9 @@ func InitMysql(db databaseInterface.Database) {
 			&models.StockItem{},
 			&models.StockSort{},
 			&models.Fiber{},
+			&models.Sale{},
+			&models.ItemAddOnn{},
+			&models.ItemSales{},
 		); err != nil {
 			logger.Error("Error when migrate table, with err: ", err)
 			return
