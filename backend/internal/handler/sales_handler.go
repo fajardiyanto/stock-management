@@ -66,7 +66,24 @@ func (s *Sales) CreateSalesHandler(c *gin.Context) {
 }
 
 func (s *Sales) GetAllSalesHandler(c *gin.Context) {
-	data, err := s.salesRepository.GetAllSales()
+	var filter models.SalesFilter
+
+	if err := c.BindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    "invalid query params: " + err.Error(),
+		})
+		return
+	}
+
+	if filter.PageNo == 0 {
+		filter.PageNo = 1
+	}
+	if filter.Size == 0 {
+		filter.Size = 10
+	}
+
+	data, err := s.salesRepository.GetAllSales(filter)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{

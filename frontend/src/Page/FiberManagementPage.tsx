@@ -17,7 +17,6 @@ const FiberManagementPage: React.FC = () => {
     const [modalType, setModalType] = useState<'ADD' | 'EDIT' | 'DETAIL' | 'DELETE' | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const totalPages = Math.ceil(data.total / pageSize);
     const [error, setError] = useState<string>('');
     const [selectedFiber, setSelectedFiber] = useState<FiberResponse>({} as FiberResponse);
 
@@ -29,6 +28,8 @@ const FiberManagementPage: React.FC = () => {
 
     const initialFormEditFiberData: FiberRequest = { name: '', status: 'FREE' };
     const [editFormData, setEditFormData] = useState<FiberRequest>(initialFormEditFiberData);
+
+    const totalPages = Math.ceil(data.total / pageSize);
 
     const { showToast } = useToast();
 
@@ -86,7 +87,6 @@ const FiberManagementPage: React.FC = () => {
 
     const handleOpenEdit = (fiber: FiberResponse) => {
         setSelectedFiber(fiber);
-        console.log("asdsd", fiber)
         setEditFormData({
             name: fiber.name,
             status: fiber.status,
@@ -183,6 +183,14 @@ const FiberManagementPage: React.FC = () => {
         fetchFibers();
     };
 
+    if (loading && data.data?.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
+                <div className="text-gray-500">Loading fibers...</div>
+            </div>
+        );
+    }
+
 
     if (error && data.data?.length === 0) {
         return (
@@ -202,7 +210,7 @@ const FiberManagementPage: React.FC = () => {
     return (
         <div>
             <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-                <header className="flex justify-between items-center mb-4">
+                <header className="flex justify-between items-center mb-4 bg-white p-6 rounded-xl shadow-md">
                     <div>
                         <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Fiber</h1>
                         <p className="text-gray-500 mt-1">Kelola wadah fiber untuk penjualan ikan</p>

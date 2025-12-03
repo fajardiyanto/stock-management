@@ -37,6 +37,7 @@ export interface PaymentResponse {
     description: string;
     sales_id: string;
     purchase_id: string;
+    is_deleted: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -52,5 +53,12 @@ export interface CreatePaymentReqeust {
     purchase_id: string;
     purchase_date: string;
     stock_code: string;
+    total: number;
+}
+
+export interface CreatePaymentSalesRequest {
+    sales_id: string;
+    sales_date: string;
+    sales_code: string;
     total: number;
 }

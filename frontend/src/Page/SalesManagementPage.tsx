@@ -2,44 +2,121 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import SalesFilter from '../components/SalesComponents/SalesFilter';
 import SalesTable from '../components/SalesComponents/SalesTable';
-import { SaleConfirmRequest, SaleEntry } from '../types/sales';
+import { SaleConfirmRequest, SaleEntry, BuyerOption, SaleFilter } from '../types/sales';
 import { useNavigate } from 'react-router-dom';
 import { salesService } from '../services/salesService';
 import { useToast } from '../contexts/ToastContext';
 import SaleModalDelete from "../components/SalesComponents/SaleModalDelete";
+import { authService } from '../services/authService';
 
 const SalesManagementPage: React.FC = () => {
     const [salesData, setSalesData] = useState<SaleEntry[]>([]);
     const [loading, setLoading] = useState(false);
-    const [filters, setFilters] = useState({});
+    const [filters, setFilters] = useState<SaleFilter>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [totalSales, setTotalSales] = useState(0);
     const [error, setError] = useState<string>('');
     const [modalType, setModalType] = useState<'DELETE' | null>(null);
     const [saleConfirmData, setSaleConfirmData] = useState<SaleConfirmRequest | null>(null);
+    const [buyerList, setBuyerList] = useState<BuyerOption[]>([]);
 
     const navigate = useNavigate();
     const { showToast } = useToast();
 
-    const handleSearch = useCallback((newFilters: any) => {
+    const fetchSalesData = useCallback(async () => {
         setLoading(true);
-        setFilters(newFilters);
-        console.log("Applying sales filters:", newFilters);
-        setTimeout(() => {
-            const filtered = salesData.filter(sale => {
-                const searchMatch = !newFilters.pencarian || sale.customer.name.toLowerCase().includes(newFilters.pencarian.toLowerCase()) || sale.sale_code.toLowerCase().includes(newFilters.pencarian.toLowerCase());
-                const statusMatch = !newFilters.status_pembayaran || sale.payment_status === newFilters.status_pembayaran;
-                return searchMatch && statusMatch;
+        setError('');
+
+        const activeFilters = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v)
+        );
+
+        try {
+            const response = await salesService.getAllSales({
+                page: currentPage,
+                size: pageSize,
+                ...activeFilters,
             });
-            setSalesData(filtered);
+
+            if (response.status_code === 200) {
+                setSalesData(response.data.data);
+                setTotalSales(response.data.total);
+            } else {
+                setError(response.message || "Failed to fetch purchasing data");
+                showToast(
+                    response.message || "Failed to fetch purchasing data",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch stock entries. Please try again");
+            showToast("Failed to fetch stock entries. Please try again", "error");
+        } finally {
             setLoading(false);
-        }, 500);
-    }, []);
+        }
+    }, [filters, currentPage, pageSize, showToast]);
+
+    const fetchBuyerOptions = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await authService.getListUserRoles('buyer');
+            if (response.status_code === 200) {
+                const defaultBuyer: any = { uuid: '', name: 'Semua Buyer' };
+                setBuyerList([defaultBuyer, ...response.data]);
+            } else {
+                setError(response.message || "Failed to fetch buyer data");
+                showToast(response.message || "Failed to fetch buyer data", "error");
+            }
+        } catch (err) {
+            setError("Failed to fetch buyer data. Please try again");
+            showToast("Failed to fetch buyer data. Please try again", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    useEffect(() => {
+        fetchSalesData();
+        fetchBuyerOptions();
+    }, [fetchSalesData, fetchBuyerOptions]);
+
+    const refreshSalesData = async () => {
+        try {
+            const response = await salesService.getAllSales({
+                page: currentPage,
+                size: pageSize,
+            });
+
+            if (response.status_code === 200) {
+                setSalesData(response.data.data);
+                setTotalSales(response.data.total);
+            } else {
+                setError(response.message || "Failed to fetch purchasing data");
+                showToast(
+                    response.message || "Failed to fetch purchasing data",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch stock entries. Please try again");
+            showToast("Failed to fetch stock entries. Please try again", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearch = (newFilters: SaleFilter) => {
+        setCurrentPage(1);
+        setFilters(newFilters);
+    };
 
     const handleReset = () => {
+        if (Object.keys(filters).length === 0 && currentPage === 1) return;
+
         setSalesData(salesData);
         setFilters({});
+        setCurrentPage(1);
     };
 
     const totalPages = Math.ceil(totalSales / pageSize);
@@ -58,33 +135,6 @@ const SalesManagementPage: React.FC = () => {
     const handleAddSale = () => {
         navigate('/dashboard/sales/create');
     };
-
-    const fetchSalesData = useCallback(async () => {
-        setLoading(true);
-
-        try {
-            const response = await salesService.getAllSales();
-            if (response.status_code === 200) {
-                setSalesData(response.data);
-                // setTotalSales(response.data.total);
-            } else {
-                setError(response.message || "Failed to fetch purchasing data");
-                showToast(
-                    response.message || "Failed to fetch purchasing data",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch stock entries. Please try again");
-            showToast("Failed to fetch stock entries. Please try again", "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    useEffect(() => {
-        fetchSalesData();
-    }, [fetchSalesData]);
 
     const onHandleDeleteSale = async (sale_id: string, sale_code: string) => {
         setSaleConfirmData({
@@ -114,7 +164,16 @@ const SalesManagementPage: React.FC = () => {
         setModalType(null);
     };
 
-    if (error) {
+    if (loading && salesData.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
+                <div className="text-gray-500">Loading sales...</div>
+            </div>
+        );
+    }
+
+
+    if (error && salesData.length === 0) {
         return (
             <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
                 <p className="font-bold mb-2">Error Loading Data</p>
@@ -131,7 +190,7 @@ const SalesManagementPage: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-            <header className="flex justify-between items-center">
+            <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Penjualan</h1>
                     <p className="text-gray-500 mt-1">Kelola data penjualan ikan ke pembeli</p>
@@ -149,7 +208,12 @@ const SalesManagementPage: React.FC = () => {
                 </div>
             </header>
 
-            <SalesFilter onSearch={handleSearch} onReset={handleReset} onAddSale={handleAddSale} />
+            <SalesFilter
+                buyerList={buyerList}
+                onSearch={handleSearch}
+                onReset={handleReset}
+                onAddSale={handleAddSale}
+            />
 
             <SalesTable
                 data={salesData}
@@ -161,6 +225,7 @@ const SalesManagementPage: React.FC = () => {
                 onPageSizeChange={handlePageSizeChange}
                 onPageChange={handlePageChange}
                 onDelete={onHandleDeleteSale}
+                onRefresh={refreshSalesData}
             />
 
             {modalType === 'DELETE' && (

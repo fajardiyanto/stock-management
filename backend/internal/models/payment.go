@@ -28,6 +28,7 @@ type PaymentResponse struct {
 	Description string    `json:"description"`
 	SalesId     string    `json:"sales_id"`
 	PurchaseId  string    `json:"purchase_id"`
+	IsDeleted   bool      `json:"is_deleted"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

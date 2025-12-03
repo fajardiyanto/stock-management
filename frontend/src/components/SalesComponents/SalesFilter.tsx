@@ -1,35 +1,45 @@
 import React, { useState } from 'react';
 import { Search, ChevronDown, Calendar } from 'lucide-react';
-import { SaleFilter } from '../../types/sales';
+import { SaleFilter, BuyerOption } from '../../types/sales';
 import { PaymentStatus, MOCK_FILTER_STATUS_OPTIONS } from '../../types/payment';
 
 interface SalesFilterProps {
+    buyerList: BuyerOption[];
     onSearch: (filters: SaleFilter) => void;
     onReset: () => void;
     onAddSale: () => void;
 }
 
-const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale }) => {
+const SalesFilter: React.FC<SalesFilterProps> = ({ buyerList, onSearch, onReset, onAddSale }) => {
     const [search, setSearch] = useState('');
-    const [paymentStatus, setPaymentStatus] = useState('');
-    const [createdAt, setCreatedAt] = useState('');
+    const [paymentStatusKey, setPaymentStatusKey] = useState(MOCK_FILTER_STATUS_OPTIONS[0].key);
     const [salesDate, setSalesDate] = useState('');
+    const [customerId, setCustomerId] = useState('');
+    const [isFiltering, setIsFiltering] = useState(false);
 
     const handleSearch = () => {
+        setIsFiltering(true);
         onSearch({
-            search: search,
-            payment_status: paymentStatus as PaymentStatus,
-            created_at: createdAt,
-            sales_date: salesDate,
+            id: search || undefined,
+            payment_status: paymentStatusKey === '' ? undefined : (paymentStatusKey as PaymentStatus),
+            sales_date: salesDate || undefined,
+            customer_id: customerId || undefined,
         });
+        setIsFiltering(false);
     };
 
     const handleReset = () => {
         setSearch('');
-        setPaymentStatus('');
-        setCreatedAt('');
+        setPaymentStatusKey('ALL');
         setSalesDate('');
+        setCustomerId('');
         onReset();
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
     };
 
     return (
@@ -49,10 +59,10 @@ const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale 
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="ID atau nama pembeli"
+                            placeholder="ID"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                            onKeyPress={handleKeyPress}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
                         />
                     </div>
@@ -61,8 +71,15 @@ const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale 
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Pembeli</label>
                     <div className="relative">
-                        <select className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer">
-                            <option value="">Semua Pembeli</option>
+                        <select
+                            value={customerId}
+                            onChange={(e) => setCustomerId(e.target.value)}
+                            className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer">
+                            {buyerList.map(b => (
+                                <option key={b.uuid || ''} value={b.uuid}>
+                                    {b.name}
+                                </option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
@@ -70,20 +87,6 @@ const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale 
 
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Dibuat</label>
-                    <div className="relative">
-                        <input
-                            type="date"
-                            value={createdAt}
-                            onChange={(e) => setCreatedAt(e.target.value)}
-                            placeholder="dd/mm/yyyy"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
-                        />
-                        <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Pembayaran</label>
                     <div className="relative">
                         <input
                             type="date"
@@ -96,12 +99,26 @@ const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale 
                     </div>
                 </div>
 
+                {/* <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Pembayaran</label>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={salesDate}
+                            onChange={(e) => setSalesDate(e.target.value)}
+                            placeholder="dd/mm/yyyy"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
+                        />
+                        <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                    </div>
+                </div> */}
+
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Status Pembayaran</label>
                     <div className="relative">
                         <select
-                            value={paymentStatus}
-                            onChange={(e) => setPaymentStatus(e.target.value)}
+                            value={paymentStatusKey}
+                            onChange={(e) => setPaymentStatusKey(e.target.value)}
                             className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
                         >
                             {MOCK_FILTER_STATUS_OPTIONS.map(opt => (
@@ -110,6 +127,16 @@ const SalesFilter: React.FC<SalesFilterProps> = ({ onSearch, onReset, onAddSale 
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                     </div>
+                </div>
+
+                <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end">
+                    <button
+                        onClick={handleSearch}
+                        className="w-full bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md disabled:opacity-50"
+                        disabled={isFiltering}
+                    >
+                        {isFiltering ? 'Searching...' : 'Search'}
+                    </button>
                 </div>
             </div>
 

@@ -110,10 +110,11 @@ func (s *Payment) DeleteManualPaymentHandler(c *gin.Context) {
 	})
 }
 
-func (s *Payment) GetAllPaymentFromPurchaseIdHandler(c *gin.Context) {
-	purchaseId := c.Param("purchaseId")
+func (s *Payment) GetAllPaymentByFieldIdHandler(c *gin.Context) {
+	id := c.Param("id")
+	field := c.Param("field")
 
-	data, err := s.paymentRepository.GetAllPaymentFromPurchaseId(purchaseId)
+	data, err := s.paymentRepository.GetAllPaymentByFieldId(id, field)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
@@ -125,7 +126,7 @@ func (s *Payment) GetAllPaymentFromPurchaseIdHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
 		StatusCode: http.StatusOK,
-		Message:    fmt.Sprintf("get all payment from purchase id %s", purchaseId),
+		Message:    fmt.Sprintf("get all payment from field id %s", id),
 		Data:       data,
 	})
 }

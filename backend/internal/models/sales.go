@@ -104,10 +104,28 @@ type SaleResponse struct {
 	ExportSale      bool             `json:"export_sale"`
 	TotalAmount     int              `json:"total_amount"`
 	PaidAmount      int              `json:"paid_amount"`
+	RemainingAmount int              `json:"remaining_amount"`
 	PaymentStatus   string           `json:"payment_status"`
 	SalesDate       time.Time        `json:"sales_date"`
 	FiberUsed       []FiberUsedList  `json:"fiber_used"`
 	SoldItem        []ItemSaleList   `json:"sold_items"`
 	AddOn           []ItemAddOnnList `json:"add_ons"`
 	LastPaymentDate string           `json:"last_payment_date"`
+}
+
+type SalesFilter struct {
+	Size          int    `form:"size"`
+	PageNo        int    `form:"page_no"`
+	SalesId       string `form:"id"`
+	CustomerId    string `form:"customer_id"`
+	SalesDate     string `form:"sales_date"`
+	PaymentStatus string `form:"payment_status"`
+	//LastPaymentDate string `form:"last_payment_date"`
+}
+
+type SalePaginationResponse struct {
+	Size   int            `json:"size"`
+	PageNo int            `json:"page_no"`
+	Total  int            `json:"total"`
+	Data   []SaleResponse `json:"data"`
 }

@@ -135,7 +135,7 @@ const PurchasingManagementPage: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-            <header className="flex justify-between items-center">
+            <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
                 <h1 className="text-3xl font-extrabold text-gray-800">
                     Manajemen Pembelian
                 </h1>

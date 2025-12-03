@@ -144,7 +144,7 @@ const StockManagementPage: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-            <header className="flex justify-between items-center mb-4">
+            <header className="flex justify-between items-center mb-4 bg-white p-6 rounded-xl shadow-md">
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Stok</h1>
                     <p className="text-gray-500 mt-1">Kelola stok ikan dari supplier</p>

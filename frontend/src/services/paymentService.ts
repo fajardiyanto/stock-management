@@ -37,9 +37,9 @@ export const paymentService = {
         return response;
     },
 
-    getAllPaymentByPurchaseId: async (id: string): Promise<ApiResponse<CashFlowResponse>> => {
+    getAllPaymentBField: async (id: string, field: string): Promise<ApiResponse<CashFlowResponse>> => {
         const response = await apiCall<ApiResponse<CashFlowResponse>>(
-            `/purchase/${id}/payments`
+            `/purchase/${id}/payments/${field}`
         );
         return response;
     },

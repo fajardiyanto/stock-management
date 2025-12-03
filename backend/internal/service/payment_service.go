@@ -26,6 +26,11 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 	var results models.CashFlowResponse
 	var totalIncome, totalOutcome int
 
+	var user models.User
+	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = false", userId).Find(&user).Error; err != nil {
+		return nil, err
+	}
+
 	for _, payment := range payments {
 		if payment.Type == "INCOME" {
 			totalIncome += payment.Total
@@ -43,6 +48,22 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 			PurchaseId:  payment.PurchaseId,
 			CreatedAt:   payment.CreatedAt,
 			UpdatedAt:   payment.UpdatedAt,
+		}
+
+		if payment.Type == constatnts.Expense {
+			result.IsDeleted = true
+		}
+
+		if user.Role == constatnts.SupplierRole && payment.PurchaseId == "" && payment.Type != constatnts.Income {
+			result.IsDeleted = true
+		}
+
+		if user.Role == constatnts.BuyerRole && payment.SalesId == "" && payment.Type != constatnts.Income {
+			result.IsDeleted = true
+		}
+
+		if payment.Type == constatnts.Income && payment.PurchaseId == "" && payment.SalesId == "" {
+			result.IsDeleted = true
 		}
 
 		results.Payment = append(results.Payment, result)
@@ -159,9 +180,20 @@ func (p *PaymentService) DeleteManualPayment(paymentId string) error {
 	return nil
 }
 
-func (p *PaymentService) GetAllPaymentFromPurchaseId(purchaseId string) (*models.CashFlowResponse, error) {
+func (p *PaymentService) GetAllPaymentByFieldId(id string, field string) (*models.CashFlowResponse, error) {
+	query := config.GetDBConn().Orm().Debug().Model(&models.Payment{})
+
+	switch field {
+	case "purchase":
+		query = query.Where("purchase_id = ? AND deleted = false", id)
+	case "sale":
+		query = query.Where("sales_id = ? AND deleted = false", id)
+	default:
+		return nil, fmt.Errorf("invalid field: %s (allowed: purchase, sales)", field)
+	}
+
 	var payments []models.Payment
-	if err := config.GetDBConn().Orm().Debug().Model(&models.Payment{}).Where("purchase_id = ? AND deleted = false", purchaseId).Find(&payments).Error; err != nil {
+	if err := query.Find(&payments).Error; err != nil {
 		return nil, err
 	}
 

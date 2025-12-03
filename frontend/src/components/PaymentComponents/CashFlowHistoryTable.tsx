@@ -54,12 +54,13 @@ const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({ user, cashF
                                         {getTipeBadge(entry.type)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                                        {entry.purchase_id === "" || entry.type === 'EXPENSE' || entry.sales_id === "" ? (
+                                        {entry.is_deleted ? (
                                             <button
                                                 type="button"
                                                 onClick={() => onRemove(entry)}
                                                 className="p-3 mb-0.5 text-red-500 hover:text-red-700 rounded-lg transition"
                                                 title="Remove Entry"
+                                                disabled={entry.purchase_id === "" || entry.sales_id === 'EXPENSE' || entry.sales_id === ''}
                                             >
                                                 <Trash2 size={20} />
                                             </button>

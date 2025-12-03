@@ -7,6 +7,7 @@ import (
 	"dashboard-app/internal/repository"
 	"fmt"
 	"github.com/google/uuid"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -143,15 +144,51 @@ func (s *SalesService) CreateSales(request models.SaleRequest) error {
 	return nil
 }
 
-func (s *SalesService) GetAllSales() ([]models.SaleResponse, error) {
+func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePaginationResponse, error) {
 	db := config.GetDBConn().Orm().Debug()
 
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
+	}
+	if filter.Size < 1 {
+		filter.Size = 10
+	}
+
+	offset := (filter.PageNo - 1) * filter.Size
+
 	query := db.Model(&models.Sale{})
+
+	if filter.SalesId != "" {
+		salesId, err := strconv.Atoi(filter.SalesId)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Where("id = ?", salesId)
+	}
+
+	if filter.PaymentStatus != "ALL" && filter.PaymentStatus != "" {
+		query = query.Where("payment_status = ?", filter.PaymentStatus)
+	}
+
+	if filter.SalesDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", filter.SalesDate)
+		if err == nil {
+			query = query.Where("DATE(purchase_date) = ?", parsedDate.Format("2006-01-02"))
+		}
+	}
+
+	if filter.CustomerId != "" {
+		query = query.Where("customer_id = ?", filter.CustomerId)
+	}
 
 	query = query.Where("deleted = false")
 
 	var sales []models.Sale
-	if err := query.Find(&sales).Error; err != nil {
+	if err := query.
+		Limit(filter.Size).
+		Offset(offset).
+		Order("created_at desc").
+		Find(&sales).Error; err != nil {
 		return nil, err
 	}
 
@@ -249,6 +286,7 @@ func (s *SalesService) GetAllSales() ([]models.SaleResponse, error) {
 			ExportSale:      v.ExportSale,
 			TotalAmount:     v.TotalAmount,
 			PaidAmount:      v.PaidAmount,
+			RemainingAmount: v.TotalAmount - v.PaidAmount,
 			PaymentStatus:   v.PaymentStatus,
 			SalesDate:       v.PurchaseDate,
 			LastPaymentDate: lastPayment,
@@ -260,7 +298,19 @@ func (s *SalesService) GetAllSales() ([]models.SaleResponse, error) {
 		responses = append(responses, saleResponse)
 	}
 
-	return responses, nil
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	res := models.SalePaginationResponse{
+		Size:   filter.Size,
+		PageNo: filter.PageNo,
+		Total:  int(total),
+		Data:   responses,
+	}
+
+	return &res, nil
 }
 
 func (s *SalesService) DeleteSale(saleId string) error {

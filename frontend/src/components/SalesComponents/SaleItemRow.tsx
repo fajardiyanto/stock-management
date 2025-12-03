@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SoldItem, SaleEntry } from '../../types/sales';
 import { Calendar, PencilIcon, Trash2 } from 'lucide-react';
 import { formatRupiah } from '../../utils/FormatRupiah';
-import { PaymentStatusLabel } from '../../types/payment';
 import { formatDate } from '../../utils/FormatDate';
+import { useToast } from '../../contexts/ToastContext';
+import { paymentService } from '../../services/paymentService';
+import { PaymentResponse, PaymentStatusLabel } from '../../types/payment';
+import RecordSalesPaymentModal from './RecordSalesPaymentModal';
 
 interface SaleItemRowProps {
     sale: SaleEntry;
@@ -11,10 +14,46 @@ interface SaleItemRowProps {
     itemIndex: number;
     totalItems: number;
     onDelete: (sale_id: string, sale_code: string) => void;
+    onRefresh: () => void;
 }
 
-const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalItems, onDelete }) => {
+const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalItems, onDelete, onRefresh }) => {
     const isFirstRow = itemIndex === 0;
+
+    const [sales, setSales] = useState<SaleEntry>({} as SaleEntry);
+    const [modalType, setModalType] = useState<'ADD' | 'EDIT' | null>(null);
+    const [payments, setPayments] = useState<PaymentResponse[]>([]);
+    const [error, setError] = useState<string>('');
+
+    const { showToast } = useToast();
+
+    const handleOpenPayment = async (data: SaleEntry) => {
+        setModalType('ADD');
+        setSales(data)
+
+        try {
+            const response = await paymentService.getAllPaymentBField(data.uuid, "sale");
+
+            if (response.status_code === 200) {
+                setPayments(response.data.payment);
+            } else {
+                setError(response.message || 'Failed to fetch cash flows');
+                showToast(response.message || 'Failed to fetch cash flows', 'error');
+            }
+        } catch (err) {
+            setError('Failed to fetch cash flows. Please try again.');
+            showToast('Failed to fetch cash flows. Please try again.', 'error');
+        }
+    }
+
+    const handleEditPurchase = async (data: SaleEntry) => {
+        setModalType('EDIT');
+        setSales(data)
+    }
+
+    const handleCloseModal = () => {
+        setModalType(null);
+    }
 
     const addOn = isFirstRow && sale.add_ons.length > 0 ? sale.add_ons[0] : null;
 
@@ -53,7 +92,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalI
             <td className="px-6 py-4 text-sm text-gray-600">{item.weight} kg</td>
             <td className="px-6 py-4 text-sm text-gray-800">{formatRupiah(item.total_amount)}</td>
 
-            <td className="px-6 py-4 text-sm text-gray-600">{addOn?.addon_name || '-'}</td>
+            <td className="px-6 py-4 font-bold text-sm text-gray-600">{addOn?.addon_name || '-'}</td>
             <td className="px-6 py-4 text-sm text-gray-600">{addOn ? formatRupiah(addOn.addon_price) : '-'}</td>
             <td
                 rowSpan={isFirstRow ? totalItems : 1}
@@ -61,7 +100,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalI
             >
                 {isFirstRow &&
                     sale.fiber_used.map((fiber, index) => (
-                        <div key={index} className="bg-blue-100 rounded px-2 py-1 mb-1 text-center inline-block">
+                        <div key={index} className="bg-blue-100 rounded px-2 py-1 mb-1 text-center">
                             {fiber.name}
                         </div>
                     ))
@@ -75,6 +114,9 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalI
                     </td>
                     <td rowSpan={totalItems} className="px-6 py-4 text-sm text-gray-900 align-middle">
                         {formatRupiah(sale.paid_amount)}
+                    </td>
+                    <td rowSpan={totalItems} className="px-6 py-4 text-sm text-gray-900 align-middle">
+                        {formatRupiah(sale.remaining_amount)}
                     </td>
                     <td rowSpan={totalItems} className="px-6 py-4 text-sm align-middle">
                         {getPaymentBadge(sale.payment_status)}
@@ -93,12 +135,28 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({ sale, item, itemIndex, totalI
                     </td>
                     <td rowSpan={totalItems} className="px-6 py-4 text-right text-sm font-medium align-middle">
                         <div className="flex justify-end gap-2">
-                            <button title="Edit Penjualan" className="p-2 text-gray-600 hover:text-blue-600"><PencilIcon size={18} /></button>
-                            <button title="Tambah Pembayaran" className="p-2 text-gray-600 hover:text-green-600"><Calendar size={18} /></button>
-                            <button onClick={() => onDelete(sale.uuid, sale.sale_code)} title="Hapus Penjualan" className="p-2 text-red-600 hover:text-red-800"><Trash2 size={18} /></button>
+                            <button title="Edit Penjualan" className="p-2 text-blue-500 hover:text-blue-800"><PencilIcon size={18} /></button>
+                            <button
+                                onClick={() => handleOpenPayment(sale)}
+                                title="Tambah Pembayaran"
+                                className="p-2 text-green-500 hover:text-green-800"
+                            >
+                                <Calendar size={18} />
+                            </button>
+                            <button onClick={() => onDelete(sale.uuid, sale.sale_code)} title="Hapus Penjualan" className="p-2 text-red-500 hover:text-red-800"><Trash2 size={18} /></button>
                         </div>
                     </td>
                 </>
+            )}
+
+            {modalType === 'ADD' && (
+                <RecordSalesPaymentModal
+                    sale={sales}
+                    payments={payments}
+                    error={error}
+                    onClose={handleCloseModal}
+                    onRefresh={onRefresh}
+                />
             )}
         </tr>
     );

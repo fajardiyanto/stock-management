@@ -41,7 +41,6 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
     const { showToast } = useToast();
 
-
     const startIdx = ((currentPage - 1) * pageSize) + 1;
 
     const handleOpenPayment = async (data: Purchasing) => {
@@ -49,7 +48,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
         setPurchase(data)
 
         try {
-            const response = await paymentService.getAllPaymentByPurchaseId(data.purchase_id);
+            const response = await paymentService.getAllPaymentBField(data.purchase_id, "purchase");
 
             if (response.status_code === 200) {
                 setPayments(response.data.payment);

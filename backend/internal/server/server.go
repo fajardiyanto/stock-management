@@ -62,7 +62,7 @@ func Run() error {
 		api.GET("/payments/user/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
 		api.POST("/payment/user/:userId/manual", paymentHandler.CreateManualPaymentHandler)
 		api.DELETE("/payment/:paymentId/manual", paymentHandler.DeleteManualPaymentHandler)
-		api.GET("/purchase/:purchaseId/payments", paymentHandler.GetAllPaymentFromPurchaseIdHandler)
+		api.GET("/purchase/:id/payments/:field", paymentHandler.GetAllPaymentByFieldIdHandler)
 		api.POST("/payment", paymentHandler.CreatePaymentByPurchaseIdHandler)
 
 		api.GET("/fibers", fiberHandler.GetAllFibersHandler)

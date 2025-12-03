@@ -40,10 +40,10 @@ export interface SaleEntry {
 export interface SaleFilter {
     page?: number;
     size?: number;
-    search?: string
     payment_status?: PaymentStatus;
-    created_at?: string;
+    id?: string;
     sales_date?: string;
+    customer_id?: string;
 }
 
 export interface Customer {
@@ -109,4 +109,30 @@ export interface ItemSortirOption {
 export interface SaleConfirmRequest {
     sale_id: string;
     sale_code: string;
+}
+
+export interface SalePaginationResponse {
+    size: number;
+    page_no: number;
+    total: number;
+    data: SaleEntry[];
+}
+
+export interface SaleEntry {
+    id: number;
+    uuid: string;
+    sale_code: string;
+    customer: Customer;
+    created_at: string;
+    payment_late_day: number;
+    export_sale: boolean;
+    total_amount: number;
+    remaining_amount: number;
+    paid_amount: number;
+    payment_status: PaymentStatus;
+    sales_date: string;
+    sold_items: SoldItem[];
+    add_ons: SoldAddon[];
+    fiber_used: FiberList[];
+    last_payment_date: string;
 }
