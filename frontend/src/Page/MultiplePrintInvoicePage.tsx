@@ -5,13 +5,12 @@ import { salesService } from "../services/salesService";
 import { formatDate } from "../utils/FormatDate";
 
 const PrintInvoicePage: React.FC = () => {
-    const { invoiceId } = useParams<{ invoiceId: string }>();
-    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>("");
 
-    // const invoiceIds =
-    //     searchParams.get("ids")?.split(",") || (invoiceId ? [invoiceId] : []);
+    const saleId = searchParams.get("saleId");
+    const navigate = useNavigate();
 
     const [invoicesData, setInvoicesData] = useState<SaleEntry[]>([]);
 
@@ -19,10 +18,11 @@ const PrintInvoicePage: React.FC = () => {
         setLoading(true);
 
         try {
+            console.log(saleId);
             const response = await salesService.getAllSales({
                 page: 1,
                 size: 100,
-                id: invoiceId,
+                sales_id: saleId || undefined,
             });
 
             if (response.status_code === 200) {
@@ -35,7 +35,7 @@ const PrintInvoicePage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [saleId]);
 
     useEffect(() => {
         fetchInvoices();

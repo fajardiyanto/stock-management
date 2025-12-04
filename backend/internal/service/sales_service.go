@@ -158,12 +158,16 @@ func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePagin
 
 	query := db.Model(&models.Sale{})
 
-	if filter.SalesId != "" {
+	if filter.Id != "" {
 		salesId, err := strconv.Atoi(filter.SalesId)
 		if err != nil {
 			return nil, err
 		}
 		query = query.Where("id = ?", salesId)
+	}
+
+	if filter.SalesId != "" {
+		query = query.Where("uuid = ?", filter.SalesId)
 	}
 
 	if filter.PaymentStatus != "ALL" && filter.PaymentStatus != "" {

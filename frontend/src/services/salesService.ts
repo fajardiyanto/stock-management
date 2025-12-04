@@ -29,6 +29,9 @@ export const salesService = {
         if (filters.id) {
             queryParams.append('id', filters.id);
         }
+        if (filters.sales_id) {
+            queryParams.append('sales_id', filters.sales_id);
+        }
         if (filters.sales_date) {
             queryParams.append('sales_date', filters.sales_date);
         }

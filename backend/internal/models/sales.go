@@ -116,7 +116,8 @@ type SaleResponse struct {
 type SalesFilter struct {
 	Size          int    `form:"size"`
 	PageNo        int    `form:"page_no"`
-	SalesId       string `form:"id"`
+	Id            string `form:"id"`
+	SalesId       string `form:"sales_id"`
 	CustomerId    string `form:"customer_id"`
 	SalesDate     string `form:"sales_date"`
 	PaymentStatus string `form:"payment_status"`

@@ -1,6 +1,6 @@
 import React from "react";
 import { SoldItem, SaleEntry } from "../../types/sales";
-import { Calendar, PencilIcon, Trash2 } from "lucide-react";
+import { Calendar, PencilIcon, Printer, Trash2 } from "lucide-react";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { formatDate } from "../../utils/FormatDate";
 import { PaymentStatusLabel } from "../../types/payment";
@@ -41,6 +41,10 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                 {PaymentStatusLabel[status]}
             </span>
         );
+    };
+
+    const handlePrintNota = () => {
+        window.open(`/dashboard/print-invoice?saleId=${sale.uuid}`, "_blank");
     };
 
     return (
@@ -191,6 +195,13 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                     className="p-2 text-green-500 hover:text-green-800"
                                 >
                                     <Calendar size={18} />
+                                </button>
+                                <button
+                                    onClick={handlePrintNota}
+                                    title="Cetak Nota"
+                                    className="p-2 text-gray-500 hover:text-gray-800"
+                                >
+                                    <Printer size={18} />
                                 </button>
                                 <button
                                     onClick={() =>
