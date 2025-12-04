@@ -200,9 +200,11 @@ func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePagin
 		}
 
 		userDetail := models.GetUserDetail{
-			Uuid:  customer.Uuid,
-			Name:  customer.Name,
-			Phone: customer.Phone,
+			Uuid:            customer.Uuid,
+			Name:            customer.Name,
+			Phone:           customer.Phone,
+			Address:         customer.Address,
+			ShippingAddress: customer.ShippingAddress,
 		}
 
 		var payment models.Payment

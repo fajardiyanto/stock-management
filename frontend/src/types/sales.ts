@@ -50,6 +50,8 @@ export interface Customer {
     uuid: string;
     name: string;
     phone: string;
+    address: string;
+    shipping_address: string;
 }
 
 export interface CreateSaleItemRequest {

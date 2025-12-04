@@ -78,9 +78,11 @@ type GetAllUserResponse struct {
 }
 
 type GetUserDetail struct {
-	Uuid  string `json:"uuid"`
-	Name  string `json:"name"`
-	Phone string `json:"phone"`
+	Uuid            string `json:"uuid"`
+	Name            string `json:"name"`
+	Phone           string `json:"phone"`
+	Address         string `json:"address"`
+	ShippingAddress string `json:"shipping_address"`
 }
 
 func (*User) TableName() string {

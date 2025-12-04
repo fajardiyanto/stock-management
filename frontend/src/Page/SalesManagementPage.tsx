@@ -178,6 +178,15 @@ const SalesManagementPage: React.FC = () => {
         setModalType(null);
     };
 
+    const handlePrintNota = () => {
+        if (salesData.length === 0) {
+            showToast("No sales data to print.", "error");
+            setError("No sales data to print.");
+            return;
+        }
+        window.open("/dashboard/print-invoice", "_blank");
+    };
+
     if (loading && salesData.length === 0) {
         return (
             <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
@@ -213,7 +222,10 @@ const SalesManagementPage: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="flex items-center gap-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition shadow-sm">
+                    <button
+                        onClick={handlePrintNota}
+                        className="flex items-center gap-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition shadow-sm"
+                    >
                         Cetak Nota
                     </button>
                     <button

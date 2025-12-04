@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import { User } from "../types/user";
 import { MenuId } from "../types";
 import UserManagementPage from "./UserManagementPage";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import SalesManagementPage from "./SalesManagementPage";
 import PurchasingManagementPage from "./PurchasingManagementPage";
 import StockManagementPage from "./StockManagementPage";
@@ -15,6 +15,7 @@ import StockSortManagementPage from "./StockSortManagementPage";
 import FiberManagementPage from "./FiberManagementPage";
 import SaleCreationPage from "./SaleCreationPage";
 import SaleUpdatePage from "./SaleUpdatePage";
+import MultiplePrintInvoicePage from "./MultiplePrintInvoicePage";
 
 interface DashboardProps {
     onLogout: () => void;
@@ -36,6 +37,17 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
         authService.logout();
         onLogout();
     };
+
+    const location = useLocation();
+    const isPrintPage = location.pathname === "/dashboard/print-invoice";
+
+    if (isPrintPage) {
+        return (
+            <main className="p-6">
+                <MultiplePrintInvoicePage />
+            </main>
+        );
+    }
 
     return (
         <div className="flex h-screen bg-gray-100">
@@ -96,6 +108,10 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route
                                 path="sales/update/:saleId"
                                 element={<SaleUpdatePage />}
+                            />
+                            <Route
+                                path="print-invoice"
+                                element={<MultiplePrintInvoicePage />}
                             />
                         </Routes>
                     </div>
