@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import StockFilter from "../components/StockComponents/StockFilter";
 import StockTable from "../components/StockComponents/StockTable";
-import { StockEntriesFilters, StockEntry, StockConfirmRequest } from "../types/stock";
+import {
+    StockEntriesFilters,
+    StockEntry,
+    StockConfirmRequest,
+} from "../types/stock";
 import { useToast } from "../contexts/ToastContext";
 import { stockService } from "../services/stockService";
 import { useNavigate } from "react-router-dom";
 import StockModalDelete from "../components/StockComponents/StockModalDelete";
-
 
 const StockManagementPage: React.FC = () => {
     const [stockData, setStockData] = useState<StockEntry[]>([]);
@@ -16,8 +19,9 @@ const StockManagementPage: React.FC = () => {
     const [totalStockData, setTotalStockData] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [filters, setFilters] = useState<StockEntriesFilters>({});
-    const [modalType, setModalType] = useState<'DELETE' | null>(null);
-    const [stockConfirmData, setStockConfirmData] = useState<StockConfirmRequest | null>();
+    const [modalType, setModalType] = useState<"DELETE" | null>(null);
+    const [stockConfirmData, setStockConfirmData] =
+        useState<StockConfirmRequest | null>();
 
     const { showToast } = useToast();
     const navigate = useNavigate();
@@ -48,7 +52,10 @@ const StockManagementPage: React.FC = () => {
             }
         } catch (err) {
             setError("Failed to fetch stock entries. Please try again");
-            showToast("Failed to fetch stock entries. Please try again", "error");
+            showToast(
+                "Failed to fetch stock entries. Please try again",
+                "error"
+            );
         } finally {
             setLoading(false);
         }
@@ -81,26 +88,31 @@ const StockManagementPage: React.FC = () => {
     const handleDeleteStock = (stockId: string, stockCode: string) => {
         setStockConfirmData({
             stock_id: stockId,
-            stock_code: stockCode
+            stock_code: stockCode,
         });
-        setModalType('DELETE');
+        setModalType("DELETE");
     };
 
     const handleConfirmDeleted = async () => {
         try {
-            const response = await stockService.deleteStock(stockConfirmData?.stock_id || '');
+            const response = await stockService.deleteStock(
+                stockConfirmData?.stock_id || ""
+            );
 
             if (response.status_code === 200) {
-                showToast('Stock deleted successfully!', 'success');
+                showToast("Stock deleted successfully!", "success");
                 handleCloseModal();
                 fetchStockEntries();
             } else {
-                showToast(`Failed to delete stock: ${response.message}`, 'error');
+                showToast(
+                    `Failed to delete stock: ${response.message}`,
+                    "error"
+                );
             }
         } catch (err) {
-            showToast('Failed to delete stock. Please try again.', 'error');
+            showToast("Failed to delete stock. Please try again.", "error");
         }
-    }
+    };
 
     const handleCloseModal = () => {
         setModalType(null);
@@ -117,7 +129,7 @@ const StockManagementPage: React.FC = () => {
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setCurrentPage(1);
-    }
+    };
 
     if (loading && stockData.length === 0) {
         return (
@@ -146,8 +158,12 @@ const StockManagementPage: React.FC = () => {
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
             <header className="flex justify-between items-center mb-4 bg-white p-6 rounded-xl shadow-md">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Stok</h1>
-                    <p className="text-gray-500 mt-1">Kelola stok ikan dari supplier</p>
+                    <h1 className="text-3xl font-extrabold text-gray-800">
+                        Manajemen Stok
+                    </h1>
+                    <p className="text-gray-500 mt-1">
+                        Kelola stok ikan dari supplier
+                    </p>
                 </div>
             </header>
 
@@ -167,8 +183,12 @@ const StockManagementPage: React.FC = () => {
                 onDeleteStock={handleDeleteStock}
             />
 
-            {modalType === 'DELETE' && (
-                <StockModalDelete item={stockConfirmData} onConfirm={handleConfirmDeleted} onClose={handleCloseModal} />
+            {modalType === "DELETE" && (
+                <StockModalDelete
+                    item={stockConfirmData}
+                    onConfirm={handleConfirmDeleted}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );

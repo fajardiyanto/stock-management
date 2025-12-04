@@ -1,5 +1,5 @@
-import React from 'react';
-import { User } from '../types/user';
+import React from "react";
+import { User } from "../types/user";
 
 interface NavbarProps {
     activeMenu: string;
@@ -17,14 +17,14 @@ const Navbar: React.FC<NavbarProps> = ({ activeMenu, userData }) => {
                 <div className="flex items-center gap-4">
                     <div className="text-right">
                         <p className="text-sm font-medium text-gray-800">
-                            {userData?.name || 'User'}
+                            {userData?.name || "User"}
                         </p>
                         <p className="text-xs text-gray-500">
-                            {userData?.phone || 'user@example.com'}
+                            {userData?.phone || "user@example.com"}
                         </p>
                     </div>
                     <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {userData?.name?.[0] || 'U'}
+                        {userData?.name?.[0] || "U"}
                     </div>
                 </div>
             </div>

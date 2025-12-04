@@ -1,6 +1,6 @@
-import React from 'react';
-import { Search, ChevronDown } from 'lucide-react';
-import { STATUS_OPTIONS_LIST } from '../../types/fiber';
+import React from "react";
+import { Search, ChevronDown } from "lucide-react";
+import { STATUS_OPTIONS_LIST } from "../../types/fiber";
 
 interface FiberFilterProps {
     searchName: string;
@@ -21,13 +21,16 @@ const FiberFilter: React.FC<FiberFilterProps> = ({
         <div className="flex justify-between items-end p-4 bg-white rounded-xl shadow-md border border-gray-100">
             <div className="flex space-x-4 w-full max-w-lg">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={18}
+                    />
                     <input
                         type="text"
                         placeholder="Search nama fiber..."
                         value={searchName}
                         onChange={(e) => setSearchName(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && onSearch()}
+                        onKeyPress={(e) => e.key === "Enter" && onSearch()}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
                     />
                 </div>
@@ -38,11 +41,16 @@ const FiberFilter: React.FC<FiberFilterProps> = ({
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
                     >
-                        {STATUS_OPTIONS_LIST.map(opt => (
-                            <option key={opt.key} value={opt.key}>{opt.label}</option>
+                        {STATUS_OPTIONS_LIST.map((opt) => (
+                            <option key={opt.key} value={opt.key}>
+                                {opt.label}
+                            </option>
                         ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                    <ChevronDown
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                        size={16}
+                    />
                 </div>
             </div>
         </div>

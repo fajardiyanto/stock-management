@@ -1,24 +1,30 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import SaleInfoSection from '../components/SalesComponents/SaleInfoSection';
-import ItemSelectionSection from '../components/SalesComponents/ItemSelectionSection';
-import FiberAllocationSection from '../components/SalesComponents/FiberAllocationSection';
-import AddOnSection from '../components/SalesComponents/AddOnSection';
-import SaleSummaryCard from '../components/SalesComponents/SaleSummaryCard';
-import { SubmitSaleRequest, SelectedSaleItem, FiberAllocation, SelectedAddOn, BuyerOption } from '../types/sales';
-import { FiberList } from '../types/fiber';
-import { getDefaultDate } from '../utils/DefaultDate';
-import { useToast } from '../contexts/ToastContext';
-import { authService } from '../services/authService';
-import { stockService } from '../services/stockService';
-import { fiberService } from '../services/fiberService';
-import { salesService } from '../services/salesService';
-import { StockSortResponse } from '../types/stock';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useCallback, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import SaleInfoSection from "../components/SalesComponents/SaleInfoSection";
+import ItemSelectionSection from "../components/SalesComponents/ItemSelectionSection";
+import FiberAllocationSection from "../components/SalesComponents/FiberAllocationSection";
+import AddOnSection from "../components/SalesComponents/AddOnSection";
+import SaleSummaryCard from "../components/SalesComponents/SaleSummaryCard";
+import {
+    SubmitSaleRequest,
+    SelectedSaleItem,
+    FiberAllocation,
+    SelectedAddOn,
+    BuyerOption,
+} from "../types/sales";
+import { FiberList } from "../types/fiber";
+import { getDefaultDate } from "../utils/DefaultDate";
+import { useToast } from "../contexts/ToastContext";
+import { authService } from "../services/authService";
+import { stockService } from "../services/stockService";
+import { fiberService } from "../services/fiberService";
+import { salesService } from "../services/salesService";
+import { StockSortResponse } from "../types/stock";
+import { useNavigate } from "react-router-dom";
 
 const SaleCreationPage: React.FC = () => {
     const [formData, setFormData] = useState<SubmitSaleRequest>({
-        customer_id: '',
+        customer_id: "",
         sales_date: getDefaultDate(),
         export_sale: false,
         sale_items: [],
@@ -31,7 +37,7 @@ const SaleCreationPage: React.FC = () => {
     const [selectedAddOns, setSelectedAddOns] = useState<SelectedAddOn[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
     const [buyerList, setBuyerList] = useState<BuyerOption[]>([]);
     const [stockSorts, setStockSorts] = useState<StockSortResponse[]>([]);
     const [fibers, setFibers] = useState<FiberList[]>([]);
@@ -39,56 +45,78 @@ const SaleCreationPage: React.FC = () => {
     const { showToast } = useToast();
     const navigate = useNavigate();
 
-    const totalItemPrice = selectedItems.reduce((sum, item) => sum + item.total_amount, 0);
-    const totalAddonPrice = selectedAddOns.reduce((sum, addon) => sum + addon.total_price, 0);
+    const totalItemPrice = selectedItems.reduce(
+        (sum, item) => sum + item.total_amount,
+        0
+    );
+    const totalAddonPrice = selectedAddOns.reduce(
+        (sum, addon) => sum + addon.total_price,
+        0
+    );
     const totalFiberPrice = 0;
     const grandTotal = totalItemPrice + totalAddonPrice + totalFiberPrice;
 
-    const handleFormChange = (field: keyof SubmitSaleRequest, value: string | boolean) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (field === 'export_sale' && value === true) {
-            setFormData(prev => ({ ...prev, fiber_allocations: [] }));
+    const handleFormChange = (
+        field: keyof SubmitSaleRequest,
+        value: string | boolean
+    ) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+        if (field === "export_sale" && value === true) {
+            setFormData((prev) => ({ ...prev, fiber_allocations: [] }));
         }
     };
 
     const handleItemAdd = (item: SelectedSaleItem) => {
-        setSelectedItems(prev => [...prev, item]);
-        setError('');
+        setSelectedItems((prev) => [...prev, item]);
+        setError("");
     };
 
     const handleItemRemove = (tempId: string) => {
-        setSelectedItems(prev => prev.filter(item => item.tempId !== tempId));
-        setFormData(prev => ({
+        setSelectedItems((prev) =>
+            prev.filter((item) => item.tempId !== tempId)
+        );
+        setFormData((prev) => ({
             ...prev,
-            fiber_allocations: prev.fiber_allocations.filter(alloc => alloc.item_id !== tempId)
+            fiber_allocations: prev.fiber_allocations.filter(
+                (alloc) => alloc.item_id !== tempId
+            ),
         }));
-        setError('');
+        setError("");
     };
 
     const handleAddOnAdd = (addon: SelectedAddOn) => {
-        setSelectedAddOns(prev => [...prev, addon]);
-        setError('');
+        setSelectedAddOns((prev) => [...prev, addon]);
+        setError("");
     };
 
     const handleAddOnRemove = (tempId: string) => {
-        setSelectedAddOns(prev => prev.filter(addon => addon.tempId !== tempId));
-        setError('');
+        setSelectedAddOns((prev) =>
+            prev.filter((addon) => addon.tempId !== tempId)
+        );
+        setError("");
     };
 
     const handleFiberAllocation = (allocation: FiberAllocation) => {
-        setFormData(prev => ({ ...prev, fiber_allocations: [...prev.fiber_allocations, allocation] }));
-        setError('');
+        setFormData((prev) => ({
+            ...prev,
+            fiber_allocations: [...prev.fiber_allocations, allocation],
+        }));
+        setError("");
     };
 
     const handleRemoveAllocation = (fiberUuid: string) => {
-        setFormData(prev => ({ ...prev, fiber_allocations: prev.fiber_allocations.filter(alloc => alloc.fiber_id !== fiberUuid) }));
-        setError('');
+        setFormData((prev) => ({
+            ...prev,
+            fiber_allocations: prev.fiber_allocations.filter(
+                (alloc) => alloc.fiber_id !== fiberUuid
+            ),
+        }));
+        setError("");
     };
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
+        setError("");
 
         if (!formData.customer_id) {
             setError("Harap pilih Pembeli.");
@@ -103,15 +131,15 @@ const SaleCreationPage: React.FC = () => {
 
         const submissionPayload: SubmitSaleRequest = {
             ...formData,
-            sales_date: formData.sales_date + ':00Z',
-            sale_items: selectedItems.map(item => ({
+            sales_date: formData.sales_date + ":00Z",
+            sale_items: selectedItems.map((item) => ({
                 stock_sort_id: item.stock_sort_id,
                 weight: item.weight,
                 stock_code: item.stock_code,
                 price_per_kilogram: item.price_per_kilogram,
                 total_amount: item.total_amount,
             })),
-            add_ons: selectedAddOns.map(addon => ({
+            add_ons: selectedAddOns.map((addon) => ({
                 name: addon.name,
                 price: addon.price,
             })),
@@ -122,14 +150,18 @@ const SaleCreationPage: React.FC = () => {
             const response = await salesService.createSales(submissionPayload);
             if (response.status_code === 201 || response.status_code === 200) {
                 showToast("Sales berhasil disimpan!", "success");
-                navigate('/dashboard/sales');
+                navigate("/dashboard/sales");
             } else {
-                const errorMessage = response.message || "Gagal menyimpan penjualan. Coba lagi.";
+                const errorMessage =
+                    response.message || "Gagal menyimpan penjualan. Coba lagi.";
                 setError(errorMessage);
                 showToast(errorMessage, "error");
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Gagal menyimpan hasil penjualan. Coba lagi.";
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : "Gagal menyimpan hasil penjualan. Coba lagi.";
             setError(errorMessage);
             showToast(errorMessage, "error");
         } finally {
@@ -140,13 +172,16 @@ const SaleCreationPage: React.FC = () => {
     const fetchBuyerOptions = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await authService.getListUserRoles('buyer');
+            const response = await authService.getListUserRoles("buyer");
             if (response.status_code === 200) {
-                const defaultBuyer: any = { uuid: '', name: 'Semua Buyer' };
+                const defaultBuyer: any = { uuid: "", name: "Semua Buyer" };
                 setBuyerList([defaultBuyer, ...response.data]);
             } else {
                 setError(response.message || "Failed to fetch buyer data");
-                showToast(response.message || "Failed to fetch buyer data", "error");
+                showToast(
+                    response.message || "Failed to fetch buyer data",
+                    "error"
+                );
             }
         } catch (err) {
             setError("Failed to fetch buyer data. Please try again");
@@ -163,12 +198,20 @@ const SaleCreationPage: React.FC = () => {
             if (response.status_code === 200) {
                 setStockSorts(response.data);
             } else {
-                setError(response.message || "Failed to fetch stock sorts data");
-                showToast(response.message || "Failed to fetch stock sorts data", "error");
+                setError(
+                    response.message || "Failed to fetch stock sorts data"
+                );
+                showToast(
+                    response.message || "Failed to fetch stock sorts data",
+                    "error"
+                );
             }
         } catch (err) {
             setError("Failed to fetch stock sorts data. Please try again");
-            showToast("Failed to fetch stock sorts data. Please try again", "error");
+            showToast(
+                "Failed to fetch stock sorts data. Please try again",
+                "error"
+            );
         } finally {
             setLoading(false);
         }
@@ -178,15 +221,21 @@ const SaleCreationPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const response = await fiberService.getAllFiber({
-                size: 100,
-                page_no: 1,
-            });
+            const response = await fiberService.getAllUsedFiber();
             if (response.status_code === 200) {
-                setFibers([...response.data.data]);
+                if (response.data) {
+                    const fiberOptions = response.data.map((fiber) => ({
+                        uuid: fiber.uuid,
+                        name: fiber.name,
+                    }));
+                    setFibers(fiberOptions);
+                }
             } else {
                 setError(response.message || "Failed to fetch fiber data");
-                showToast(response.message || "Failed to fetch fiber data", "error");
+                showToast(
+                    response.message || "Failed to fetch fiber data",
+                    "error"
+                );
             }
         } catch (err) {
             setError("Failed to fetch fiber data. Please try again");
@@ -194,7 +243,7 @@ const SaleCreationPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [showToast])
+    }, [showToast]);
 
     useEffect(() => {
         fetchBuyerOptions();
@@ -202,16 +251,22 @@ const SaleCreationPage: React.FC = () => {
         fetchFiberList();
     }, [fetchBuyerOptions, fetchStockSorts, fetchFiberList]);
 
-
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10 font-sans">
             <header className="mb-8">
-                <button onClick={() => navigate('/dashboard/sales')} className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium">
+                <button
+                    onClick={() => navigate("/dashboard/sales")}
+                    className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium"
+                >
                     <ArrowLeft size={18} className="mr-2" />
                     Kembali
                 </button>
-                <h1 className="text-3xl font-extrabold text-gray-900">Form Penjualan</h1>
-                <p className="text-gray-500 mt-1">Isi form untuk membuat penjualan baru</p>
+                <h1 className="text-3xl font-extrabold text-gray-900">
+                    Form Penjualan
+                </h1>
+                <p className="text-gray-500 mt-1">
+                    Isi form untuk membuat penjualan baru
+                </p>
             </header>
 
             <form onSubmit={handleSubmit}>
@@ -223,7 +278,11 @@ const SaleCreationPage: React.FC = () => {
                             </div>
                         )}
 
-                        <SaleInfoSection formData={formData} onFormChange={handleFormChange} buyerList={buyerList} />
+                        <SaleInfoSection
+                            formData={formData}
+                            onFormChange={handleFormChange}
+                            buyerList={buyerList}
+                        />
 
                         <ItemSelectionSection
                             selectedItems={selectedItems}
@@ -260,9 +319,16 @@ const SaleCreationPage: React.FC = () => {
                             <button
                                 type="submit"
                                 className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
-                                disabled={isSubmitting || !formData.customer_id || selectedItems.length === 0 || loading}
+                                disabled={
+                                    isSubmitting ||
+                                    !formData.customer_id ||
+                                    selectedItems.length === 0 ||
+                                    loading
+                                }
                             >
-                                {isSubmitting ? 'Memproses...' : 'Simpan Penjualan'}
+                                {isSubmitting
+                                    ? "Memproses..."
+                                    : "Simpan Penjualan"}
                             </button>
                         </div>
                     </div>

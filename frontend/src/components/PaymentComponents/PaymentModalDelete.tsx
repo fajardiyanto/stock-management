@@ -1,6 +1,6 @@
-import React from 'react';
-import { X, Trash2 } from 'lucide-react';
-import { PaymentResponse } from '../../types/payment';
+import React from "react";
+import { X, Trash2 } from "lucide-react";
+import { PaymentResponse } from "../../types/payment";
 
 interface UserModalDeleteProps {
     item: PaymentResponse | undefined;
@@ -8,14 +8,20 @@ interface UserModalDeleteProps {
     onClose: () => void;
 }
 
-const PaymentModalDelete: React.FC<UserModalDeleteProps> = ({ item, onConfirm, onClose }) => {
+const PaymentModalDelete: React.FC<UserModalDeleteProps> = ({
+    item,
+    onConfirm,
+    onClose,
+}) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all duration-300 scale-100">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                         <Trash2 className="text-red-600" size={24} />
-                        <h3 className="text-xl font-bold text-red-700">Confirm Deletion</h3>
+                        <h3 className="text-xl font-bold text-red-700">
+                            Confirm Deletion
+                        </h3>
                     </div>
                     <button
                         onClick={onClose}
@@ -26,7 +32,8 @@ const PaymentModalDelete: React.FC<UserModalDeleteProps> = ({ item, onConfirm, o
                 </div>
 
                 <p className="text-gray-700 mb-6 border-t pt-4">
-                    Are you absolutely sure you want to delete payment <b>{item?.description}</b>?
+                    Are you absolutely sure you want to delete payment{" "}
+                    <b>{item?.description}</b>?
                 </p>
 
                 <div className="flex justify-end gap-3">

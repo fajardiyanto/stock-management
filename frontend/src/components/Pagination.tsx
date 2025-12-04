@@ -19,9 +19,9 @@ const Pagination: React.FC<PaginationProps> = ({
     totalPages,
     loading,
     onPageChange,
-    onPageSizeChange
+    onPageSizeChange,
 }) => {
-    const startIdx = ((currentPage - 1) * pageSize) + 1;
+    const startIdx = (currentPage - 1) * pageSize + 1;
     const endIdx = Math.min(currentPage * pageSize, totalData);
 
     const paginationRange = [];
@@ -47,19 +47,24 @@ const Pagination: React.FC<PaginationProps> = ({
                     <span>Show</span>
                     <select
                         value={pageSize}
-                        onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                        className='border border-gray-300 rounded-lg px-3 py-1 bg-white focus:ring-blue-500 appearance-none cursor-pointer'
+                        onChange={(e) =>
+                            onPageSizeChange(Number(e.target.value))
+                        }
+                        className="border border-gray-300 rounded-lg px-3 py-1 bg-white focus:ring-blue-500 appearance-none cursor-pointer"
                     >
-                        {[10, 20, 50, 100].map(size => (
-                            <option key={size} value={size}>{size}</option>
+                        {[10, 20, 50, 100].map((size) => (
+                            <option key={size} value={size}>
+                                {size}
+                            </option>
                         ))}
                     </select>
                     <span>entries</span>
                 </div>
                 <div className="text-sm text-gray-700">
-                    Showing <span className="font-semibold">{startIdx}</span> to{' '}
-                    <span className="font-semibold">{endIdx}</span> of{' '}
-                    <span className="font-semibold">{totalData}</span> {entryName}
+                    Showing <span className="font-semibold">{startIdx}</span> to{" "}
+                    <span className="font-semibold">{endIdx}</span> of{" "}
+                    <span className="font-semibold">{totalData}</span>{" "}
+                    {entryName}
                 </div>
                 <div className="flex items-center gap-1">
                     <button
@@ -72,14 +77,15 @@ const Pagination: React.FC<PaginationProps> = ({
                     </button>
 
                     <div className="flex gap-1">
-                        {paginationRange.map(pageNum => (
+                        {paginationRange.map((pageNum) => (
                             <button
                                 key={pageNum}
                                 onClick={() => onPageChange(pageNum)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${currentPage === pageNum
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'border border-gray-300 hover:bg-gray-100'
-                                    }`}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                                    currentPage === pageNum
+                                        ? "bg-blue-600 text-white shadow-md"
+                                        : "border border-gray-300 hover:bg-gray-100"
+                                }`}
                             >
                                 {pageNum}
                             </button>
@@ -101,6 +107,6 @@ const Pagination: React.FC<PaginationProps> = ({
             </div>
         </>
     );
-}
+};
 
-export default Pagination;  
+export default Pagination;

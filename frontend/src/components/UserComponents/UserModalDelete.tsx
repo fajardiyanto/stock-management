@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Trash2 } from 'lucide-react';
+import React from "react";
+import { X, Trash2 } from "lucide-react";
 
 interface UserModalDeleteProps {
     userName: string;
@@ -7,14 +7,20 @@ interface UserModalDeleteProps {
     onClose: () => void;
 }
 
-const UserModalDelete: React.FC<UserModalDeleteProps> = ({ userName, onConfirm, onClose }) => {
+const UserModalDelete: React.FC<UserModalDeleteProps> = ({
+    userName,
+    onConfirm,
+    onClose,
+}) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all duration-300 scale-100">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                         <Trash2 className="text-red-600" size={24} />
-                        <h3 className="text-xl font-bold text-red-700">Confirm Deletion</h3>
+                        <h3 className="text-xl font-bold text-red-700">
+                            Confirm Deletion
+                        </h3>
                     </div>
                     <button
                         onClick={onClose}
@@ -25,7 +31,8 @@ const UserModalDelete: React.FC<UserModalDeleteProps> = ({ userName, onConfirm, 
                 </div>
 
                 <p className="text-gray-700 mb-6 border-t pt-4">
-                    Are you absolutely sure you want to delete user <b>{userName}</b>?
+                    Are you absolutely sure you want to delete user{" "}
+                    <b>{userName}</b>?
                 </p>
 
                 <div className="flex justify-end gap-3">

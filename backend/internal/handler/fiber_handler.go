@@ -201,3 +201,21 @@ func (s *Fiber) UpdateFiberHandler(c *gin.Context) {
 		Message:    fmt.Sprintf("successfully update fiber for id: %s", fiberId),
 	})
 }
+
+func (s *Fiber) GetAllUsedFibersHandler(c *gin.Context) {
+	data, err := s.fiberRepository.GetAllUsedFibers()
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get all used fibers",
+		Data:       data,
+	})
+}

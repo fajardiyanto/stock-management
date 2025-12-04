@@ -125,7 +125,7 @@ func (s *SalesService) CreateSales(request models.SaleRequest) error {
 		UserId:      request.CustomerId,
 		Total:       request.TotalAmount,
 		Type:        constatnts.Income,
-		Description: fmt.Sprintf("Pembayaran selling SELL%d", sale.ID),
+		Description: fmt.Sprintf("Hutang selling SELL%d", sale.ID),
 		SalesId:     saleId,
 		Deleted:     false,
 		CreatedAt:   time.Now(),

@@ -1,6 +1,15 @@
-import React from 'react';
-import { Users, LogOut, X, Menu, ShoppingBasket, ShoppingBag, Warehouse, BoxIcon } from 'lucide-react';
-import { MenuId, MenuItem } from '../types';
+import React from "react";
+import {
+    Users,
+    LogOut,
+    X,
+    Menu,
+    ShoppingBasket,
+    ShoppingBag,
+    Warehouse,
+    BoxIcon,
+} from "lucide-react";
+import { MenuId, MenuItem } from "../types";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -15,23 +24,26 @@ const Sidebar: React.FC<SidebarProps> = ({
     toggleSidebar,
     activeMenu,
     setActiveMenu,
-    onLogout
+    onLogout,
 }) => {
     const menuItems: MenuItem[] = [
-        { id: 'fiber', label: 'Management Fiber', icon: BoxIcon },
-        { id: 'sales', label: 'Management Penjualan', icon: ShoppingBag },
-        { id: 'purchase', label: 'Management Pembelian', icon: ShoppingBasket },
-        { id: 'stock', label: 'Management Stok', icon: Warehouse },
-        { id: 'users', label: 'Management Akun', icon: Users },
+        { id: "fiber", label: "Management Fiber", icon: BoxIcon },
+        { id: "sales", label: "Management Penjualan", icon: ShoppingBag },
+        { id: "purchase", label: "Management Pembelian", icon: ShoppingBasket },
+        { id: "stock", label: "Management Stok", icon: Warehouse },
+        { id: "users", label: "Management Akun", icon: Users },
     ];
 
     return (
         <aside
-            className={`${isOpen ? 'w-64' : 'w-20'
-                } bg-gray-900 text-white transition-all duration-300 ease-in-out flex flex-col`}
+            className={`${
+                isOpen ? "w-64" : "w-20"
+            } bg-gray-900 text-white transition-all duration-300 ease-in-out flex flex-col`}
         >
             <div className="p-4 flex items-center justify-between">
-                {isOpen && <h1 className="text-xl font-bold">Stock Fish Management</h1>}
+                {isOpen && (
+                    <h1 className="text-xl font-bold">Stock Fish Management</h1>
+                )}
                 <button
                     onClick={toggleSidebar}
                     className="p-2 rounded-lg hover:bg-gray-800 transition"
@@ -47,10 +59,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <button
                             key={item.id}
                             onClick={() => setActiveMenu(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-2 transition ${activeMenu === item.id
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-300 hover:bg-gray-800'
-                                }`}
+                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-2 transition ${
+                                activeMenu === item.id
+                                    ? "bg-blue-600 text-white"
+                                    : "text-gray-300 hover:bg-gray-800"
+                            }`}
                         >
                             <Icon size={20} />
                             {isOpen && <span>{item.label}</span>}

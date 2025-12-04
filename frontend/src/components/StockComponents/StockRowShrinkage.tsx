@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { formatRupiah } from '../../utils/FormatRupiah';
-import { StockSortResponse } from '../../types/stock';
+import React, { useState } from "react";
+import { formatRupiah } from "../../utils/FormatRupiah";
+import { StockSortResponse } from "../../types/stock";
 
 interface StockRowShrinkageProps {
     shrinkageItem: StockSortResponse;
     onToggleShrinkage: () => void;
 }
 
-const StockRowShrinkage: React.FC<StockRowShrinkageProps> = ({ shrinkageItem, onToggleShrinkage }) => {
+const StockRowShrinkage: React.FC<StockRowShrinkageProps> = ({
+    shrinkageItem,
+    onToggleShrinkage,
+}) => {
     const [showDeleteTooltip, setShowDeleteTooltip] = useState(false);
 
     const weightShrinkage = shrinkageItem.weight;
@@ -51,6 +54,6 @@ const StockRowShrinkage: React.FC<StockRowShrinkageProps> = ({ shrinkageItem, on
             <td className="border-l border-gray-200"></td>
         </tr>
     );
-}
+};
 
 export default StockRowShrinkage;

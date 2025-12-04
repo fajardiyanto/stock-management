@@ -1,67 +1,80 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
-import { authService } from '../services/authService';
-import { CreateUserRequest, User, UpdateUserRequest } from '../types/user';
-import { useToast } from '../contexts/ToastContext';
-import { CashFlowResponse } from '../types/payment';
-import { paymentService } from '../services/paymentService';
-import UserTable from '../components/UserComponents/UserTable';
-import UserFilter from '../components/UserComponents/UserFilter';
-import UserModalForm from '../components/UserComponents/UserModalForm';
-import UserModalDetail from '../components/UserComponents/UserModalDetail';
-import UserModalDelete from '../components/UserComponents/UserModalDelete';
+import React, { useState, useEffect, useCallback } from "react";
+import { Plus } from "lucide-react";
+import { authService } from "../services/authService";
+import { CreateUserRequest, User, UpdateUserRequest } from "../types/user";
+import { useToast } from "../contexts/ToastContext";
+import { CashFlowResponse } from "../types/payment";
+import { paymentService } from "../services/paymentService";
+import UserTable from "../components/UserComponents/UserTable";
+import UserFilter from "../components/UserComponents/UserFilter";
+import UserModalForm from "../components/UserComponents/UserModalForm";
+import UserModalDetail from "../components/UserComponents/UserModalDetail";
+import UserModalDelete from "../components/UserComponents/UserModalDelete";
 
 const UserManagementPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchName, setSearchName] = useState('');
-    const [searchPhone, setSearchPhone] = useState('');
+    const [searchName, setSearchName] = useState("");
+    const [searchPhone, setSearchPhone] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalUsers, setTotalUsers] = useState(0);
-    const [error, setError] = useState<string>('');
+    const [error, setError] = useState<string>("");
     const [pageSize, setPageSize] = useState(10);
-    const [modalType, setModalType] = useState<'ADD' | 'EDIT' | 'DETAIL' | 'DELETE' | null>(null);
+    const [modalType, setModalType] = useState<
+        "ADD" | "EDIT" | "DETAIL" | "DELETE" | null
+    >(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [cashFlows, setCashFlows] = useState<CashFlowResponse>({} as CashFlowResponse);
+    const [cashFlows, setCashFlows] = useState<CashFlowResponse>(
+        {} as CashFlowResponse
+    );
 
     const { showToast } = useToast();
 
-    const initialFormData: UpdateUserRequest = { name: '', phone: '', role: 'BUYER', address: '', shipping_address: '', password: '' };
-    const [editFormData, setEditFormData] = useState<UpdateUserRequest>(initialFormData);
+    const initialFormData: UpdateUserRequest = {
+        name: "",
+        phone: "",
+        role: "BUYER",
+        address: "",
+        shipping_address: "",
+        password: "",
+    };
+    const [editFormData, setEditFormData] =
+        useState<UpdateUserRequest>(initialFormData);
     const initialAddUserFormData: CreateUserRequest = {
-        name: '',
-        phone: '',
-        role: 'BUYER',
-        address: '',
-        shipping_address: '',
-        password: ''
+        name: "",
+        phone: "",
+        role: "BUYER",
+        address: "",
+        shipping_address: "",
+        password: "",
     };
 
-    const [addFormData, setAddFormData] = useState<CreateUserRequest>(initialAddUserFormData);
-
+    const [addFormData, setAddFormData] = useState<CreateUserRequest>(
+        initialAddUserFormData
+    );
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
-        setError('');
+        setError("");
 
         try {
             const response = await authService.getListUsers({
                 page: currentPage,
                 size: pageSize,
                 name: searchName || undefined,
-                phone: searchPhone || undefined
+                phone: searchPhone || undefined,
             });
 
             if (response.status_code === 200) {
                 setUsers(response.data.data);
                 setTotalUsers(response.data.total);
             } else {
-                setError(response.message || 'Failed to fetch users');
-                showToast(response.message || 'Failed to fetch users', 'error');
+                setError(response.message || "Failed to fetch users");
+                showToast(response.message || "Failed to fetch users", "error");
             }
         } catch (err) {
-            setError('Failed to fetch users. Please try again.');
-            showToast('Failed to fetch users. Please try again.', 'error');
+            setError("Failed to fetch users. Please try again.");
+            showToast("Failed to fetch users. Please try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -71,10 +84,9 @@ const UserManagementPage: React.FC = () => {
         fetchUsers();
     }, [fetchUsers]);
 
-
     const handleOpenAdd = () => {
         setAddFormData(initialAddUserFormData);
-        setModalType('ADD');
+        setModalType("ADD");
     };
 
     const handleOpenEdit = (user: User) => {
@@ -85,9 +97,9 @@ const UserManagementPage: React.FC = () => {
             role: user.role,
             address: user.address,
             shipping_address: user.shipping_address,
-            password: ''
+            password: "",
         });
-        setModalType('EDIT');
+        setModalType("EDIT");
     };
 
     const refreshCashFlows = async (userId: string) => {
@@ -97,24 +109,27 @@ const UserManagementPage: React.FC = () => {
             if (response.status_code === 200) {
                 setCashFlows(response.data);
             } else {
-                setError(response.message || 'Failed to fetch cash flows');
-                showToast(response.message || 'Failed to fetch cash flows', 'error');
+                setError(response.message || "Failed to fetch cash flows");
+                showToast(
+                    response.message || "Failed to fetch cash flows",
+                    "error"
+                );
             }
         } catch (err) {
-            setError('Failed to fetch cash flows. Please try again.');
-            showToast('Failed to fetch cash flows. Please try again.', 'error');
+            setError("Failed to fetch cash flows. Please try again.");
+            showToast("Failed to fetch cash flows. Please try again.", "error");
         }
     };
 
     const handleOpenDetail = async (user: User) => {
         setSelectedUser(user);
         await refreshCashFlows(user.uuid);
-        setModalType('DETAIL');
+        setModalType("DETAIL");
     };
 
     const handleOpenDelete = (user: User) => {
         setSelectedUser(user);
-        setModalType('DELETE');
+        setModalType("DELETE");
     };
 
     const handleCloseModal = () => {
@@ -129,24 +144,33 @@ const UserManagementPage: React.FC = () => {
     };
 
     const handleCreateUser = async () => {
-        if (!addFormData.name || !addFormData.phone || !addFormData.password || !addFormData.role ||
-            !addFormData.address || !addFormData.shipping_address) {
-            showToast('Please fill all required fields', 'warning');
+        if (
+            !addFormData.name ||
+            !addFormData.phone ||
+            !addFormData.password ||
+            !addFormData.role ||
+            !addFormData.address ||
+            !addFormData.shipping_address
+        ) {
+            showToast("Please fill all required fields", "warning");
             return;
         }
 
         try {
             const response = await authService.createUser(addFormData);
             if (response.status_code === 200) {
-                showToast('User created successfully!', 'success');
+                showToast("User created successfully!", "success");
                 handleCloseModal();
                 setCurrentPage(1);
                 fetchUsers();
             } else {
-                showToast(`Failed to create user: ${response.message}`, 'error');
+                showToast(
+                    `Failed to create user: ${response.message}`,
+                    "error"
+                );
             }
         } catch (err) {
-            showToast('Failed to create user. Please try again.', 'error');
+            showToast("Failed to create user. Please try again.", "error");
         }
     };
 
@@ -165,17 +189,23 @@ const UserManagementPage: React.FC = () => {
         }
 
         try {
-            const response = await authService.updateUser(selectedUser.uuid, dataToUpdate);
+            const response = await authService.updateUser(
+                selectedUser.uuid,
+                dataToUpdate
+            );
 
             if (response.status_code === 200) {
-                showToast('User updated successfully!', 'success');
+                showToast("User updated successfully!", "success");
                 handleCloseModal();
                 fetchUsers();
             } else {
-                showToast(`Failed to update user: ${response.message}`, 'error');
+                showToast(
+                    `Failed to update user: ${response.message}`,
+                    "error"
+                );
             }
         } catch (err) {
-            showToast('Failed to update user. Please try again.', 'error');
+            showToast("Failed to update user. Please try again.", "error");
         }
     };
 
@@ -186,14 +216,17 @@ const UserManagementPage: React.FC = () => {
             const response = await authService.deleteUser(selectedUser.uuid);
 
             if (response.status_code === 200) {
-                showToast('User deleted successfully!', 'success');
+                showToast("User deleted successfully!", "success");
                 handleCloseModal();
                 fetchUsers();
             } else {
-                showToast(`Failed to delete user: ${response.message}`, 'error');
+                showToast(
+                    `Failed to delete user: ${response.message}`,
+                    "error"
+                );
             }
         } catch (err) {
-            showToast('Failed to delete user. Please try again.', 'error');
+            showToast("Failed to delete user. Please try again.", "error");
         }
     };
 
@@ -203,8 +236,8 @@ const UserManagementPage: React.FC = () => {
     };
 
     const handleClearSearch = () => {
-        setSearchName('');
-        setSearchPhone('');
+        setSearchName("");
+        setSearchPhone("");
         setCurrentPage(1);
     };
 
@@ -244,7 +277,9 @@ const UserManagementPage: React.FC = () => {
             <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
                 <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-gray-800">User Management</h1>
+                        <h1 className="text-3xl font-extrabold text-gray-800">
+                            User Management
+                        </h1>
                     </div>
                     <button
                         onClick={handleOpenAdd}
@@ -279,7 +314,7 @@ const UserManagementPage: React.FC = () => {
                 />
             </div>
 
-            {modalType === 'DETAIL' && selectedUser && (
+            {modalType === "DETAIL" && selectedUser && (
                 <UserModalDetail
                     user={selectedUser}
                     cashFlows={cashFlows}
@@ -292,7 +327,7 @@ const UserManagementPage: React.FC = () => {
                 />
             )}
 
-            {modalType === 'EDIT' && selectedUser && (
+            {modalType === "EDIT" && selectedUser && (
                 <UserModalForm
                     type="EDIT"
                     title={`Edit User: ${selectedUser.name}`}
@@ -304,7 +339,7 @@ const UserManagementPage: React.FC = () => {
                 />
             )}
 
-            {modalType === 'ADD' && (
+            {modalType === "ADD" && (
                 <UserModalForm
                     type="ADD"
                     title="Add New User"
@@ -316,7 +351,7 @@ const UserManagementPage: React.FC = () => {
                 />
             )}
 
-            {modalType === 'DELETE' && selectedUser && (
+            {modalType === "DELETE" && selectedUser && (
                 <UserModalDelete
                     userName={selectedUser.name}
                     onConfirm={handleDeleteConfirm}

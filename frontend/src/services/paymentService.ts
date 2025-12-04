@@ -1,4 +1,4 @@
-import { CashFlowResponse, CreatePaymentReqeust, ManualEntryFormRequest } from "../types/payment";
+import { CashFlowResponse, CreatePaymentReqeust, CreatePaymentSalesRequest, ManualEntryFormRequest } from "../types/payment";
 import { ApiResponse } from "../types";
 import { apiCall } from "./";
 
@@ -46,7 +46,21 @@ export const paymentService = {
 
     createPaymentByPurchaseId: async (data: CreatePaymentReqeust): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
-            `/payment`,
+            `/payment/purchase`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    },
+
+    createPaymentBySaleId: async (data: CreatePaymentSalesRequest): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(
+            `/payment/sale`,
             {
                 method: 'POST',
                 headers: {

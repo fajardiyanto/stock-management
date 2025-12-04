@@ -132,7 +132,7 @@ func (s *Payment) GetAllPaymentByFieldIdHandler(c *gin.Context) {
 }
 
 func (s *Payment) CreatePaymentByPurchaseIdHandler(c *gin.Context) {
-	var req models.CreatePaymentRequest
+	var req models.CreatePaymentPurchaseRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		config.GetLogger().Error(err)
@@ -170,5 +170,47 @@ func (s *Payment) CreatePaymentByPurchaseIdHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
 		StatusCode: http.StatusOK,
 		Message:    fmt.Sprintf("create payment from purchase id %s", req.PurchaseId),
+	})
+}
+
+func (s *Payment) CreatePaymentBySaleIdHandler(c *gin.Context) {
+	var req models.CreatePaymentSaleRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	if err := s.validator.Struct(req); err != nil {
+		var errs []string
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
+		}
+		errMsg := strings.Join(errs, ", ")
+
+		config.GetLogger().Error(errMsg)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    errMsg,
+		})
+		return
+	}
+
+	if err := s.paymentRepository.CreatePaymentBySalesId(req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("create payment from purchase id %s", req.SalesId),
 	})
 }

@@ -63,7 +63,8 @@ func Run() error {
 		api.POST("/payment/user/:userId/manual", paymentHandler.CreateManualPaymentHandler)
 		api.DELETE("/payment/:paymentId/manual", paymentHandler.DeleteManualPaymentHandler)
 		api.GET("/purchase/:id/payments/:field", paymentHandler.GetAllPaymentByFieldIdHandler)
-		api.POST("/payment", paymentHandler.CreatePaymentByPurchaseIdHandler)
+		api.POST("/payment/purchase", paymentHandler.CreatePaymentByPurchaseIdHandler)
+		api.POST("/payment/sale", paymentHandler.CreatePaymentBySaleIdHandler)
 
 		api.GET("/fibers", fiberHandler.GetAllFibersHandler)
 		api.GET("/fiber/:fiberId", fiberHandler.GetFiberByIdHandler)
@@ -71,6 +72,7 @@ func Run() error {
 		api.PUT("/fiber/:fiberId/mark", fiberHandler.MarkFiberAvailableHandler)
 		api.DELETE("/fiber/:fiberId", fiberHandler.DeleteFiberHandler)
 		api.PUT("/fiber/:fiberId", fiberHandler.UpdateFiberHandler)
+		api.GET("/fibers/used", fiberHandler.GetAllUsedFibersHandler)
 
 		api.POST("/sales", salesHandler.CreateSalesHandler)
 		api.GET("/sales", salesHandler.GetAllSalesHandler)

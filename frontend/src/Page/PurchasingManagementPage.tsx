@@ -42,7 +42,7 @@ const PurchasingManagementPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     const fetchPurchases = useCallback(async () => {
         setLoading(true);
@@ -84,7 +84,7 @@ const PurchasingManagementPage: React.FC = () => {
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setCurrentPage(1);
-    }
+    };
 
     const handleSearch = (newFilters: PurchaseFilters) => {
         setCurrentPage(1);

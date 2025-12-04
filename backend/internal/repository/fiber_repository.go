@@ -9,4 +9,5 @@ type FiberRepository interface {
 	MarkFiberAvailable(string) error
 	DeleteFiber(string) error
 	UpdateFiber(string, models.FiberRequest) error
+	GetAllUsedFibers() ([]models.FiberResponse, error)
 }

@@ -8,5 +8,6 @@ type PaymentRepository interface {
 	CreateManualPayment(string, []models.CreateManualPaymentRequest) error
 	DeleteManualPayment(string) error
 	GetAllPaymentByFieldId(string, string) (*models.CashFlowResponse, error)
-	CreatePaymentByPurchaseId(models.CreatePaymentRequest) error
+	CreatePaymentByPurchaseId(models.CreatePaymentPurchaseRequest) error
+	CreatePaymentBySalesId(models.CreatePaymentSaleRequest) error
 }

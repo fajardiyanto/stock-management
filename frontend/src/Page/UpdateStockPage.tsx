@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Plus, ArrowLeft, Calendar, ChevronDown } from 'lucide-react';
-import StockItemInput from '../components/StockComponents/StockItemInput';
-import { CreateStockItem, StockEntry } from '../types/stock';
-import { CreatePurchasingRequest } from '../types/purchase';
+import React, { useCallback, useEffect, useState } from "react";
+import { Plus, ArrowLeft, Calendar, ChevronDown } from "lucide-react";
+import StockItemInput from "../components/StockComponents/StockItemInput";
+import { CreateStockItem, StockEntry } from "../types/stock";
+import { CreatePurchasingRequest } from "../types/purchase";
 import { useToast } from "../contexts/ToastContext";
-import { User } from '../types/user';
-import { authService } from '../services/authService';
-import { useNavigate, useParams } from 'react-router-dom';
-import { stockService } from '../services/stockService';
+import { User } from "../types/user";
+import { authService } from "../services/authService";
+import { useNavigate, useParams } from "react-router-dom";
+import { stockService } from "../services/stockService";
 
 const getDefaultDate = (): string => {
     const now = new Date();
@@ -16,23 +16,25 @@ const getDefaultDate = (): string => {
 };
 
 const initialItem: CreateStockItem = {
-    item_name: '',
+    item_name: "",
     weight: 0,
     price_per_kilogram: 0,
 };
 
 const UpdateStockPage: React.FC = () => {
     const [formData, setFormData] = useState<CreatePurchasingRequest>({
-        supplier_id: '',
+        supplier_id: "",
         purchase_date: getDefaultDate(),
         stock_items: [initialItem],
     });
 
-    const [error, setError] = useState<string>('');
+    const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierOptions, setSupplierOptions] = useState<User[]>([]);
-    const [getStockEntry, setGetStockEntry] = useState<StockEntry>({} as StockEntry);
+    const [getStockEntry, setGetStockEntry] = useState<StockEntry>(
+        {} as StockEntry
+    );
 
     const { showToast } = useToast();
     const navigate = useNavigate();
@@ -40,21 +42,23 @@ const UpdateStockPage: React.FC = () => {
 
     const fetchStockEntry = useCallback(async () => {
         setLoading(true);
-        setError('');
+        setError("");
 
         try {
-            const response = await stockService.getStockEntryById(stockId || '');
+            const response = await stockService.getStockEntryById(
+                stockId || ""
+            );
             if (response.status_code === 200) {
                 const entry = response.data;
                 setGetStockEntry(entry);
                 setFormData({
                     supplier_id: entry.supplier.uuid,
                     purchase_date: entry.purchase_date.slice(0, 16),
-                    stock_items: entry.stock_items.map(item => ({
+                    stock_items: entry.stock_items.map((item) => ({
                         item_name: item.item_name,
                         weight: item.weight,
                         price_per_kilogram: item.price_per_kilogram,
-                    }))
+                    })),
                 });
             } else {
                 setError(response.message || "Failed to fetch stock entry");
@@ -69,7 +73,6 @@ const UpdateStockPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-
     }, [stockId, showToast]);
 
     const handleItemChange = (
@@ -107,39 +110,48 @@ const UpdateStockPage: React.FC = () => {
         e.preventDefault();
 
         if (isSubmitting || loading) return;
-        setError('');
+        setError("");
 
         if (!formData.supplier_id) {
             showToast("Harap pilih supplier.", "warning");
             return;
         }
 
-        const submissionItems = formData.stock_items.filter(item =>
-            item.item_name && (item.weight > 0 || item.price_per_kilogram > 0)
+        const submissionItems = formData.stock_items.filter(
+            (item) =>
+                item.item_name &&
+                (item.weight > 0 || item.price_per_kilogram > 0)
         );
 
         if (submissionItems.length === 0) {
-            showToast("Harap masukkan minimal satu item stok yang valid.", "warning");
+            showToast(
+                "Harap masukkan minimal satu item stok yang valid.",
+                "warning"
+            );
             return;
         }
 
-        const formattedPurchaseDate = formData.purchase_date + ':00Z';
+        const formattedPurchaseDate = formData.purchase_date + ":00Z";
         const finalPayload: CreatePurchasingRequest = {
             ...formData,
             purchase_date: formattedPurchaseDate,
-            stock_items: submissionItems
+            stock_items: submissionItems,
         };
 
         setIsSubmitting(true);
         setLoading(true);
 
         try {
-            const response = await stockService.updateStockEntry(stockId || '', finalPayload);
+            const response = await stockService.updateStockEntry(
+                stockId || "",
+                finalPayload
+            );
 
             if (response.status_code === 201 || response.status_code === 200) {
                 showToast("Stok berhasil disimpan!", "success");
             } else {
-                const errorMessage = response.message || "Gagal menyimpan stok. Coba lagi.";
+                const errorMessage =
+                    response.message || "Gagal menyimpan stok. Coba lagi.";
                 setError(errorMessage);
                 showToast(errorMessage, "error");
             }
@@ -156,7 +168,7 @@ const UpdateStockPage: React.FC = () => {
     const fetchSuppliers = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await authService.getListUserRoles('supplier');
+            const response = await authService.getListUserRoles("supplier");
             if (response.status_code === 200) {
                 setSupplierOptions(response.data);
             } else {
@@ -168,7 +180,10 @@ const UpdateStockPage: React.FC = () => {
             }
         } catch (err) {
             setError("Failed to fetch supplier data. Please try again");
-            showToast("Failed to fetch supplier data. Please try again", "error");
+            showToast(
+                "Failed to fetch supplier data. Please try again",
+                "error"
+            );
         } finally {
             setLoading(false);
         }
@@ -180,7 +195,7 @@ const UpdateStockPage: React.FC = () => {
     }, [fetchStockEntry, fetchSuppliers]);
 
     const canRemoveItem = formData.stock_items.length > 1;
-    const submitButtonText = isSubmitting ? 'Menyimpan...' : 'Update Stok';
+    const submitButtonText = isSubmitting ? "Menyimpan..." : "Update Stok";
 
     if (loading) {
         return (
@@ -193,16 +208,27 @@ const UpdateStockPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10 font-sans">
             <header className="mb-8">
-                <button onClick={() => navigate('/dashboard/stock')} className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium">
+                <button
+                    onClick={() => navigate("/dashboard/stock")}
+                    className="flex items-center text-gray-600 hover:text-gray-800 transition mb-4 font-medium"
+                >
                     <ArrowLeft size={18} className="mr-2" />
                     Kembali
                 </button>
-                <h1 className="text-3xl font-extrabold text-gray-900">Edit Stok</h1>
-                <p className="text-gray-500 mt-1">{getStockEntry ? `Edit stok ${getStockEntry.stock_code}` : ''}</p>
+                <h1 className="text-3xl font-extrabold text-gray-900">
+                    Edit Stok
+                </h1>
+                <p className="text-gray-500 mt-1">
+                    {getStockEntry
+                        ? `Edit stok ${getStockEntry.stock_code}`
+                        : ""}
+                </p>
             </header>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-2xl p-6 lg:p-8 space-y-8">
-
+            <form
+                onSubmit={handleSubmit}
+                className="bg-white rounded-xl shadow-2xl p-6 lg:p-8 space-y-8"
+            >
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative">
                         <strong className="font-bold">Error!</strong>
@@ -211,40 +237,59 @@ const UpdateStockPage: React.FC = () => {
                 )}
 
                 <section>
-                    <h2 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">Informasi Stok</h2>
+                    <h2 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">
+                        Informasi Stok
+                    </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Supplier
+                            </label>
                             <div className="relative">
                                 <select
                                     value={formData.supplier_id}
-                                    onChange={(e) => handleSupplierChange(e.target.value)}
+                                    onChange={(e) =>
+                                        handleSupplierChange(e.target.value)
+                                    }
                                     className="appearance-none w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer shadow-sm"
                                     disabled={isSubmitting || loading}
                                 >
                                     <option value="">All Suppliers</option>
-                                    {supplierOptions.map(s => (
-                                        <option key={s.uuid} value={s.uuid} disabled={s.uuid === ''}>
+                                    {supplierOptions.map((s) => (
+                                        <option
+                                            key={s.uuid}
+                                            value={s.uuid}
+                                            disabled={s.uuid === ""}
+                                        >
                                             {s.name}
                                         </option>
                                     ))}
                                 </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                <ChevronDown
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                                    size={16}
+                                />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Stok</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tanggal Stok
+                            </label>
                             <div className="relative">
                                 <input
                                     type="datetime-local"
                                     value={formData.purchase_date}
-                                    onChange={(e) => handleDateChange(e.target.value)}
+                                    onChange={(e) =>
+                                        handleDateChange(e.target.value)
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none pr-8 shadow-sm"
                                     disabled={isSubmitting || loading}
                                 />
-                                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                                <Calendar
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                                    size={18}
+                                />
                             </div>
                         </div>
                     </div>
@@ -252,7 +297,9 @@ const UpdateStockPage: React.FC = () => {
 
                 <section className="space-y-6 pt-4">
                     <div className="flex justify-between items-center border-b pb-3">
-                        <h2 className="text-xl font-semibold text-gray-800">Item Stok</h2>
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            Item Stok
+                        </h2>
                         <button
                             type="button"
                             onClick={handleAddItem}
@@ -271,7 +318,9 @@ const UpdateStockPage: React.FC = () => {
                                 item={item}
                                 onChange={handleItemChange}
                                 onRemove={handleRemoveItem}
-                                canRemove={canRemoveItem && !isSubmitting && !loading}
+                                canRemove={
+                                    canRemoveItem && !isSubmitting && !loading
+                                }
                             />
                         ))}
                     </div>

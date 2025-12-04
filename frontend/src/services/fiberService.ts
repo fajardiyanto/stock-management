@@ -82,4 +82,11 @@ export const fiberService = {
         );
         return response;
     },
+
+    getAllUsedFiber: async (): Promise<ApiResponse<FiberResponse[]>> => {
+        const response = await apiCall<ApiResponse<FiberResponse[]>>(
+            `/fibers/used`
+        );
+        return response;
+    },
 }

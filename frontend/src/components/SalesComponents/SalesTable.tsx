@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { SaleEntry } from '../../types/sales';
 import SaleItemRow from './SaleItemRow';
 import Pagination from "../Pagination";
+import { useToast } from '../../contexts/ToastContext';
+import { paymentService } from '../../services/paymentService';
+import { PaymentResponse } from '../../types/payment';
+import RecordSalesPaymentModal from './RecordSalesPaymentModal';
 
 interface SalesTableProps {
     data: SaleEntry[];
@@ -17,6 +21,41 @@ interface SalesTableProps {
 }
 
 const SalesTable: React.FC<SalesTableProps> = ({ data, currentPage, pageSize, totalPurchases, totalPages, loading, onPageSizeChange, onPageChange, onDelete, onRefresh }) => {
+    const [sales, setSales] = useState<SaleEntry>({} as SaleEntry);
+    const [modalType, setModalType] = useState<'ADD' | 'EDIT' | null>(null);
+    const [payments, setPayments] = useState<PaymentResponse[]>([]);
+    const [error, setError] = useState<string>('');
+
+    const { showToast } = useToast();
+
+    const handleOpenPayment = async (data: SaleEntry) => {
+        setModalType('ADD');
+        setSales(data)
+
+        try {
+            const response = await paymentService.getAllPaymentBField(data.uuid, "sale");
+
+            if (response.status_code === 200) {
+                setPayments(response.data.payment);
+            } else {
+                setError(response.message || 'Failed to fetch cash flows');
+                showToast(response.message || 'Failed to fetch cash flows', 'error');
+            }
+        } catch (err) {
+            setError('Failed to fetch cash flows. Please try again.');
+            showToast('Failed to fetch cash flows. Please try again.', 'error');
+        }
+    }
+
+    const handleEditPurchase = async (data: SaleEntry) => {
+        setModalType('EDIT');
+        setSales(data)
+    }
+
+    const handleCloseModal = () => {
+        setModalType(null);
+    }
+
     return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
             <div className="overflow-x-auto">
@@ -63,13 +102,23 @@ const SalesTable: React.FC<SalesTableProps> = ({ data, currentPage, pageSize, to
                                     itemIndex={itemIndex}
                                     totalItems={sale.sold_items.length}
                                     onDelete={onDelete}
-                                    onRefresh={onRefresh}
+                                    handleOpenPayment={handleOpenPayment}
                                 />
                             ))
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {modalType === 'ADD' && (
+                <RecordSalesPaymentModal
+                    sale={sales}
+                    payments={payments}
+                    error={error}
+                    onClose={handleCloseModal}
+                    onRefresh={onRefresh}
+                />
+            )}
 
             <Pagination
                 entryName="sales"

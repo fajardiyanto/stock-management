@@ -44,9 +44,16 @@ type CreateManualPaymentRequest struct {
 	Description string `json:"description"`
 }
 
-type CreatePaymentRequest struct {
+type CreatePaymentPurchaseRequest struct {
 	PurchaseId   string    `json:"purchase_id" validate:"required"`
 	PurchaseDate time.Time `json:"purchase_date" validate:"required"`
 	StockCode    string    `json:"stock_code" validate:"required"`
 	Total        int       `json:"total" validate:"required"`
+}
+
+type CreatePaymentSaleRequest struct {
+	SalesId   string    `json:"sales_id" validate:"required"`
+	SalesDate time.Time `json:"sales_date" validate:"required"`
+	SalesCode string    `json:"sales_code" validate:"required"`
+	Total     int       `json:"total" validate:"required"`
 }

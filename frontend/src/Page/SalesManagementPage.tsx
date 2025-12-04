@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
-import SalesFilter from '../components/SalesComponents/SalesFilter';
-import SalesTable from '../components/SalesComponents/SalesTable';
-import { SaleConfirmRequest, SaleEntry, BuyerOption, SaleFilter } from '../types/sales';
-import { useNavigate } from 'react-router-dom';
-import { salesService } from '../services/salesService';
-import { useToast } from '../contexts/ToastContext';
+import React, { useState, useEffect, useCallback } from "react";
+import { Plus } from "lucide-react";
+import SalesFilter from "../components/SalesComponents/SalesFilter";
+import SalesTable from "../components/SalesComponents/SalesTable";
+import {
+    SaleConfirmRequest,
+    SaleEntry,
+    BuyerOption,
+    SaleFilter,
+} from "../types/sales";
+import { useNavigate } from "react-router-dom";
+import { salesService } from "../services/salesService";
+import { useToast } from "../contexts/ToastContext";
 import SaleModalDelete from "../components/SalesComponents/SaleModalDelete";
-import { authService } from '../services/authService';
+import { authService } from "../services/authService";
 
 const SalesManagementPage: React.FC = () => {
     const [salesData, setSalesData] = useState<SaleEntry[]>([]);
@@ -16,9 +21,10 @@ const SalesManagementPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [totalSales, setTotalSales] = useState(0);
-    const [error, setError] = useState<string>('');
-    const [modalType, setModalType] = useState<'DELETE' | null>(null);
-    const [saleConfirmData, setSaleConfirmData] = useState<SaleConfirmRequest | null>(null);
+    const [error, setError] = useState<string>("");
+    const [modalType, setModalType] = useState<"DELETE" | null>(null);
+    const [saleConfirmData, setSaleConfirmData] =
+        useState<SaleConfirmRequest | null>(null);
     const [buyerList, setBuyerList] = useState<BuyerOption[]>([]);
 
     const navigate = useNavigate();
@@ -26,7 +32,7 @@ const SalesManagementPage: React.FC = () => {
 
     const fetchSalesData = useCallback(async () => {
         setLoading(true);
-        setError('');
+        setError("");
 
         const activeFilters = Object.fromEntries(
             Object.entries(filters).filter(([_, v]) => v)
@@ -43,15 +49,15 @@ const SalesManagementPage: React.FC = () => {
                 setSalesData(response.data.data);
                 setTotalSales(response.data.total);
             } else {
-                setError(response.message || "Failed to fetch purchasing data");
+                setError(response.message || "Failed to fetch sales data");
                 showToast(
-                    response.message || "Failed to fetch purchasing data",
+                    response.message || "Failed to fetch sales data",
                     "error"
                 );
             }
         } catch (err) {
-            setError("Failed to fetch stock entries. Please try again");
-            showToast("Failed to fetch stock entries. Please try again", "error");
+            setError("Failed to fetch sales data. Please try again");
+            showToast("Failed to fetch sales data. Please try again", "error");
         } finally {
             setLoading(false);
         }
@@ -60,17 +66,20 @@ const SalesManagementPage: React.FC = () => {
     const fetchBuyerOptions = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await authService.getListUserRoles('buyer');
+            const response = await authService.getListUserRoles("buyer");
             if (response.status_code === 200) {
-                const defaultBuyer: any = { uuid: '', name: 'Semua Buyer' };
+                const defaultBuyer: any = { uuid: "", name: "Semua Buyer" };
                 setBuyerList([defaultBuyer, ...response.data]);
             } else {
-                setError(response.message || "Failed to fetch buyer data");
-                showToast(response.message || "Failed to fetch buyer data", "error");
+                setError(response.message || "Failed to fetch sales data");
+                showToast(
+                    response.message || "Failed to fetch sales data",
+                    "error"
+                );
             }
         } catch (err) {
-            setError("Failed to fetch buyer data. Please try again");
-            showToast("Failed to fetch buyer data. Please try again", "error");
+            setError("Failed to fetch sales data. Please try again");
+            showToast("Failed to fetch sales data. Please try again", "error");
         } finally {
             setLoading(false);
         }
@@ -92,15 +101,15 @@ const SalesManagementPage: React.FC = () => {
                 setSalesData(response.data.data);
                 setTotalSales(response.data.total);
             } else {
-                setError(response.message || "Failed to fetch purchasing data");
+                setError(response.message || "Failed to fetch sales data");
                 showToast(
-                    response.message || "Failed to fetch purchasing data",
+                    response.message || "Failed to fetch sales data",
                     "error"
                 );
             }
         } catch (err) {
-            setError("Failed to fetch stock entries. Please try again");
-            showToast("Failed to fetch stock entries. Please try again", "error");
+            setError("Failed to fetch sales data. Please try again");
+            showToast("Failed to fetch sales data. Please try again", "error");
         } finally {
             setLoading(false);
         }
@@ -130,35 +139,40 @@ const SalesManagementPage: React.FC = () => {
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setCurrentPage(1);
-    }
+    };
 
     const handleAddSale = () => {
-        navigate('/dashboard/sales/create');
+        navigate("/dashboard/sales/create");
     };
 
     const onHandleDeleteSale = async (sale_id: string, sale_code: string) => {
         setSaleConfirmData({
             sale_id: sale_id,
-            sale_code: sale_code
+            sale_code: sale_code,
         });
-        setModalType('DELETE');
-    }
+        setModalType("DELETE");
+    };
 
     const handleConfirmDeleted = async () => {
         try {
-            const response = await salesService.deleteSale(saleConfirmData?.sale_id || '');
+            const response = await salesService.deleteSale(
+                saleConfirmData?.sale_id || ""
+            );
 
             if (response.status_code === 200) {
-                showToast('Sale deleted successfully!', 'success');
+                showToast("Sale deleted successfully!", "success");
                 handleCloseModal();
                 fetchSalesData();
             } else {
-                showToast(`Failed to delete sale: ${response.message}`, 'error');
+                showToast(
+                    `Failed to delete sale: ${response.message}`,
+                    "error"
+                );
             }
         } catch (err) {
-            showToast('Failed to delete sale. Please try again.', 'error');
+            showToast("Failed to delete sale. Please try again.", "error");
         }
-    }
+    };
 
     const handleCloseModal = () => {
         setModalType(null);
@@ -171,7 +185,6 @@ const SalesManagementPage: React.FC = () => {
             </div>
         );
     }
-
 
     if (error && salesData.length === 0) {
         return (
@@ -192,8 +205,12 @@ const SalesManagementPage: React.FC = () => {
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
             <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Penjualan</h1>
-                    <p className="text-gray-500 mt-1">Kelola data penjualan ikan ke pembeli</p>
+                    <h1 className="text-3xl font-extrabold text-gray-800">
+                        Manajemen Penjualan
+                    </h1>
+                    <p className="text-gray-500 mt-1">
+                        Kelola data penjualan ikan ke pembeli
+                    </p>
                 </div>
                 <div className="flex gap-3">
                     <button className="flex items-center gap-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition shadow-sm">
@@ -228,8 +245,12 @@ const SalesManagementPage: React.FC = () => {
                 onRefresh={refreshSalesData}
             />
 
-            {modalType === 'DELETE' && (
-                <SaleModalDelete item={saleConfirmData} onConfirm={handleConfirmDeleted} onClose={handleCloseModal} />
+            {modalType === "DELETE" && (
+                <SaleModalDelete
+                    item={saleConfirmData}
+                    onConfirm={handleConfirmDeleted}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );

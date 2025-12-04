@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, X } from 'lucide-react';
+import React from "react";
+import { Search, X } from "lucide-react";
 
 interface UserFilterProps {
     searchName: string;
@@ -16,20 +16,25 @@ const UserFilter: React.FC<UserFilterProps> = ({
     searchPhone,
     setSearchPhone,
     onSearch,
-    onClear
+    onClear,
 }) => {
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             onSearch();
         }
     };
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-700 border-b pb-3">Search & Filter</h2>
+            <h2 className="text-xl font-bold text-gray-700 border-b pb-3">
+                Search & Filter
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={20}
+                    />
                     <input
                         type="text"
                         placeholder="Search by name..."
@@ -41,7 +46,10 @@ const UserFilter: React.FC<UserFilterProps> = ({
                 </div>
 
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={20}
+                    />
                     <input
                         type="text"
                         placeholder="Search by phone..."

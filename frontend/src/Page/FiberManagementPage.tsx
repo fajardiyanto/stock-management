@@ -1,33 +1,46 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import FiberFilter from '../components/FiberComponents/FiberFilter';
-import FiberTable from '../components/FiberComponents/FiberTable';
-import { FiberRequest, FiberResponse, FiberPaginationResponse } from '../types/fiber';
-import { Plus } from 'lucide-react';
-import FiberAddModal from '../components/FiberComponents/FiberFormModal';
-import { useToast } from '../contexts/ToastContext';
-import { fiberService } from '../services/fiberService';
-import FiberModalDelete from '../components/FiberComponents/FiberModalDelete';
-
+import React, { useState, useEffect, useCallback } from "react";
+import FiberFilter from "../components/FiberComponents/FiberFilter";
+import FiberTable from "../components/FiberComponents/FiberTable";
+import {
+    FiberRequest,
+    FiberResponse,
+    FiberPaginationResponse,
+} from "../types/fiber";
+import { Plus } from "lucide-react";
+import FiberAddModal from "../components/FiberComponents/FiberFormModal";
+import { useToast } from "../contexts/ToastContext";
+import { fiberService } from "../services/fiberService";
+import FiberModalDelete from "../components/FiberComponents/FiberModalDelete";
 
 const FiberManagementPage: React.FC = () => {
-    const [data, setData] = useState<FiberPaginationResponse>({} as FiberPaginationResponse);
+    const [data, setData] = useState<FiberPaginationResponse>(
+        {} as FiberPaginationResponse
+    );
     const [loading, setLoading] = useState(false);
-    const [searchName, setSearchName] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [modalType, setModalType] = useState<'ADD' | 'EDIT' | 'DETAIL' | 'DELETE' | null>(null);
+    const [searchName, setSearchName] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
+    const [modalType, setModalType] = useState<
+        "ADD" | "EDIT" | "DETAIL" | "DELETE" | null
+    >(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [error, setError] = useState<string>('');
-    const [selectedFiber, setSelectedFiber] = useState<FiberResponse>({} as FiberResponse);
+    const [error, setError] = useState<string>("");
+    const [selectedFiber, setSelectedFiber] = useState<FiberResponse>(
+        {} as FiberResponse
+    );
 
     const initialAddFiberFormData: FiberRequest = {
-        name: '',
-        status: 'FREE'
+        name: "",
+        status: "FREE",
     };
-    const [formData, setFormData] = useState<FiberRequest>(initialAddFiberFormData);
+    const [formData, setFormData] = useState<FiberRequest>(
+        initialAddFiberFormData
+    );
 
-    const initialFormEditFiberData: FiberRequest = { name: '', status: 'FREE' };
-    const [editFormData, setEditFormData] = useState<FiberRequest>(initialFormEditFiberData);
+    const initialFormEditFiberData: FiberRequest = { name: "", status: "FREE" };
+    const [editFormData, setEditFormData] = useState<FiberRequest>(
+        initialFormEditFiberData
+    );
 
     const totalPages = Math.ceil(data.total / pageSize);
 
@@ -35,14 +48,14 @@ const FiberManagementPage: React.FC = () => {
 
     const fetchFibers = useCallback(async () => {
         setLoading(true);
-        setError('');
+        setError("");
 
         try {
             const response = await fiberService.getAllFiber({
                 page_no: currentPage,
                 size: pageSize,
                 name: searchName || undefined,
-                status: statusFilter || undefined
+                status: statusFilter || undefined,
             });
 
             if (response.status_code === 200) {
@@ -55,8 +68,8 @@ const FiberManagementPage: React.FC = () => {
                 );
             }
         } catch (err) {
-            setError('Failed to fetch fibers. Please try again.');
-            showToast('Failed to fetch fibers. Please try again.', 'error');
+            setError("Failed to fetch fibers. Please try again.");
+            showToast("Failed to fetch fibers. Please try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -82,7 +95,7 @@ const FiberManagementPage: React.FC = () => {
 
     const handleOpenAddModal = () => {
         setFormData(initialAddFiberFormData);
-        setModalType('ADD');
+        setModalType("ADD");
     };
 
     const handleOpenEdit = (fiber: FiberResponse) => {
@@ -91,35 +104,41 @@ const FiberManagementPage: React.FC = () => {
             name: fiber.name,
             status: fiber.status,
         });
-        setModalType('EDIT');
+        setModalType("EDIT");
     };
 
     const handleEditFiber = async () => {
         if (!editFormData.name) {
-            showToast('Please fill all required fields', 'warning');
+            showToast("Please fill all required fields", "warning");
             return;
         }
 
         try {
-            const response = await fiberService.updateFiber(selectedFiber.uuid, editFormData);
+            const response = await fiberService.updateFiber(
+                selectedFiber.uuid,
+                editFormData
+            );
             if (response.status_code === 200) {
-                showToast('Fiber updated successfully!', 'success');
+                showToast("Fiber updated successfully!", "success");
                 handleCloseModal();
                 setCurrentPage(1);
                 fetchFibers();
             } else {
-                showToast(response.message || 'Failed to updated fiber', 'error');
-                setError(response.message || 'Failed to updated fiber');
+                showToast(
+                    response.message || "Failed to updated fiber",
+                    "error"
+                );
+                setError(response.message || "Failed to updated fiber");
             }
         } catch (err) {
-            showToast('Failed to updated fiber. Please try again.', 'error');
+            showToast("Failed to updated fiber. Please try again.", "error");
         }
-    }
+    };
 
     const handleOpenDelete = (fiber: FiberResponse) => {
         setSelectedFiber(fiber);
-        setModalType('DELETE');
-    }
+        setModalType("DELETE");
+    };
 
     const handleDelete = async () => {
         try {
@@ -128,12 +147,15 @@ const FiberManagementPage: React.FC = () => {
             if (response.status_code === 200) {
                 fetchFibers();
             } else {
-                setError(response.message || 'Failed to delete fiber');
-                showToast(response.message || 'Failed to delete fiber', 'error');
+                setError(response.message || "Failed to delete fiber");
+                showToast(
+                    response.message || "Failed to delete fiber",
+                    "error"
+                );
             }
         } catch (err) {
-            setError('Failed to delete fiber. Please try again.');
-            showToast('Failed to delete fiber. Please try again.', 'error');
+            setError("Failed to delete fiber. Please try again.");
+            showToast("Failed to delete fiber. Please try again.", "error");
         } finally {
             fetchFibers();
             setModalType(null);
@@ -147,34 +169,43 @@ const FiberManagementPage: React.FC = () => {
             if (response.status_code === 200) {
                 fetchFibers();
             } else {
-                setError(response.message || 'Failed to mark fiber available');
-                showToast(response.message || 'Failed to mark fiber available', 'error');
+                setError(response.message || "Failed to mark fiber available");
+                showToast(
+                    response.message || "Failed to mark fiber available",
+                    "error"
+                );
             }
         } catch (err) {
-            setError('Failed to mark fiber available. Please try again.');
-            showToast('Failed to mark fiber available. Please try again.', 'error');
+            setError("Failed to mark fiber available. Please try again.");
+            showToast(
+                "Failed to mark fiber available. Please try again.",
+                "error"
+            );
         }
     };
 
     const handleCreateFiber = async () => {
         if (!formData.name) {
-            showToast('Please fill all required fields', 'warning');
+            showToast("Please fill all required fields", "warning");
             return;
         }
 
         try {
             const response = await fiberService.createFiber(formData);
             if (response.status_code === 200) {
-                showToast('Fiber created successfully!', 'success');
+                showToast("Fiber created successfully!", "success");
                 handleCloseModal();
                 setCurrentPage(1);
                 fetchFibers();
             } else {
-                showToast(response.message || 'Failed to create fiber', 'error');
-                setError(response.message || 'Failed to create fiber');
+                showToast(
+                    response.message || "Failed to create fiber",
+                    "error"
+                );
+                setError(response.message || "Failed to create fiber");
             }
         } catch (err) {
-            showToast('Failed to create fiber. Please try again.', 'error');
+            showToast("Failed to create fiber. Please try again.", "error");
         }
     };
 
@@ -190,7 +221,6 @@ const FiberManagementPage: React.FC = () => {
             </div>
         );
     }
-
 
     if (error && data.data?.length === 0) {
         return (
@@ -212,8 +242,12 @@ const FiberManagementPage: React.FC = () => {
             <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
                 <header className="flex justify-between items-center mb-4 bg-white p-6 rounded-xl shadow-md">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-gray-800">Manajemen Fiber</h1>
-                        <p className="text-gray-500 mt-1">Kelola wadah fiber untuk penjualan ikan</p>
+                        <h1 className="text-3xl font-extrabold text-gray-800">
+                            Manajemen Fiber
+                        </h1>
+                        <p className="text-gray-500 mt-1">
+                            Kelola wadah fiber untuk penjualan ikan
+                        </p>
                     </div>
 
                     <button
@@ -245,7 +279,7 @@ const FiberManagementPage: React.FC = () => {
                 />
             </div>
 
-            {modalType === 'ADD' && (
+            {modalType === "ADD" && (
                 <FiberAddModal
                     type="ADD"
                     title="Add New Fiber"
@@ -257,7 +291,7 @@ const FiberManagementPage: React.FC = () => {
                 />
             )}
 
-            {modalType === 'EDIT' && (
+            {modalType === "EDIT" && (
                 <FiberAddModal
                     type="EDIT"
                     title="Edit New Fiber"
@@ -269,7 +303,7 @@ const FiberManagementPage: React.FC = () => {
                 />
             )}
 
-            {modalType === 'DELETE' && (
+            {modalType === "DELETE" && (
                 <FiberModalDelete
                     name={selectedFiber.name}
                     onConfirm={handleDelete}

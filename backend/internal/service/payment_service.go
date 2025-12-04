@@ -227,7 +227,7 @@ func (p *PaymentService) GetAllPaymentByFieldId(id string, field string) (*model
 	return &results, nil
 }
 
-func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentRequest) error {
+func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentPurchaseRequest) error {
 	db := config.GetDBConn().Orm().Debug()
 
 	tx := db.Begin()
@@ -270,6 +270,61 @@ func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentR
 		Type:        "EXPENSE",
 		Deleted:     false,
 		CreatedAt:   request.PurchaseDate,
+	}
+
+	if err := tx.Create(&payment).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSaleRequest) error {
+	db := config.GetDBConn().Orm().Debug()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var sale models.Sale
+	if err := tx.Model(&models.Sale{}).Where("uuid = ? AND deleted = false", request.SalesId).First(&sale).Error; err != nil {
+		return err
+	}
+
+	paidAmount := sale.PaidAmount + request.Total
+	remainingAmount := sale.TotalAmount - paidAmount
+
+	paymentStatus := constatnts.PartialPayment
+	if sale.TotalAmount == paidAmount {
+		paymentStatus = constatnts.PaymentInFull
+	}
+
+	saleRequest := map[string]interface{}{
+		"purchase_date":    request.SalesDate,
+		"remaining_amount": remainingAmount,
+		"payment_status":   paymentStatus,
+		"paid_amount":      paidAmount,
+		"updated_at":       time.Now(),
+	}
+
+	if err := tx.Model(&sale).Where("uuid = ? AND deleted = false", sale.Uuid).Updates(saleRequest).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	payment := models.Payment{
+		Uuid:        uuid.New().String(),
+		SalesId:     sale.Uuid,
+		UserId:      sale.CustomerId,
+		Description: fmt.Sprintf("Pembayaran Buying %s", request.SalesCode),
+		Total:       request.Total,
+		Type:        "EXPENSE",
+		Deleted:     false,
+		CreatedAt:   request.SalesDate,
 	}
 
 	if err := tx.Create(&payment).Error; err != nil {

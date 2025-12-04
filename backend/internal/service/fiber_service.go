@@ -147,3 +147,25 @@ func (f *FiberService) UpdateFiber(fiberId string, request models.FiberRequest) 
 		Where("uuid = ? AND deleted = false", fiberId).
 		Updates(updates).Error
 }
+
+func (f *FiberService) GetAllUsedFibers() ([]models.FiberResponse, error) {
+	db := config.GetDBConn().Orm().Model(&models.Fiber{})
+
+	var fibers []models.Fiber
+	if err := db.Where("status = ? AND deleted = false", "FREE").Order("created_at DESC").Find(&fibers).Error; err != nil {
+		return nil, err
+	}
+
+	var responseData []models.FiberResponse
+	for _, fiber := range fibers {
+		responseData = append(responseData, models.FiberResponse{
+			Uuid:      fiber.Uuid,
+			Name:      fiber.Name,
+			Status:    fiber.Status,
+			Deleted:   fiber.Deleted,
+			CreatedAt: fiber.CreatedAt,
+		})
+	}
+
+	return responseData, nil
+}
