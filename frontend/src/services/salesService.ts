@@ -1,5 +1,5 @@
 import { ApiResponse } from "../types/index";
-import { SubmitSaleRequest, SalePaginationResponse, SaleFilter } from "../types/sales";
+import { SubmitSaleRequest, SalePaginationResponse, SaleFilter, SaleEntry } from "../types/sales";
 import { apiCall } from "./";
 
 export const salesService = {
@@ -50,5 +50,26 @@ export const salesService = {
             }
         );
         return response;
-    }
+    },
+
+    updateSales: async (id: string, data: SubmitSaleRequest): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(
+            `/sale/${id}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    },
+
+    getSaleById: async (saleId: string): Promise<ApiResponse<SaleEntry[]>> => {
+        const response = await apiCall<ApiResponse<SaleEntry[]>>(
+            `/sale/${saleId}`,
+        );
+        return response;
+    },
 }

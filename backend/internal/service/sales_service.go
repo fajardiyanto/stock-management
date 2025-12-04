@@ -82,7 +82,7 @@ func (s *SalesService) CreateSales(request models.SaleRequest) error {
 			return err
 		}
 
-		currentWeight := stockSort.Weight - v.Weight
+		currentWeight := stockSort.CurrentWeight - v.Weight
 		if err := tx.Model(&models.StockSort{}).Where("uuid = ?", v.StockSortId).Update("current_weight", currentWeight).Error; err != nil {
 			tx.Rollback()
 			return err
@@ -333,7 +333,7 @@ func (s *SalesService) DeleteSale(saleId string) error {
 		return err
 	}
 
-	currentWeight := stockSort.Weight + itemSale.Weight
+	currentWeight := stockSort.CurrentWeight + itemSale.Weight
 	if err := tx.Model(&models.StockSort{}).Where("uuid = ?", itemSale.StockSortId).Update("current_weight", currentWeight).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -389,4 +389,274 @@ func (s *SalesService) DeleteSale(saleId string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *SalesService) GetSaleById(saleId string) (*models.SaleResponse, error) {
+	db := config.GetDBConn().Orm().Debug()
+
+	var sale models.Sale
+	if err := db.Model(&models.Sale{}).Where("uuid = ? AND deleted = false", saleId).
+		First(&sale).Error; err != nil {
+		return nil, err
+	}
+
+	var customer models.User
+	if err := db.Where("uuid = ? AND status = true", sale.CustomerId).First(&customer).Error; err != nil {
+		return nil, err
+	}
+
+	userDetail := models.GetUserDetail{
+		Uuid:  customer.Uuid,
+		Name:  customer.Name,
+		Phone: customer.Phone,
+	}
+
+	var payment models.Payment
+	lastPayment := ""
+	if err := db.Where("sales_id = ? AND deleted = false", sale.Uuid).
+		Order("created_at DESC").
+		First(&payment).Error; err == nil {
+		lastPayment = payment.CreatedAt.Format(time.RFC3339)
+	}
+
+	fiberUsedList := make([]models.FiberUsedList, 0)
+	if !sale.ExportSale && sale.FiberList != "" {
+		fibers := strings.Split(sale.FiberList, ",")
+
+		for _, fiberID := range fibers {
+			fiberID = strings.TrimSpace(fiberID)
+			if fiberID == "" {
+				continue
+			}
+
+			var fiber models.Fiber
+			if err := db.Model(&models.Fiber{}).Where("uuid = ? AND deleted = false", fiberID).First(&fiber).Error; err != nil {
+				return nil, err
+			}
+
+			fiberUsedList = append(fiberUsedList, models.FiberUsedList{
+				FiberId:   fiber.Uuid,
+				FiberName: fiber.Name,
+			})
+		}
+	}
+
+	var itemSales []models.ItemSales
+	if err := db.Model(&models.ItemSales{}).Where("sale_id = ? AND deleted = false", sale.Uuid).Find(&itemSales).Error; err != nil {
+		return nil, err
+	}
+
+	itemSalesList := make([]models.ItemSaleList, 0)
+	for _, item := range itemSales {
+		var stockSort models.StockSort
+		if err := db.Model(&models.StockSort{}).Where("uuid = ?", item.StockSortId).First(&stockSort).Error; err != nil {
+			return nil, err
+		}
+
+		itemSale := models.ItemSaleList{
+			Uuid:             item.Uuid,
+			StockCode:        item.StockCode,
+			StockSortId:      stockSort.Uuid,
+			StockSortName:    stockSort.ItemName,
+			PricePerKilogram: item.PricePerKilogram,
+			Weight:           item.Weight,
+			TotalAmount:      item.TotalAmount,
+		}
+
+		itemSalesList = append(itemSalesList, itemSale)
+	}
+
+	itemAddOns := make([]models.ItemAddOnn, 0)
+	if err := db.Model(&models.ItemAddOnn{}).Where("sale_id = ? AND deleted = false", sale.Uuid).Find(&itemAddOns).Error; err != nil {
+		return nil, err
+	}
+
+	itemAddOnList := make([]models.ItemAddOnnList, 0)
+	for _, a := range itemAddOns {
+		itemAddOn := models.ItemAddOnnList{
+			Uuid:        a.Uuid,
+			AddOnnName:  a.AddOnnName,
+			AddOnnPrice: a.AddOnnPrice,
+		}
+
+		itemAddOnList = append(itemAddOnList, itemAddOn)
+	}
+
+	saleResponse := models.SaleResponse{
+		ID:              sale.ID,
+		Uuid:            sale.Uuid,
+		SaleCode:        fmt.Sprintf("SELL%d", sale.ID),
+		Customer:        userDetail,
+		CreateAt:        sale.CreatedAt,
+		PaymentLateDay:  int(time.Since(sale.CreatedAt).Hours() / 24),
+		ExportSale:      sale.ExportSale,
+		TotalAmount:     sale.TotalAmount,
+		PaidAmount:      sale.PaidAmount,
+		RemainingAmount: sale.TotalAmount - sale.PaidAmount,
+		PaymentStatus:   sale.PaymentStatus,
+		SalesDate:       sale.PurchaseDate,
+		LastPaymentDate: lastPayment,
+		FiberUsed:       fiberUsedList,
+		SoldItem:        itemSalesList,
+		AddOn:           itemAddOnList,
+	}
+
+	return &saleResponse, nil
+}
+
+func (s *SalesService) UpdateSales(id string, request models.SaleRequest) error {
+	db := config.GetDBConn().Orm().Debug()
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var sale models.Sale
+	if err := tx.Where("uuid = ? AND deleted = false", id).First(&sale).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if sale.FiberList != "" {
+		oldFibers := strings.Split(sale.FiberList, ",")
+		for _, f := range oldFibers {
+			if err := tx.Model(&models.Fiber{}).
+				Where("uuid = ?", f).
+				Update("status", "FREE").Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	if !request.ExportSale {
+		newIDs := make([]string, 0)
+		for _, v := range request.FiberList {
+			if err := tx.Model(&models.Fiber{}).
+				Where("uuid = ? AND deleted = false", v.FiberId).
+				Update("status", "USED").Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+			newIDs = append(newIDs, v.FiberId)
+		}
+		sale.FiberList = strings.Join(newIDs, ",")
+	} else {
+		sale.FiberList = ""
+	}
+
+	var oldItems []models.ItemSales
+	if err := tx.Where("sale_id = ? AND deleted = false", id).Find(&oldItems).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	for _, old := range oldItems {
+		var stockSort models.StockSort
+		if err := tx.Where("uuid = ?", old.StockSortId).First(&stockSort).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		restoreWeight := stockSort.CurrentWeight + old.Weight
+		if err := tx.Model(&models.StockSort{}).
+			Where("uuid = ?", old.StockSortId).
+			Update("current_weight", restoreWeight).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Model(&models.ItemSales{}).
+		Where("sale_id = ?", id).
+		Update("deleted", true).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var newItemSales []models.ItemSales
+	for _, v := range request.ItemSales {
+		itemSale := models.ItemSales{
+			Uuid:             uuid.New().String(),
+			SaleId:           id,
+			Weight:           v.Weight,
+			PricePerKilogram: v.PricePerKilogram,
+			StockSortId:      v.StockSortId,
+			StockCode:        v.StockCode,
+			TotalAmount:      v.TotalAmount,
+			Deleted:          false,
+		}
+
+		var stockSort models.StockSort
+		if err := tx.Where("uuid = ?", v.StockSortId).First(&stockSort).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		newWeight := stockSort.CurrentWeight - v.Weight
+		if err := tx.Model(&models.StockSort{}).
+			Where("uuid = ?", v.StockSortId).
+			Update("current_weight", newWeight).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		newItemSales = append(newItemSales, itemSale)
+	}
+
+	if len(newItemSales) > 0 {
+		if err := tx.Create(&newItemSales).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Model(&models.ItemAddOnn{}).Where("sale_id = ?", id).Update("deleted", true).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var newAddOns []models.ItemAddOnn
+	for _, v := range request.ItemAddOnn {
+		newAddOns = append(newAddOns, models.ItemAddOnn{
+			Uuid:        uuid.New().String(),
+			SaleId:      id,
+			AddOnnName:  v.Name,
+			AddOnnPrice: v.Price,
+			Deleted:     false,
+		})
+	}
+
+	if len(newAddOns) > 0 {
+		if err := tx.Create(&newAddOns).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	sale.TotalAmount = request.TotalAmount
+	sale.RemainingAmount = request.TotalAmount - sale.PaidAmount
+	sale.PurchaseDate = request.SalesDate
+	sale.ExportSale = request.ExportSale
+	sale.CustomerId = request.CustomerId
+
+	if err := tx.Save(&sale).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	updatePayments := map[string]interface{}{
+		"user_id":    request.CustomerId,
+		"total":      request.TotalAmount,
+		"updated_at": time.Now(),
+	}
+
+	if err := tx.Model(&models.Payment{}).
+		Where("sales_id = ?", id).
+		Updates(updatePayments).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }

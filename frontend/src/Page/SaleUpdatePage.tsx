@@ -11,6 +11,7 @@ import {
     FiberAllocation,
     SelectedAddOn,
     BuyerOption,
+    SaleEntry, // Use SaleEntry for fetched data
 } from "../types/sales";
 import { FiberList } from "../types/fiber";
 import { getDefaultDate } from "../utils/DefaultDate";
@@ -20,9 +21,63 @@ import { stockService } from "../services/stockService";
 import { fiberService } from "../services/fiberService";
 import { salesService } from "../services/salesService";
 import { StockSortResponse } from "../types/stock";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const SaleCreationPage: React.FC = () => {
+const mapApiToFormState = (
+    saleEntry: SaleEntry
+): {
+    formData: SubmitSaleRequest;
+    selectedItems: SelectedSaleItem[];
+    selectedAddOns: SelectedAddOn[];
+} => {
+    const selectedItems: SelectedSaleItem[] = saleEntry.sold_items.map(
+        (item, index) => ({
+            tempId: `temp-${index}-${Math.random()}`,
+            id: 0,
+            stock_sort_id: item.stock_sort_id,
+            stock_code: item.stock_code,
+            item_name: item.stock_sort_name,
+            weight: item.weight,
+            price_per_kilogram: item.price_per_kilogram,
+            total_amount: item.total_amount,
+        })
+    );
+
+    const selectedAddOns: SelectedAddOn[] = saleEntry.add_ons.map(
+        (addon, index) => ({
+            tempId: `addon-${index}-${Math.random()}`,
+            name: addon.addon_name,
+            price: addon.addon_price,
+            total_price: addon.addon_price,
+        })
+    );
+
+    const fiberAllocations: FiberAllocation[] = saleEntry.fiber_used.map(
+        (fiber) => ({
+            item_id: fiber.uuid,
+            fiber_id: fiber.uuid,
+            fiber_name: fiber.name,
+        })
+    );
+
+    const formData: SubmitSaleRequest = {
+        customer_id: saleEntry.customer.uuid,
+        sales_date: saleEntry.sales_date.slice(0, 16),
+        export_sale: saleEntry.export_sale,
+        total_amount: saleEntry.total_amount,
+
+        sale_items: [],
+        add_ons: [],
+        fiber_allocations: fiberAllocations,
+    };
+
+    return { formData, selectedItems, selectedAddOns };
+};
+
+const SaleUpdatePage: React.FC = () => {
+    const { saleId } = useParams<{ saleId: string }>();
+    const [originalSale, setOriginalSale] = useState<SaleEntry | null>(null);
+
     const [formData, setFormData] = useState<SubmitSaleRequest>({
         customer_id: "",
         sales_date: getDefaultDate(),
@@ -35,7 +90,7 @@ const SaleCreationPage: React.FC = () => {
 
     const [selectedItems, setSelectedItems] = useState<SelectedSaleItem[]>([]);
     const [selectedAddOns, setSelectedAddOns] = useState<SelectedAddOn[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [buyerList, setBuyerList] = useState<BuyerOption[]>([]);
@@ -55,6 +110,114 @@ const SaleCreationPage: React.FC = () => {
     );
     const totalFiberPrice = 0;
     const grandTotal = totalItemPrice + totalAddonPrice + totalFiberPrice;
+
+    const fetchResources = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const buyersPromise = authService.getListUserRoles("buyer");
+
+            const stockSortsPromise = stockService.getAllStockSorts();
+
+            const fibersPromise = fiberService.getAllUsedFiber();
+
+            const [buyersResponse, stockSortsResponse, fibersResponse] =
+                await Promise.all([
+                    buyersPromise,
+                    stockSortsPromise,
+                    fibersPromise,
+                ]);
+
+            if (buyersResponse.status_code === 200 && buyersResponse.data) {
+                const defaultBuyer: BuyerOption = {
+                    uuid: "",
+                    name: "Pilih pembeli...",
+                };
+                setBuyerList([defaultBuyer, ...buyersResponse.data]);
+            } else {
+                showToast(
+                    buyersResponse.message || "Gagal memuat daftar pembeli.",
+                    "error"
+                );
+            }
+
+            if (
+                stockSortsResponse.status_code === 200 &&
+                stockSortsResponse.data
+            ) {
+                setStockSorts(stockSortsResponse.data);
+            } else {
+                showToast(
+                    stockSortsResponse.message || "Gagal memuat item stok.",
+                    "error"
+                );
+            }
+
+            if (fibersResponse.status_code === 200 && fibersResponse.data) {
+                setFibers(fibersResponse.data);
+            }
+        } catch (err) {
+            setError("Gagal memuat sumber daya awal. Coba lagi.");
+            showToast("Gagal memuat sumber daya awal. Coba lagi.", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    const fetchSaleData = useCallback(async () => {
+        if (!saleId) return;
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await salesService.getSaleById(saleId);
+
+            if (response.status_code === 200 && response.data) {
+                const saleEntry = Array.isArray(response.data)
+                    ? response.data[0]
+                    : response.data;
+
+                if (!saleEntry) {
+                    setError("Sale entry data is empty.");
+                    return;
+                }
+
+                setOriginalSale(saleEntry);
+
+                const {
+                    formData: newFormData,
+                    selectedItems: newSelectedItems,
+                    selectedAddOns: newSelectedAddOns,
+                } = mapApiToFormState(saleEntry);
+
+                setFormData(newFormData);
+                setSelectedItems(newSelectedItems);
+                setSelectedAddOns(newSelectedAddOns);
+            } else {
+                setError(response.message || "Failed to fetch sale data");
+                showToast(
+                    response.message || "Failed to fetch sale data",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Gagal memuat data penjualan. Please try again.");
+            showToast(
+                "Gagal memuat data penjualan. Please try again.",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [saleId, showToast]);
+
+    useEffect(() => {
+        fetchResources();
+        if (saleId) {
+            fetchSaleData();
+        }
+    }, [fetchResources, fetchSaleData, saleId]);
 
     const handleFormChange = (
         field: keyof SubmitSaleRequest,
@@ -118,6 +281,11 @@ const SaleCreationPage: React.FC = () => {
         e.preventDefault();
         setError("");
 
+        if (!saleId) {
+            console.error("Sale ID is missing for update.");
+            return;
+        }
+
         if (!formData.customer_id) {
             setError("Harap pilih Pembeli.");
             showToast("Harap pilih Pembeli.", "warning");
@@ -152,13 +320,18 @@ const SaleCreationPage: React.FC = () => {
         };
 
         try {
-            const response = await salesService.createSales(submissionPayload);
-            if (response.status_code === 201 || response.status_code === 200) {
-                showToast("Sales berhasil disimpan!", "success");
+            const response = await salesService.updateSales(
+                saleId,
+                submissionPayload
+            );
+
+            if (response.status_code === 200) {
+                showToast("Penjualan berhasil diperbarui!", "success");
                 navigate("/dashboard/sales");
             } else {
                 const errorMessage =
-                    response.message || "Gagal menyimpan penjualan. Coba lagi.";
+                    response.message ||
+                    "Gagal memperbarui penjualan. Coba lagi.";
                 setError(errorMessage);
                 showToast(errorMessage, "error");
             }
@@ -166,7 +339,7 @@ const SaleCreationPage: React.FC = () => {
             const errorMessage =
                 err instanceof Error
                     ? err.message
-                    : "Gagal menyimpan hasil penjualan. Coba lagi.";
+                    : "Gagal memperbarui penjualan. Coba lagi.";
             setError(errorMessage);
             showToast(errorMessage, "error");
         } finally {
@@ -174,86 +347,13 @@ const SaleCreationPage: React.FC = () => {
         }
     };
 
-    const fetchBuyerOptions = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await authService.getListUserRoles("buyer");
-            if (response.status_code === 200) {
-                const defaultBuyer: any = { uuid: "", name: "Semua Buyer" };
-                setBuyerList([defaultBuyer, ...response.data]);
-            } else {
-                setError(response.message || "Failed to fetch buyer data");
-                showToast(
-                    response.message || "Failed to fetch buyer data",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch buyer data. Please try again");
-            showToast("Failed to fetch buyer data. Please try again", "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    const fetchStockSorts = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await stockService.getAllStockSorts();
-            if (response.status_code === 200) {
-                setStockSorts(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch stock sorts data"
-                );
-                showToast(
-                    response.message || "Failed to fetch stock sorts data",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch stock sorts data. Please try again");
-            showToast(
-                "Failed to fetch stock sorts data. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    const fetchFiberList = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await fiberService.getAllUsedFiber();
-            if (response.status_code === 200) {
-                if (response.data) {
-                    const fiberOptions = response.data.map((fiber) => ({
-                        uuid: fiber.uuid,
-                        name: fiber.name,
-                    }));
-                    setFibers(fiberOptions);
-                }
-            } else {
-                setError(response.message || "Failed to fetch fiber data");
-                showToast(
-                    response.message || "Failed to fetch fiber data",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch fiber data. Please try again");
-            showToast("Failed to fetch fiber data. Please try again", "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    useEffect(() => {
-        fetchBuyerOptions();
-        fetchStockSorts();
-        fetchFiberList();
-    }, [fetchBuyerOptions, fetchStockSorts, fetchFiberList]);
+    if (loading && !originalSale) {
+        return (
+            <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
+                <div className="text-gray-500">Memuat data penjualan...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10 font-sans">
@@ -266,10 +366,10 @@ const SaleCreationPage: React.FC = () => {
                     Kembali
                 </button>
                 <h1 className="text-3xl font-extrabold text-gray-900">
-                    Form Penjualan
+                    Edit Penjualan: {originalSale?.sale_code || "Loading..."}
                 </h1>
                 <p className="text-gray-500 mt-1">
-                    Isi form untuk membuat penjualan baru
+                    Perbarui informasi penjualan ikan ke pembeli
                 </p>
             </header>
 
@@ -332,7 +432,7 @@ const SaleCreationPage: React.FC = () => {
                             >
                                 {isSubmitting
                                     ? "Memproses..."
-                                    : "Simpan Penjualan"}
+                                    : "Perbarui Penjualan"}
                             </button>
                         </div>
                     </div>
@@ -342,4 +442,4 @@ const SaleCreationPage: React.FC = () => {
     );
 };
 
-export default SaleCreationPage;
+export default SaleUpdatePage;

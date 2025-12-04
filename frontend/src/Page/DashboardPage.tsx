@@ -14,6 +14,7 @@ import UpdateStockPage from "./UpdateStockPage";
 import StockSortManagementPage from "./StockSortManagementPage";
 import FiberManagementPage from "./FiberManagementPage";
 import SaleCreationPage from "./SaleCreationPage";
+import SaleUpdatePage from "./SaleUpdatePage";
 
 interface DashboardProps {
     onLogout: () => void;
@@ -91,6 +92,10 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route
                                 path="sales/create"
                                 element={<SaleCreationPage />}
+                            />
+                            <Route
+                                path="sales/update/:saleId"
+                                element={<SaleUpdatePage />}
                             />
                         </Routes>
                     </div>

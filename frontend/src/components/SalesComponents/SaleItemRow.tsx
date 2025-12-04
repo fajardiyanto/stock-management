@@ -12,6 +12,7 @@ interface SaleItemRowProps {
     totalItems: number;
     onDelete: (sale_id: string, sale_code: string) => void;
     handleOpenPayment: (data: SaleEntry) => void;
+    handleEditSale: (data: SaleEntry) => void;
 }
 
 const SaleItemRow: React.FC<SaleItemRowProps> = ({
@@ -21,6 +22,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
     totalItems,
     onDelete,
     handleOpenPayment,
+    handleEditSale,
 }) => {
     const isFirstRow = itemIndex === 0;
 
@@ -177,6 +179,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                         >
                             <div className="flex justify-end gap-2">
                                 <button
+                                    onClick={() => handleEditSale(sale)}
                                     title="Edit Penjualan"
                                     className="p-2 text-blue-500 hover:text-blue-800"
                                 >

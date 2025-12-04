@@ -77,6 +77,8 @@ func Run() error {
 		api.POST("/sales", salesHandler.CreateSalesHandler)
 		api.GET("/sales", salesHandler.GetAllSalesHandler)
 		api.DELETE("/sale/:saleId", salesHandler.DeleteSaleHandler)
+		api.GET("/sale/:saleId", salesHandler.GetSaleByIdHandler)
+		api.PUT("/sale/:saleId", salesHandler.UpdateSalesHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

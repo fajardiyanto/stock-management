@@ -118,3 +118,66 @@ func (s *Sales) DeleteSaleHandler(c *gin.Context) {
 		Message:    "successfully delete sales",
 	})
 }
+
+func (s *Sales) GetSaleByIdHandler(c *gin.Context) {
+	saleId := c.Param("saleId")
+
+	data, err := s.salesRepository.GetSaleById(saleId)
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("successfully get sale for id %s", saleId),
+		Data:       data,
+	})
+}
+
+func (s *Sales) UpdateSalesHandler(c *gin.Context) {
+	saleId := c.Param("saleId")
+	var req models.SaleRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	if err := s.validator.Struct(req); err != nil {
+		var errs []string
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
+		}
+		errMsg := strings.Join(errs, ", ")
+
+		config.GetLogger().Error(errMsg)
+		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
+			StatusCode: http.StatusBadRequest,
+			Message:    errMsg,
+		})
+		return
+	}
+
+	if err := s.salesRepository.UpdateSales(saleId, req); err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "successfully update sales",
+	})
+}
