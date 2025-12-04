@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { X, Calendar } from "lucide-react";
 import { Purchasing } from "../../types/purchase";
 import { PaymentResponse, CreatePaymentReqeust } from "../../types/payment";
 import PaymentHistoryTable from "../PaymentComponents/PaymentHistoryTable";
-import { formatRupiah } from "../../utils/FormatRupiah";
+import { formatRupiah, formatRupiahInput } from "../../utils/FormatRupiah";
 import { cleanNumber } from "../../utils/CleanNumber";
 import { useToast } from "../../contexts/ToastContext";
 import { getDefaultDate } from "../../utils/DefaultDate";
 import { paymentService } from "../../services/paymentService";
+import { SummaryBox, ProgressBox } from "../../utils/Box";
 
 interface RecordPaymentModalProps {
     purchase: Purchasing;
@@ -16,40 +17,6 @@ interface RecordPaymentModalProps {
     onClose: () => void;
     onRefresh: () => void;
 }
-
-const SummaryBox: React.FC<{
-    label: string;
-    value: string;
-    isRed?: boolean;
-}> = ({ label, value, isRed }) => (
-    <div className="flex flex-col">
-        <span className="text-sm text-gray-600">{label}</span>
-        <span
-            className={`text-xl font-bold mt-1 ${
-                isRed ? "text-red-600" : "text-gray-800"
-            }`}
-        >
-            {value}
-        </span>
-    </div>
-);
-
-const ProgressBox: React.FC<{
-    label: string;
-    value: string;
-    isBlue?: boolean;
-}> = ({ label, value, isBlue }) => (
-    <div className="flex flex-col">
-        <span className="text-sm text-blue-700 font-medium">{label}</span>
-        <span
-            className={`text-xl font-bold mt-1 ${
-                isBlue ? "text-blue-700" : "text-blue-600"
-            }`}
-        >
-            {value}
-        </span>
-    </div>
-);
 
 const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
     purchase,
@@ -64,12 +31,22 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         stock_code: "",
         total: 0,
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [paymentAmountDisplay, setPaymentAmountDisplay] =
+        useState<string>("");
 
     const { showToast } = useToast();
 
     const rawPaymentAmount = useMemo(() => formData.total, [formData.total]);
     const remainingBefore = purchase.remaining_amount;
+
+    useEffect(() => {
+        setFormData((prev) => ({
+            ...prev,
+            purchase_id: purchase.purchase_id,
+            stock_code: purchase.stock_code,
+        }));
+    }, [purchase]);
 
     const calculation = useMemo(() => {
         const afterRemaining = Math.max(0, remainingBefore - rawPaymentAmount);
@@ -78,7 +55,6 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             purchase.total_amount > 0
                 ? (paidAfter / purchase.total_amount) * 100
                 : 0;
-
         return {
             afterRemaining,
             paidAfter,
@@ -93,22 +69,25 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
-        setFormData({ ...formData, total: cleanNumber(rawValue) });
+        const cleanedValue = cleanNumber(rawValue);
+
+        setPaymentAmountDisplay(rawValue);
+        setFormData({ ...formData, total: cleanedValue });
     };
 
     const handleAmountBlur = () => {
-        setFormData((prev) => ({
-            ...prev,
-            total: formData.total,
-        }));
-    };
-
-    const handleDateChange = (date: string) => {
-        setFormData({ ...formData, purchase_date: date });
+        if (formData.total > 0) {
+            setPaymentAmountDisplay(formatRupiahInput(formData.total));
+        }
     };
 
     const handlePaymentAmountInput = (paymentAmount: number) => {
         setFormData({ ...formData, total: paymentAmount });
+        setPaymentAmountDisplay(formatRupiahInput(paymentAmount));
+    };
+
+    const handleDateChange = (date: string) => {
+        setFormData({ ...formData, purchase_date: date });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -228,7 +207,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                                     </span>
                                     <input
                                         type="text"
-                                        value={formData.total}
+                                        value={paymentAmountDisplay}
                                         onChange={handleAmountChange}
                                         onBlur={handleAmountBlur}
                                         placeholder={formatRupiah(
