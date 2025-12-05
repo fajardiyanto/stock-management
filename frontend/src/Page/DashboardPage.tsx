@@ -16,17 +16,19 @@ import FiberManagementPage from "./FiberManagementPage";
 import SaleCreationPage from "./SaleCreationPage";
 import SaleUpdatePage from "./SaleUpdatePage";
 import MultiplePrintInvoicePage from "./MultiplePrintInvoicePage";
+import AnalyticsPage from "./AnalyticsPage";
 
 interface DashboardProps {
     onLogout: () => void;
 }
 
 const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
-    const navigate = useNavigate();
-
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
     const [activeMenu, setActiveMenu] = useState<MenuId>("dashboard");
     const [userData, setUserData] = useState<User | null>(null);
+
+    const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const user = authService.getUser();
@@ -38,9 +40,7 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
         onLogout();
     };
 
-    const location = useLocation();
     const isPrintPage = location.pathname === "/dashboard/print-invoice";
-
     if (isPrintPage) {
         return (
             <main className="p-6">
@@ -61,10 +61,8 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                 }}
                 onLogout={handleLogout}
             />
-
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Navbar activeMenu={activeMenu} userData={userData} />
-
                 <main className="flex-1 overflow-y-auto p-6">
                     {/* max-w-9xl  */}
                     <div className="mx-auto">
@@ -112,6 +110,10 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             <Route
                                 path="print-invoice"
                                 element={<MultiplePrintInvoicePage />}
+                            />
+                            <Route
+                                path="analytics"
+                                element={<AnalyticsPage userData={userData} />}
                             />
                         </Routes>
                     </div>

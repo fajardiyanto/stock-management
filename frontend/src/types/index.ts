@@ -1,4 +1,4 @@
-export type MenuId = "dashboard" | "sales" | "purchase" | "stock" | "users" | "fiber";
+export type MenuId = "dashboard" | "sales" | "purchase" | "stock" | "users" | "fiber" | "analytics";
 
 export interface ApiError {
     message: string;

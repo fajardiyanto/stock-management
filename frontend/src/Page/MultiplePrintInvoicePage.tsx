@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SaleEntry } from "../types/sales";
 import { salesService } from "../services/salesService";
 import { formatDate } from "../utils/FormatDate";
@@ -18,7 +18,6 @@ const PrintInvoicePage: React.FC = () => {
         setLoading(true);
 
         try {
-            console.log(saleId);
             const response = await salesService.getAllSales({
                 page: 1,
                 size: 100,
@@ -170,143 +169,206 @@ const PrintInvoicePage: React.FC = () => {
                 </button>
             </div>
 
-            {invoicesData.map((invoiceData, invoiceIndex) => (
-                <div
-                    key={invoiceData.sale_code}
-                    className={`print-container font-sans ${
-                        invoiceIndex < invoicesData.length - 1
-                            ? "page-break"
-                            : ""
-                    }`}
-                >
-                    <div className="mb-8 pb-6 border-b-2 border-gray-800">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                    INVOICE
-                                </h1>
+            {invoicesData.map((invoiceData, invoiceIndex) => {
+                const subtotal =
+                    invoiceData.sold_items?.reduce(
+                        (sum, item) => sum + item.total_amount,
+                        0
+                    ) || 0;
+
+                const addOnTotal =
+                    invoiceData.add_ons?.reduce(
+                        (sum, a) => sum + a.addon_price,
+                        0
+                    ) || 0;
+
+                const taxAmount = (subtotal + addOnTotal) * 0.05;
+
+                const grandTotal = subtotal + addOnTotal + taxAmount;
+
+                return (
+                    <div
+                        key={invoiceData.sale_code}
+                        className={`print-container font-sans ${
+                            invoiceIndex < invoicesData.length - 1
+                                ? "page-break"
+                                : ""
+                        }`}
+                    >
+                        <div className="mb-8 pb-6 border-b-2 border-gray-800">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                        INVOICE
+                                    </h1>
+                                    <p className="text-gray-600">
+                                        No: {invoiceData.sale_code}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        Tanggal:{" "}
+                                        {formatDate(invoiceData.sales_date)}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <h2 className="text-2xl font-bold text-blue-600 mb-2">
+                                        PERUSAHAAN ANDA
+                                    </h2>
+                                    <p className="text-sm text-gray-600">
+                                        Jl. Alamat Perusahaan No. 456
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Jakarta Pusat, 10110
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Telp: (021) 1234-5678
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Email: info@perusahaan.com
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mb-8">
+                            <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
+                                Kepada:
+                            </h3>
+                            <div className="bg-gray-50 p-4 rounded">
+                                <p className="font-bold text-gray-900 text-lg">
+                                    {invoiceData.customer.name}
+                                </p>
                                 <p className="text-gray-600">
-                                    No: {invoiceData.sale_code}
-                                </p>
-                                <p className="text-gray-600">
-                                    Tanggal:{" "}
-                                    {formatDate(invoiceData.sales_date)}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <h2 className="text-2xl font-bold text-blue-600 mb-2">
-                                    PERUSAHAAN ANDA
-                                </h2>
-                                <p className="text-sm text-gray-600">
-                                    Jl. Alamat Perusahaan No. 456
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    Jakarta Pusat, 10110
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    Telp: (021) 1234-5678
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    Email: info@perusahaan.com
+                                    {invoiceData.customer.shipping_address}
                                 </p>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="mb-8">
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
-                            Kepada:
-                        </h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                            <p className="font-bold text-gray-900 text-lg">
-                                {invoiceData.customer.name}
-                            </p>
-                            <p className="text-gray-600">
-                                {invoiceData.customer.shipping_address}
-                            </p>
-                        </div>
-                    </div>
-
-                    <table className="w-full mb-8">
-                        <thead>
-                            <tr className="bg-gray-800 text-white">
-                                <th className="text-left py-3 px-4 font-semibold">
-                                    Deskripsi
-                                </th>
-                                <th className="text-center py-3 px-4 font-semibold">
-                                    Qty
-                                </th>
-                                <th className="text-right py-3 px-4 font-semibold">
-                                    Harga Satuan
-                                </th>
-                                <th className="text-right py-3 px-4 font-semibold">
-                                    Total
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {invoiceData.sold_items.map((item, index) => (
-                                <tr
-                                    key={index}
-                                    className="border-b border-gray-200"
-                                >
-                                    <td className="py-3 px-4 text-gray-900">
-                                        {item.stock_sort_name}
-                                    </td>
-                                    <td className="py-3 px-4 text-center text-gray-700">
-                                        {item.weight} kg
-                                    </td>
-                                    <td className="py-3 px-4 text-right text-gray-700">
-                                        {formatRupiah(item.price_per_kilogram)}
-                                    </td>
-                                    <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                                        {formatRupiah(item.total_amount)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    <div className="flex justify-end mb-8">
-                        <div className="w-80">
-                            <div className="flex justify-between py-2 border-b border-gray-200">
-                                <span className="text-gray-600">Subtotal:</span>
-                                <span className="font-semibold text-gray-900">
-                                    {formatRupiah(invoiceData.total_amount)}
-                                </span>
-                            </div>
-                            {/* <div className="flex justify-between py-2 border-b border-gray-200">
-                                <span className="text-gray-600">
-                                    PPN (10%):
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    {formatRupiah(invoiceData.tax)}
-                                </span>
-                            </div> */}
-                            <div className="flex justify-between py-3 bg-gray-800 text-white px-4 rounded mt-2">
-                                <span className="font-bold text-lg">
-                                    TOTAL:
-                                </span>
-                                <span className="font-bold text-xl">
-                                    {formatRupiah(invoiceData.total_amount)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* {invoiceData.notes && ( */}
-                    <div className="mb-8 p-4 bg-blue-50 rounded border border-blue-200">
-                        <h4 className="font-semibold text-gray-800 mb-2">
-                            Catatan:
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                            Rincian Barang:
                         </h4>
-                        <p className="text-sm text-gray-600">
-                            Terima kasih atas kepercayaan Anda. Pembayaran
-                            dilakukan dalam 30 hari.
-                        </p>
-                    </div>
-                    {/* )} */}
+                        <table className="w-full mb-8">
+                            <thead>
+                                <tr className="bg-gray-800 text-white">
+                                    <th className="text-left py-3 px-4 font-semibold">
+                                        Deskripsi
+                                    </th>
+                                    <th className="text-center py-3 px-4 font-semibold">
+                                        Qty
+                                    </th>
+                                    <th className="text-right py-3 px-4 font-semibold">
+                                        Harga Satuan
+                                    </th>
+                                    <th className="text-right py-3 px-4 font-semibold">
+                                        Total
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {invoiceData.sold_items.map((item, index) => (
+                                    <tr
+                                        key={index}
+                                        className="border-b border-gray-200"
+                                    >
+                                        <td className="py-3 px-4 text-gray-900">
+                                            {item.stock_sort_name}
+                                        </td>
+                                        <td className="py-3 px-4 text-center text-gray-700">
+                                            {item.weight} kg
+                                        </td>
+                                        <td className="py-3 px-4 text-right text-gray-700">
+                                            {formatRupiah(
+                                                item.price_per_kilogram
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-semibold text-gray-900">
+                                            {formatRupiah(item.total_amount)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
 
-                    {/* <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                            Rincian Tambahan:
+                        </h4>
+                        <table className="w-full mb-8">
+                            <thead>
+                                <tr className="bg-gray-800 text-white">
+                                    <th className="text-left py-3 px-4 font-semibold">
+                                        Deskripsi
+                                    </th>
+                                    <th className="text-right py-3 px-4 font-semibold">
+                                        Total
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {invoiceData.add_ons.map((item, index) => (
+                                    <tr
+                                        key={index}
+                                        className="border-b border-gray-200"
+                                    >
+                                        <td className="py-3 px-4 text-gray-900">
+                                            {item.addon_name}
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-semibold text-gray-900">
+                                            {formatRupiah(item.addon_price)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div className="flex justify-end mb-8">
+                            <div className="w-80">
+                                <div className="flex justify-between py-2 border-b border-gray-200">
+                                    <span className="text-gray-600">
+                                        Subtotal:
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                        {formatRupiah(subtotal)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between py-2 border-b border-gray-200">
+                                    <span className="text-gray-600">
+                                        Tambahan:
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                        {formatRupiah(addOnTotal)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between py-2 border-b border-gray-200">
+                                    <span className="text-gray-600">
+                                        PPN (5%):
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                        {formatRupiah(taxAmount)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between py-3 bg-gray-800 text-white px-4 rounded mt-2">
+                                    <span className="font-bold text-lg">
+                                        TOTAL:
+                                    </span>
+                                    <span className="font-bold text-xl">
+                                        {formatRupiah(grandTotal)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* {invoiceData.notes && ( */}
+                        <div className="mb-8 p-4 bg-blue-50 rounded border border-blue-200">
+                            <h4 className="font-semibold text-gray-800 mb-2">
+                                Catatan:
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                                Terima kasih atas kepercayaan Anda. Pembayaran
+                                dilakukan dalam 30 hari.
+                            </p>
+                        </div>
+                        {/* )} */}
+
+                        {/* <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
                         <div className="text-center w-1/3">
                             <p className="text-sm text-gray-600 mb-16">
                                 Hormat Kami,
@@ -329,18 +391,19 @@ const PrintInvoicePage: React.FC = () => {
                         </div>
                     </div> */}
 
-                    <div className="mt-8 pt-4 border-t border-gray-200 text-center">
-                        <p className="text-xs text-gray-500">
-                            Invoice ini dibuat secara otomatis dan sah tanpa
-                            tanda tangan
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                            Halaman {invoiceIndex + 1} dari{" "}
-                            {invoicesData.length}
-                        </p>
+                        <div className="mt-8 pt-4 border-t border-gray-200 text-center">
+                            <p className="text-xs text-gray-500">
+                                Invoice ini dibuat secara otomatis dan sah tanpa
+                                tanda tangan
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Halaman {invoiceIndex + 1} dari{" "}
+                                {invoicesData.length}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </>
     );
 };

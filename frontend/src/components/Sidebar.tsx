@@ -8,6 +8,7 @@ import {
     ShoppingBag,
     Warehouse,
     BoxIcon,
+    HomeIcon,
 } from "lucide-react";
 import { MenuId, MenuItem } from "../types";
 
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onLogout,
 }) => {
     const menuItems: MenuItem[] = [
+        { id: "analytics", label: "Dashboard", icon: HomeIcon },
         { id: "fiber", label: "Management Fiber", icon: BoxIcon },
         { id: "sales", label: "Management Penjualan", icon: ShoppingBag },
         { id: "purchase", label: "Management Pembelian", icon: ShoppingBasket },
