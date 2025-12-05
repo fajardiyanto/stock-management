@@ -3,22 +3,15 @@ export interface DashboardStats {
     total_fiber: number;
     total_purchase: number;
     total_sales: number;
-    daily_purchase_weight: number;
-    daily_purchase_value: number;
-    daily_sold_weight: number;
-    daily_revenue: number;
+    total_purchase_weight: number;
+    total_sales_weight: number;
 }
 
-export interface DashboardSalesItem {
-    id: number;
-    customer_id: string;
-    stock_code: string;
-    supplier: string;
-    sort_result: string;
-    weight: number;
-    price_per_kg: number;
-    total: number;
-    fiber: number;
+export interface DailyDashboardStats {
+    daily_purchase_weight: number;
+    daily_purchase_value: number;
+    daily_sales_weight: number;
+    daily_sales_value: number;
 }
 
 export interface SalesTrendData {

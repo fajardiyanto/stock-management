@@ -24,6 +24,7 @@ func Run() error {
 	stockService := service.NewStockService()
 	fiberService := service.NewFiberService()
 	salesService := service.NewSalesService()
+	analyticService := service.NewAnalyticService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
@@ -31,6 +32,7 @@ func Run() error {
 	paymentHandler := handler.NewPaymentHandler(paymentService, validate)
 	fiberHandler := handler.NewFiberHandler(fiberService, validate)
 	salesHandler := handler.NewSalesHandler(salesService, validate)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticService)
 
 	api := app.Group("/v1/api")
 	api.POST("/login", userHandler.LoginHandler)
@@ -79,6 +81,9 @@ func Run() error {
 		api.DELETE("/sale/:saleId", salesHandler.DeleteSaleHandler)
 		api.GET("/sale/:saleId", salesHandler.GetSaleByIdHandler)
 		api.PUT("/sale/:saleId", salesHandler.UpdateSalesHandler)
+
+		api.GET("/analytics/stats", analyticsHandler.GetAnalyticStatsHandler)
+		api.GET("/analytics/daily/:date/stats", analyticsHandler.GetDailyAnalyticStatsHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

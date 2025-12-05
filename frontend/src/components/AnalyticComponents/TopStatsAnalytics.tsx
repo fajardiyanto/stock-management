@@ -1,7 +1,7 @@
 import React from "react";
 import { Package, Layers, ShoppingCart, TrendingUp } from "lucide-react";
 import { formatNumber } from "../../utils/CleanNumber";
-import { DashboardStats } from "../../types/dashboard";
+import { DashboardStats } from "../../types/analytic";
 
 interface TopStatsAnalyticsProps {
     stats: DashboardStats;
@@ -81,13 +81,13 @@ const TopStatsAnalytics: React.FC<TopStatsAnalyticsProps> = ({
                 <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-base font-semibold text-gray-800">
-                            Total Pembelian Harian
+                            Total Berat Pembelian
                         </h3>
                         <ShoppingCart className="text-orange-500" size={20} />
                     </div>
                     <div className="space-y-2">
                         <p className="text-3xl font-bold text-gray-900">
-                            {stats.daily_purchase_weight} kg
+                            {stats.total_purchase_weight} kg
                         </p>
                         <p className="text-sm text-gray-500">
                             Total berat pembelian untuk{" "}
@@ -106,16 +106,16 @@ const TopStatsAnalytics: React.FC<TopStatsAnalyticsProps> = ({
                 <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-base font-semibold text-gray-800">
-                            Total Nilai Pembelian
+                            Total Berat Penjualan
                         </h3>
                         <TrendingUp className="text-orange-500" size={20} />
                     </div>
                     <div className="space-y-2">
                         <p className="text-3xl font-bold text-gray-900">
-                            Rp {formatNumber(stats.daily_purchase_value)}
+                            {stats.total_sales_weight} kg
                         </p>
                         <p className="text-sm text-gray-500">
-                            Total nilai pembelian untuk{" "}
+                            Total nilai penjualan untuk{" "}
                             {new Date(selectedDate).toLocaleDateString(
                                 "id-ID",
                                 {

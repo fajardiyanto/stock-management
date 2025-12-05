@@ -3,7 +3,7 @@ import {
     SalesTrendData,
     StockDistributionData,
     UserData,
-} from "../../types/dashboard";
+} from "../../types/analytic";
 import {
     LineChart,
     Line,

@@ -199,7 +199,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 <button
                                     onClick={handlePrintNota}
                                     title="Cetak Nota"
-                                    className="p-2 text-gray-500 hover:text-gray-800"
+                                    className="p-2 text-purple-500 hover:text-purple-800"
                                 >
                                     <Printer size={18} />
                                 </button>

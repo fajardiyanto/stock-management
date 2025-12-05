@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { User } from "../types/user";
 import {
     DashboardStats,
-    DashboardSalesItem,
     SalesTrendData,
     StockDistributionData,
     UserData,
-} from "../types/dashboard";
+    DailyDashboardStats,
+} from "../types/analytic";
 import TopStatsAnalytics from "../components/AnalyticComponents/TopStatsAnalytics";
 import SummarySaleDayTable from "../components/AnalyticComponents/SummarySaleDayTable";
 import ChartAnalytics from "../components/AnalyticComponents/ChartAnalytics";
+import { analyticService } from "../services/analyticService";
+import { useToast } from "../contexts/ToastContext";
+import { getDefaultDateOnly } from "../utils/DefaultDate";
 
 interface AnalyticsPageProps {
     userData: User | null;
 }
 
 const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
-    const [selectedDate, setSelectedDate] = useState<string>(
-        new Date().toISOString().split("T")[0]
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string>("");
+    const [stats, setStats] = useState<DashboardStats>({} as DashboardStats);
+    const [dailyStats, setDailyStats] = useState<DailyDashboardStats>(
+        {} as DailyDashboardStats
     );
-    const [stats, setStats] = useState<DashboardStats>({
-        total_stock: 920.5,
-        total_fiber: 6,
-        total_purchase: 94553500,
-        total_sales: 13997920,
-        daily_purchase_weight: 0,
-        daily_purchase_value: 0,
-        daily_sold_weight: 0,
-        daily_revenue: 0,
-    });
-    const [salesData, setSalesData] = useState<DashboardSalesItem[]>([]);
+    const [selectedDate, setSelectedDate] = useState<string>(
+        getDefaultDateOnly()
+    );
+
+    const { showToast } = useToast();
 
     const salesTrendData: SalesTrendData[] = [
         { month: "Jan", sales_revenue: 12000000, purchase_revenue: 8000000 },
@@ -61,15 +61,91 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
         { name: "Customer D", total: 11553500 },
     ];
 
+    const fetchDashboardStats = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getDashboardStats();
+
+            if (response.status_code === 200) {
+                setStats(response.data);
+            } else {
+                setError(response.message || "Failed to fetch dashboard stats");
+                showToast(
+                    response.message || "Failed to fetch dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    const fetchDailyDashboardStats = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getDailyDashboardStats(
+                selectedDate
+            );
+
+            if (response.status_code === 200) {
+                setDailyStats(response.data);
+            } else {
+                setError(
+                    response.message || "Failed to fetch daily dashboard stats"
+                );
+                showToast(
+                    response.message || "Failed to fetch daily dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch daily dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch daily dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDate, showToast]);
+
     useEffect(() => {
-        // Fetch dashboard data
-        // const fetchData = async () => {
-        //   const response = await dashboardService.getStats();
-        //   setStats(response.data);
-        // };
-        // fetchData();
-        console.log("Selected Date:", selectedDate);
-    }, [selectedDate]);
+        fetchDailyDashboardStats();
+        fetchDashboardStats();
+    }, [fetchDashboardStats, fetchDailyDashboardStats]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
+                <div className="text-gray-500">Loading purchases...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
+                <p className="font-bold mb-2">Error Loading Data</p>
+                <p>{error}</p>
+                <button
+                    onClick={fetchDashboardStats}
+                    className="mt-4 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200 transition"
+                >
+                    Retry Loading
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -84,9 +160,8 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
             <TopStatsAnalytics stats={stats} selectedDate={selectedDate} />
 
             <SummarySaleDayTable
-                stats={stats}
+                stats={dailyStats}
                 selectedDate={selectedDate}
-                salesData={salesData}
                 setSelectedDate={setSelectedDate}
             />
 
