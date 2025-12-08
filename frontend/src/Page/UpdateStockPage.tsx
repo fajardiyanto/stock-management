@@ -8,6 +8,7 @@ import { User } from "../types/user";
 import { authService } from "../services/authService";
 import { useNavigate, useParams } from "react-router-dom";
 import { stockService } from "../services/stockService";
+import { MaxDate } from "../utils/MaxDate";
 
 const getDefaultDate = (): string => {
     const now = new Date();
@@ -280,6 +281,7 @@ const UpdateStockPage: React.FC = () => {
                                 <input
                                     type="datetime-local"
                                     value={formData.purchase_date}
+                                    max={MaxDate()}
                                     onChange={(e) =>
                                         handleDateChange(e.target.value)
                                     }

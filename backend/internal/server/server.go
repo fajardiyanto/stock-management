@@ -84,6 +84,10 @@ func Run() error {
 
 		api.GET("/analytics/stats", analyticsHandler.GetAnalyticStatsHandler)
 		api.GET("/analytics/daily/:date/stats", analyticsHandler.GetDailyAnalyticStatsHandler)
+		api.GET("/analytics/sales/trend/:year", analyticsHandler.GetSalesTrendDataHandler)
+		api.GET("/analytics/stock/distribution", analyticsHandler.GetStockDistributionDataHandler)
+		api.GET("/analytics/supplier/performance", analyticsHandler.GetSupplierPerformanceHandler)
+		api.GET("/analytics/customer/performance", analyticsHandler.GetCustomerPerformanceHandler)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

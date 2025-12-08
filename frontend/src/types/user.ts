@@ -6,7 +6,8 @@ export interface User {
     role: string;
     status: boolean;
     address: string;
-    shipping_address: string;
+    shipping_address?: string;
+    tax_payer_identification_number?: string;
     balance: number;
     created_at: string;
     updated_at: string;
@@ -46,8 +47,10 @@ export interface UpdateUserRequest {
     phone: string;
     role: string;
     address: string;
-    shipping_address: string;
+    shipping_address?: string;
     password?: string;
+    tax_payer_identification_number?: string;
+    tax_payer_identification_number_raw?: string;
 }
 
 export interface CreateUserRequest {
@@ -55,6 +58,8 @@ export interface CreateUserRequest {
     phone: string;
     role: string;
     address: string;
-    shipping_address: string;
+    shipping_address?: string;
     password: string;
+    tax_payer_identification_number?: string;
+    tax_payer_identification_number_raw?: string;
 }

@@ -54,3 +54,77 @@ func (s *Analytic) GetDailyAnalyticStatsHandler(c *gin.Context) {
 		Data:       data,
 	})
 }
+
+func (s *Analytic) GetSalesTrendDataHandler(c *gin.Context) {
+	year := c.Param("year")
+
+	data, err := s.analyticRepository.GetSalesTrendData(year)
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get sales trend data analytics",
+		Data:       data,
+	})
+}
+
+func (s *Analytic) GetStockDistributionDataHandler(c *gin.Context) {
+	data, err := s.analyticRepository.GetStockDistributionData()
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get stock distribution data analytics",
+		Data:       data,
+	})
+}
+
+func (s *Analytic) GetSupplierPerformanceHandler(c *gin.Context) {
+	data, err := s.analyticRepository.GetSupplierPerformance()
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get supplier performance data analytics",
+		Data:       data,
+	})
+}
+
+func (s *Analytic) GetCustomerPerformanceHandler(c *gin.Context) {
+	data, err := s.analyticRepository.GetCustomerPerformance()
+	if err != nil {
+		config.GetLogger().Error(err)
+		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
+		StatusCode: http.StatusOK,
+		Message:    "get supplier performance data analytics",
+		Data:       data,
+	})
+}

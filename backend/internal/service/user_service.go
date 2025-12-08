@@ -29,16 +29,17 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 	}
 
 	user := models.User{
-		Uuid:            uuid.New().String(),
-		Name:            req.Name,
-		Phone:           req.Phone,
-		Password:        pass,
-		Role:            req.Role,
-		Status:          true,
-		Address:         req.Address,
-		ShippingAddress: req.ShippingAddress,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		Uuid:                         uuid.New().String(),
+		Name:                         req.Name,
+		Phone:                        req.Phone,
+		Password:                     pass,
+		Role:                         req.Role,
+		Status:                       true,
+		Address:                      req.Address,
+		ShippingAddress:              req.ShippingAddress,
+		TaxPayerIdentificationNumber: req.TaxPayerIdentificationNumber,
+		CreatedAt:                    time.Now(),
+		UpdatedAt:                    time.Now(),
 	}
 
 	if err = config.GetDBConn().Orm().Debug().Model(&models.User{}).Create(&user).Error; err != nil {
@@ -156,6 +157,7 @@ func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*mod
 	if err := query.
 		Limit(size).
 		Offset(offset).
+		Order("created_at asc").
 		Find(&users).Error; err != nil {
 		return nil, err
 	}
@@ -168,17 +170,18 @@ func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*mod
 		}
 
 		usersResponse = append(usersResponse, models.UserResponse{
-			ID:              user.ID,
-			Uuid:            user.Uuid,
-			Name:            user.Name,
-			Phone:           user.Phone,
-			Role:            user.Role,
-			Status:          user.Status,
-			Address:         user.Address,
-			ShippingAddress: user.ShippingAddress,
-			Balance:         balance,
-			CreatedAt:       user.CreatedAt,
-			UpdatedAt:       user.UpdatedAt,
+			ID:                           user.ID,
+			Uuid:                         user.Uuid,
+			Name:                         user.Name,
+			Phone:                        user.Phone,
+			Role:                         user.Role,
+			Status:                       user.Status,
+			Address:                      user.Address,
+			ShippingAddress:              user.ShippingAddress,
+			TaxPayerIdentificationNumber: user.TaxPayerIdentificationNumber,
+			Balance:                      balance,
+			CreatedAt:                    user.CreatedAt,
+			UpdatedAt:                    user.UpdatedAt,
 		})
 	}
 
@@ -194,12 +197,13 @@ func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*mod
 
 func (s *UserService) UpdateUser(uuid string, data models.UpdateUserRequest) error {
 	updates := map[string]interface{}{
-		"name":             data.Name,
-		"phone":            data.Phone,
-		"role":             data.Role,
-		"address":          data.Address,
-		"shipping_address": data.ShippingAddress,
-		"updated_at":       time.Now(),
+		"name":                            data.Name,
+		"phone":                           data.Phone,
+		"role":                            data.Role,
+		"address":                         data.Address,
+		"shipping_address":                data.ShippingAddress,
+		"tax_payer_identification_number": data.TaxPayerIdentificationNumber,
+		"updated_at":                      time.Now(),
 	}
 
 	return config.GetDBConn().Orm().Debug().

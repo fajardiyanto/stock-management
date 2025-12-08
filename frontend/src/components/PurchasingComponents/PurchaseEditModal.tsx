@@ -3,6 +3,7 @@ import { X, Calendar } from "lucide-react";
 import { Purchasing, UpdatePurchaseRequest } from "../../types/purchase";
 import { useToast } from "../../contexts/ToastContext";
 import { purchaseService } from "../../services/purchaseService";
+import { MaxDate } from "../../utils/MaxDate";
 
 interface PurchaseEditModalProps {
     purchase: Purchasing;
@@ -114,6 +115,7 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
                                 <input
                                     type="datetime-local"
                                     value={formData.purchase_date}
+                                    max={MaxDate()}
                                     onChange={(e) =>
                                         handleDateChange(e.target.value)
                                     }

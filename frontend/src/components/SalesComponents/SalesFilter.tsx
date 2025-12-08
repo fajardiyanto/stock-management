@@ -127,6 +127,7 @@ const SalesFilter: React.FC<SalesFilterProps> = ({
                         <input
                             type="date"
                             value={salesDate}
+                            max={new Date().toISOString().split("T")[0]}
                             onChange={(e) => setSalesDate(e.target.value)}
                             placeholder="dd/mm/yyyy"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"

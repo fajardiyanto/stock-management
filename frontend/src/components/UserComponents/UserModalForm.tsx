@@ -1,6 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import { CreateUserRequest, UpdateUserRequest } from "../../types/user";
+import { formatInputNPWP } from "../../utils/FormatNPWP";
 
 type FormData = CreateUserRequest | UpdateUserRequest;
 
@@ -30,6 +31,19 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
         >
     ) => {
         const { name, value } = e.target;
+
+        if (name === "tax_payer_identification_number_raw") {
+            const digits = value.replace(/\D/g, "").slice(0, 15); // raw digits
+            const formatted = formatInputNPWP(digits); // formatted for display
+
+            setFormData({
+                ...formData,
+                tax_payer_identification_number: digits,
+                tax_payer_identification_number_raw: formatted,
+            });
+            return;
+        }
+
         setFormData((prev: FormData) => ({ ...prev, [name]: value }));
     };
 
@@ -116,6 +130,20 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
+                            NPWP
+                        </label>
+                        <input
+                            type="text"
+                            name="tax_payer_identification_number_raw"
+                            value={formData.tax_payer_identification_number_raw}
+                            onChange={handleChange}
+                            maxLength={20}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             Address *
                         </label>
                         <textarea
@@ -127,20 +155,21 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Shipping Address *
-                        </label>
-                        <textarea
-                            name="shipping_address"
-                            value={formData.shipping_address}
-                            onChange={handleChange}
-                            rows={2}
-                            placeholder="Enter shipping address"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
+                    {formData.role === "BUYER" && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Shipping Address *
+                            </label>
+                            <textarea
+                                name="shipping_address"
+                                value={formData.shipping_address}
+                                onChange={handleChange}
+                                rows={2}
+                                placeholder="Enter shipping address"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-3 mt-8 pt-4 border-t">

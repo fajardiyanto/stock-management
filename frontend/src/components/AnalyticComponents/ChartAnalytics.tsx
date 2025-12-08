@@ -34,6 +34,19 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
     supplierData,
     customerData,
 }) => {
+    const values = salesTrendData.flatMap((item) => [
+        item.sales_revenue,
+        item.purchase_revenue,
+    ]);
+
+    const nonZeroValues = values.filter((v) => v > 0);
+    const minValue = nonZeroValues.length > 0 ? Math.min(...nonZeroValues) : 0;
+    const maxValue = values.length > 0 ? Math.max(...values) : 0;
+
+    const padding = (maxValue - minValue) * 0.1;
+    const finalMin = Math.max(0, minValue);
+    const finalMax = maxValue + padding;
+
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -42,10 +55,16 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                         Tren Penjualan & Pembelian
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={salesTrendData}>
+                        <LineChart
+                            data={salesTrendData}
+                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
+                        >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
-                            <YAxis />
+                            <YAxis
+                                domain={[finalMin, finalMax]}
+                                tickFormatter={(value) => formatRupiah(value)}
+                            />
                             <Tooltip
                                 formatter={(value: number) =>
                                     formatRupiah(value)
@@ -107,10 +126,15 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                         Performa Supplier
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={supplierData}>
+                        <BarChart
+                            data={supplierData}
+                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
+                        >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
-                            <YAxis />
+                            <YAxis
+                                tickFormatter={(value) => formatRupiah(value)}
+                            />
                             <Tooltip
                                 formatter={(value: number) =>
                                     formatRupiah(value)
@@ -131,10 +155,15 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                         Performa Customer
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={customerData}>
+                        <BarChart
+                            data={customerData}
+                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
+                        >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
-                            <YAxis />
+                            <YAxis
+                                tickFormatter={(value) => formatRupiah(value)}
+                            />
                             <Tooltip
                                 formatter={(value: number) =>
                                     formatRupiah(value)

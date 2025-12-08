@@ -28,38 +28,14 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
     const [selectedDate, setSelectedDate] = useState<string>(
         getDefaultDateOnly()
     );
+    const [salesTrendData, setSalesTrendData] = useState<SalesTrendData[]>([]);
+    const [stockDistributionData, setStockDistributionData] = useState<
+        StockDistributionData[]
+    >([]);
+    const [supplierData, setSupplierData] = useState<UserData[]>([]);
+    const [customerData, setCustomerData] = useState<UserData[]>([]);
 
     const { showToast } = useToast();
-
-    const salesTrendData: SalesTrendData[] = [
-        { month: "Jan", sales_revenue: 12000000, purchase_revenue: 8000000 },
-        { month: "Feb", sales_revenue: 15000000, purchase_revenue: 10000000 },
-        { month: "Mar", sales_revenue: 18000000, purchase_revenue: 12000000 },
-        { month: "Apr", sales_revenue: 14000000, purchase_revenue: 9000000 },
-        { month: "May", sales_revenue: 22000000, purchase_revenue: 15000000 },
-        { month: "Jun", sales_revenue: 25000000, purchase_revenue: 18000000 },
-    ];
-
-    const stockDistributionData: StockDistributionData[] = [
-        { name: "Grade A", value: 350, color: "#3b82f6" },
-        { name: "Grade B", value: 280, color: "#8b5cf6" },
-        { name: "Grade C", value: 200, color: "#ec4899" },
-        { name: "Susut", value: 90.5, color: "#ef4444" },
-    ];
-
-    const supplierData: UserData[] = [
-        { name: "Supplier A", total: 35000000 },
-        { name: "Supplier B", total: 28000000 },
-        { name: "Supplier C", total: 20000000 },
-        { name: "Supplier D", total: 11553500 },
-    ];
-
-    const customerData: UserData[] = [
-        { name: "Customer A", total: 35000000 },
-        { name: "Customer B", total: 28000000 },
-        { name: "Customer C", total: 20000000 },
-        { name: "Customer D", total: 11553500 },
-    ];
 
     const fetchDashboardStats = useCallback(async () => {
         setLoading(true);
@@ -119,10 +95,137 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
         }
     }, [selectedDate, showToast]);
 
+    const fetchSalesTrendData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getSalesTrendData("2025");
+
+            if (response.status_code === 200) {
+                setSalesTrendData(response.data);
+            } else {
+                setError(
+                    response.message || "Failed to fetch daily dashboard stats"
+                );
+                showToast(
+                    response.message || "Failed to fetch daily dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch daily dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch daily dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    const fetchStockDistributionData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getStockDistributionData();
+
+            if (response.status_code === 200) {
+                setStockDistributionData(response.data);
+            } else {
+                setError(
+                    response.message || "Failed to fetch daily dashboard stats"
+                );
+                showToast(
+                    response.message || "Failed to fetch daily dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch daily dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch daily dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    const fetchSupplierPerformanceData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getSupplierPerformance();
+
+            if (response.status_code === 200) {
+                setSupplierData(response.data);
+            } else {
+                setError(
+                    response.message || "Failed to fetch daily dashboard stats"
+                );
+                showToast(
+                    response.message || "Failed to fetch daily dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch daily dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch daily dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
+    const fetchCustomerPerformanceData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await analyticService.getCustomerPerformance();
+
+            if (response.status_code === 200) {
+                setCustomerData(response.data);
+            } else {
+                setError(
+                    response.message || "Failed to fetch daily dashboard stats"
+                );
+                showToast(
+                    response.message || "Failed to fetch daily dashboard stats",
+                    "error"
+                );
+            }
+        } catch (err) {
+            setError("Failed to fetch daily dashboard stats. Please try again");
+            showToast(
+                "Failed to fetch daily dashboard stats. Please try again",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
     useEffect(() => {
         fetchDailyDashboardStats();
         fetchDashboardStats();
-    }, [fetchDashboardStats, fetchDailyDashboardStats]);
+        fetchSalesTrendData();
+        fetchStockDistributionData();
+        fetchSupplierPerformanceData();
+        fetchCustomerPerformanceData();
+    }, [
+        fetchDashboardStats,
+        fetchDailyDashboardStats,
+        fetchSalesTrendData,
+        fetchStockDistributionData,
+        fetchSupplierPerformanceData,
+        fetchCustomerPerformanceData,
+    ]);
 
     if (loading) {
         return (

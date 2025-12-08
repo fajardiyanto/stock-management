@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type AnalyticStatsResponse struct {
 	TotalStock          int64 `json:"total_stock"`
 	TotalFiber          int64 `json:"total_fiber"`
@@ -29,6 +31,21 @@ type StockDistributionData struct {
 }
 
 type UserData struct {
-	Name  string `json:"name"`
-	Total int64  `json:"total"`
+	Name  string `json:"name" gorm:"column:name"`
+	Total int64  `json:"total" gorm:"column:total"`
+}
+
+type SalesResult struct {
+	Month        time.Time `json:"month" gorm:"column:month"`
+	TotalRevenue int64     `json:"total" gorm:"column:total"`
+}
+
+type PurchaseResult struct {
+	Month        time.Time `json:"month" gorm:"column:month"`
+	TotalPayment int64     `json:"total" gorm:"column:total"`
+}
+
+type StockDistributionDataResult struct {
+	Id    int `json:"id" gorm:"column:id"`
+	Value int `json:"value" gorm:"column:value"`
 }

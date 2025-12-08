@@ -9,6 +9,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { getDefaultDate } from "../../utils/DefaultDate";
 import { paymentService } from "../../services/paymentService";
 import { SummaryBox, ProgressBox } from "../../utils/Box";
+import { MaxDate } from "../../utils/MaxDate";
 
 interface RecordPaymentModalProps {
     purchase: Purchasing;
@@ -241,6 +242,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                                     <input
                                         type="datetime-local"
                                         value={formData.purchase_date}
+                                        max={MaxDate()}
                                         onChange={(e) =>
                                             handleDateChange(e.target.value)
                                         }

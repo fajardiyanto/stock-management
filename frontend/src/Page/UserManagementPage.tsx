@@ -36,6 +36,7 @@ const UserManagementPage: React.FC = () => {
         role: "BUYER",
         address: "",
         shipping_address: "",
+        tax_payer_identification_number: "",
         password: "",
     };
     const [editFormData, setEditFormData] =
@@ -46,6 +47,7 @@ const UserManagementPage: React.FC = () => {
         role: "BUYER",
         address: "",
         shipping_address: "",
+        tax_payer_identification_number: "",
         password: "",
     };
 
@@ -97,6 +99,8 @@ const UserManagementPage: React.FC = () => {
             role: user.role,
             address: user.address,
             shipping_address: user.shipping_address,
+            tax_payer_identification_number:
+                user.tax_payer_identification_number || "",
             password: "",
         });
         setModalType("EDIT");
@@ -149,8 +153,7 @@ const UserManagementPage: React.FC = () => {
             !addFormData.phone ||
             !addFormData.password ||
             !addFormData.role ||
-            !addFormData.address ||
-            !addFormData.shipping_address
+            !addFormData.address
         ) {
             showToast("Please fill all required fields", "warning");
             return;
@@ -182,6 +185,8 @@ const UserManagementPage: React.FC = () => {
             role: editFormData.role,
             address: editFormData.address,
             shipping_address: editFormData.shipping_address,
+            tax_payer_identification_number:
+                editFormData.tax_payer_identification_number,
         };
 
         if (editFormData.password) {

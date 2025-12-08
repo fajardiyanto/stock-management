@@ -3,6 +3,7 @@ import { User } from "../../types/user";
 import { Trash2, Eye } from "lucide-react";
 import Pagination from "../Pagination";
 import { formatRupiah } from "../../utils/FormatRupiah";
+import { formatNPWP } from "../../utils/FormatNPWP";
 
 interface UserTableProps {
     users: User[];
@@ -31,9 +32,9 @@ const getRoleStyle = (role: string) => {
     }
 };
 
-const getStatusStyle = (status: boolean) => {
-    return status ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
-};
+// const getStatusStyle = (status: boolean) => {
+//     return status ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+// };
 
 const getBalanceStyle = (balance: number) => {
     if (balance > 0) return "bg-green-100 text-green-800";
@@ -66,7 +67,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                 "User",
                                 "Phone",
                                 "Role",
-                                "Status",
+                                "NPWP",
                                 "Address",
                                 "Saldo",
                                 "Created At",
@@ -112,7 +113,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                             ID: {user.id}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm ">
                                         {user.phone}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -125,14 +126,10 @@ const UserTable: React.FC<UserTableProps> = ({
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyle(
-                                                user.status
-                                            )}`}
-                                        >
-                                            {user.status
-                                                ? "Active"
-                                                : "Inactive"}
+                                        <span className="px-3 py-1 inline-flex text-sm leading-5">
+                                            {formatNPWP(
+                                                user.tax_payer_identification_number
+                                            ) || "-"}
                                         </span>
                                     </td>
                                     <td

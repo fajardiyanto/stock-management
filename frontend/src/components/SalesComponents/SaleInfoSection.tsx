@@ -1,6 +1,7 @@
 import React from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 import { SubmitSaleRequest, BuyerOption } from "../../types/sales";
+import { MaxDate } from "../../utils/MaxDate";
 
 interface SaleInfoSectionProps {
     formData: SubmitSaleRequest;
@@ -63,6 +64,7 @@ const SaleInfoSection: React.FC<SaleInfoSectionProps> = ({
                         <input
                             type="datetime-local"
                             value={formData.sales_date}
+                            max={MaxDate()}
                             onChange={(e) =>
                                 onFormChange("sales_date", e.target.value)
                             }

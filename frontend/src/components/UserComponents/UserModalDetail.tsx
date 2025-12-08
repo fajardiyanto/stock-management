@@ -12,6 +12,7 @@ import ManualEntryForm from "../PaymentComponents/ManualEntryForm";
 import { paymentService } from "../../services/paymentService";
 import { useToast } from "../../contexts/ToastContext";
 import PaymentModalDelete from "../PaymentComponents/PaymentModalDelete";
+import { formatNPWP } from "../../utils/FormatNPWP";
 
 interface UserModalDetailProps {
     user: User;
@@ -259,12 +260,16 @@ const UserModalDetail: React.FC<UserModalDetailProps> = ({
                                 label="Status"
                                 value={getStatusBadge(user.status)}
                             />
-                            <div className="sm:col-span-2">
-                                <DetailRow
-                                    label="Registered At"
-                                    value={formatDate(user.created_at)}
-                                />
-                            </div>
+                            <DetailRow
+                                label="NPWP"
+                                value={formatNPWP(
+                                    user.tax_payer_identification_number
+                                )}
+                            />
+                            <DetailRow
+                                label="Registered At"
+                                value={formatDate(user.created_at)}
+                            />
                         </div>
 
                         <div className="space-y-4">
@@ -273,12 +278,12 @@ const UserModalDetail: React.FC<UserModalDetailProps> = ({
                             </h4>
                             <div className="grid grid-cols-1 gap-4">
                                 <DetailRow
-                                    label="Primary Address"
+                                    label="Address"
                                     value={user.address}
                                 />
                                 <DetailRow
                                     label="Shipping Address"
-                                    value={user.shipping_address}
+                                    value={user.shipping_address || "-"}
                                 />
                             </div>
                         </div>

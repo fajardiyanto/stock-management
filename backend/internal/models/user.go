@@ -5,17 +5,18 @@ import (
 )
 
 type User struct {
-	ID              int       `json:"id"`
-	Uuid            string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
-	Name            string    `json:"name" gorm:"column:name"`
-	Phone           string    `json:"phone" gorm:"column:phone"`
-	Password        string    `json:"-" gorm:"column:password"`
-	Role            string    `json:"role" gorm:"column:role"`
-	Status          bool      `json:"status" gorm:"column:status"`
-	Address         string    `json:"address" gorm:"column:address"`
-	ShippingAddress string    `json:"shipping_address" gorm:"column:shipping_address"`
-	CreatedAt       time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt       time.Time `json:"updated_at" gorm:"column:updated_at"`
+	ID                           int       `json:"id"`
+	Uuid                         string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
+	Name                         string    `json:"name" gorm:"column:name"`
+	Phone                        string    `json:"phone" gorm:"column:phone"`
+	Password                     string    `json:"-" gorm:"column:password"`
+	Role                         string    `json:"role" gorm:"column:role"`
+	Status                       bool      `json:"status" gorm:"column:status"`
+	Address                      string    `json:"address" gorm:"column:address"`
+	ShippingAddress              string    `json:"shipping_address" gorm:"column:shipping_address"`
+	TaxPayerIdentificationNumber string    `json:"tax_payer_identification_number" gorm:"column:tax_payer_identification_number"`
+	CreatedAt                    time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt                    time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type LoginRequest struct {
@@ -29,35 +30,38 @@ type LoginResponse struct {
 }
 
 type UserResponse struct {
-	ID              int       `json:"id"`
-	Uuid            string    `json:"uuid"`
-	Name            string    `json:"name"`
-	Phone           string    `json:"phone"`
-	Role            string    `json:"role"`
-	Status          bool      `json:"status"`
-	Address         string    `json:"address"`
-	ShippingAddress string    `json:"shipping_address"`
-	Balance         int       `json:"balance"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID                           int       `json:"id"`
+	Uuid                         string    `json:"uuid"`
+	Name                         string    `json:"name"`
+	Phone                        string    `json:"phone"`
+	Role                         string    `json:"role"`
+	Status                       bool      `json:"status"`
+	Address                      string    `json:"address"`
+	ShippingAddress              string    `json:"shipping_address"`
+	TaxPayerIdentificationNumber string    `json:"tax_payer_identification_number"`
+	Balance                      int       `json:"balance"`
+	CreatedAt                    time.Time `json:"created_at"`
+	UpdatedAt                    time.Time `json:"updated_at"`
 }
 
 type UserRequest struct {
-	Name            string `json:"name" validate:"required,min=3"`
-	Phone           string `json:"phone" validate:"required"`
-	Password        string `json:"password" validate:"required,min=6"`
-	Role            string `json:"role" validate:"required,oneof=SUPER_ADMIN ADMIN BUYER SUPPLIER"`
-	Address         string `json:"address" validate:"required"`
-	ShippingAddress string `json:"shipping_address" validate:"omitempty"`
+	Name                         string `json:"name" validate:"required,min=3"`
+	Phone                        string `json:"phone" validate:"required"`
+	Password                     string `json:"password" validate:"required,min=6"`
+	Role                         string `json:"role" validate:"required,oneof=SUPER_ADMIN ADMIN BUYER SUPPLIER"`
+	Address                      string `json:"address" validate:"required"`
+	ShippingAddress              string `json:"shipping_address" validate:"omitempty"`
+	TaxPayerIdentificationNumber string `json:"tax_payer_identification_number"`
 }
 
 type UpdateUserRequest struct {
-	Name            string `json:"name" validate:"required,min=3"`
-	Phone           string `json:"phone" validate:"required"`
-	Password        string `json:"password" validate:"omitempty"`
-	Role            string `json:"role" validate:"required,oneof=SUPER_ADMIN ADMIN BUYER SUPPLIER"`
-	Address         string `json:"address" validate:"required"`
-	ShippingAddress string `json:"shipping_address" validate:"omitempty"`
+	Name                         string `json:"name" validate:"required,min=3"`
+	Phone                        string `json:"phone" validate:"required"`
+	Password                     string `json:"password" validate:"omitempty"`
+	Role                         string `json:"role" validate:"required,oneof=SUPER_ADMIN ADMIN BUYER SUPPLIER"`
+	Address                      string `json:"address" validate:"required"`
+	ShippingAddress              string `json:"shipping_address" validate:"omitempty"`
+	TaxPayerIdentificationNumber string `json:"tax_payer_identification_number"`
 }
 
 type UserTokenModel struct {
