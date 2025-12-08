@@ -17,7 +17,7 @@ func NewFiberService() repository.FiberRepository {
 }
 
 func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPaginationResponse, error) {
-	db := config.GetDBConn().Orm().Debug().Model(&models.Fiber{})
+	db := config.GetDBConn().Model(&models.Fiber{})
 
 	if filter.Size <= 0 {
 		filter.Size = 10
@@ -52,7 +52,7 @@ func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 	for _, fiber := range fibers {
 
 		var sale models.Sale
-		if err := config.GetDBConn().Orm().Debug().Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).
+		if err := config.GetDBConn().Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).
 			First(&sale).Error; err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 }
 
 func (f *FiberService) GetFiberById(id string) (*models.FiberResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var fiber models.Fiber
 	var sale models.Sale
@@ -114,7 +114,7 @@ func (f *FiberService) CreateFiber(request models.FiberRequest) (*models.FiberRe
 		StockSortId: "",
 	}
 
-	if err := config.GetDBConn().Orm().Debug().Create(&newFiber).Error; err != nil {
+	if err := config.GetDBConn().Create(&newFiber).Error; err != nil {
 		return nil, err
 	}
 
@@ -131,14 +131,14 @@ func (f *FiberService) CreateFiber(request models.FiberRequest) (*models.FiberRe
 }
 
 func (f *FiberService) MarkFiberAvailable(fiberId string) error {
-	return config.GetDBConn().Orm().
+	return config.GetDBConn().
 		Model(&models.Fiber{}).
 		Where("uuid = ? AND deleted = false", fiberId).
 		Update("status", "FREE").Error
 }
 
 func (f *FiberService) DeleteFiber(fiberId string) error {
-	return config.GetDBConn().Orm().
+	return config.GetDBConn().
 		Model(&models.Fiber{}).
 		Where("uuid = ? AND deleted = false", fiberId).
 		Update("deleted", true).Error
@@ -151,14 +151,14 @@ func (f *FiberService) UpdateFiber(fiberId string, request models.FiberRequest) 
 		"updated_at": time.Now(),
 	}
 
-	return config.GetDBConn().Orm().
+	return config.GetDBConn().
 		Model(&models.Fiber{}).
 		Where("uuid = ? AND deleted = false", fiberId).
 		Updates(updates).Error
 }
 
 func (f *FiberService) GetAllUsedFibers() ([]models.FiberResponse, error) {
-	db := config.GetDBConn().Orm().Model(&models.Fiber{})
+	db := config.GetDBConn().Model(&models.Fiber{})
 
 	var fibers []models.Fiber
 	if err := db.Where("status = ? AND deleted = false", "FREE").Order("created_at DESC").Find(&fibers).Error; err != nil {

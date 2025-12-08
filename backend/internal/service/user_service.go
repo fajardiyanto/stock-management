@@ -42,7 +42,7 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 		UpdatedAt:                    time.Now(),
 	}
 
-	if err = config.GetDBConn().Orm().Debug().Model(&models.User{}).Create(&user).Error; err != nil {
+	if err = config.GetDBConn().Model(&models.User{}).Create(&user).Error; err != nil {
 		return nil, err
 	}
 
@@ -55,7 +55,7 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 
 func (s *UserService) CheckUser(phone string) error {
 	var res models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("phone = ? AND status = true", phone).First(&res).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.User{}).Where("phone = ? AND status = true", phone).First(&res).Error; err != nil {
 		return err
 	}
 	return nil
@@ -63,7 +63,7 @@ func (s *UserService) CheckUser(phone string) error {
 
 func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse, error) {
 	var user models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("phone = ? AND status = true", req.Phone).First(&user).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.User{}).Where("phone = ? AND status = true", req.Phone).First(&user).Error; err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse,
 
 func (s *UserService) GetUserById(id string) (*models.User, error) {
 	var user models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = true", id).First(&user).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.User{}).Where("uuid = ? AND status = true", id).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user not found")
 		}
@@ -110,7 +110,7 @@ func (s *UserService) GetUserByIdFromToken(token string) (*models.User, error) {
 	}
 
 	var user models.User
-	if err = config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = true", userId).First(&user).Error; err != nil {
+	if err = config.GetDBConn().Model(&models.User{}).Where("uuid = ? AND status = true", userId).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user not found")
 		}
@@ -121,7 +121,7 @@ func (s *UserService) GetUserByIdFromToken(token string) (*models.User, error) {
 }
 
 func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*models.GetAllUserResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	if page < 1 {
 		page = 1
@@ -206,14 +206,14 @@ func (s *UserService) UpdateUser(uuid string, data models.UpdateUserRequest) err
 		"updated_at":                      time.Now(),
 	}
 
-	return config.GetDBConn().Orm().Debug().
+	return config.GetDBConn().
 		Model(&models.User{}).
 		Where("uuid = ? AND status = true", uuid).
 		Updates(updates).Error
 }
 
 func (s *UserService) SoftDeleteUser(uuid string) error {
-	return config.GetDBConn().Orm().
+	return config.GetDBConn().
 		Model(&models.User{}).
 		Where("uuid = ? AND status = true", uuid).
 		Update("status", false).Error
@@ -221,7 +221,7 @@ func (s *UserService) SoftDeleteUser(uuid string) error {
 
 func (s *UserService) GetAllUserByRole(role string) ([]models.User, error) {
 	var users []models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("role = ?", strings.ToUpper(role)).Find(&users).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.User{}).Where("role = ?", strings.ToUpper(role)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

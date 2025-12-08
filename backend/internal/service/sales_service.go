@@ -19,7 +19,7 @@ func NewSalesService() repository.SalesRepository {
 }
 
 func (s *SalesService) CreateSales(request models.SaleRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -151,7 +151,7 @@ func (s *SalesService) CreateSales(request models.SaleRequest) error {
 }
 
 func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePaginationResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	if filter.PageNo < 1 {
 		filter.PageNo = 1
@@ -326,7 +326,7 @@ func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePagin
 }
 
 func (s *SalesService) DeleteSale(saleId string) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -404,7 +404,7 @@ func (s *SalesService) DeleteSale(saleId string) error {
 }
 
 func (s *SalesService) GetSaleById(saleId string) (*models.SaleResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var sale models.Sale
 	if err := db.Model(&models.Sale{}).Where("uuid = ? AND deleted = false", saleId).
@@ -517,7 +517,7 @@ func (s *SalesService) GetSaleById(saleId string) (*models.SaleResponse, error) 
 }
 
 func (s *SalesService) UpdateSales(id string, request models.SaleRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 	tx := db.Begin()
 	if tx.Error != nil {
 		return tx.Error

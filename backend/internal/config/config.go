@@ -2,6 +2,7 @@ package config
 
 import (
 	"dashboard-app/internal/models"
+	"gorm.io/gorm"
 
 	databaseInterface "github.com/fajarardiyanto/flt-go-database/interfaces"
 	databaseLib "github.com/fajarardiyanto/flt-go-database/lib"
@@ -47,8 +48,12 @@ func InitMysql(db databaseInterface.Database) {
 	}
 }
 
-func GetDBConn() databaseInterface.SQL {
-	return database
+func GetDBConn() *gorm.DB {
+	if models.GetConfig().Environment == "development" {
+		return database.Orm().Debug()
+	} else {
+		return database.Orm()
+	}
 }
 
 func GetLogger() interfaces.Logger {

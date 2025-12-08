@@ -19,7 +19,7 @@ func NewStockService() repository.StockRepository {
 }
 
 func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*models.StockResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	if filter.PageNo < 1 {
 		filter.PageNo = 1
@@ -207,7 +207,7 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 }
 
 func (s *StockService) GetStockEntryById(stockId string) (*models.StockEntriesResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 	var stockEntry models.StockEntry
 	if err := db.Where("uuid = ? AND deleted = false", stockId).First(&stockEntry).Error; err != nil {
 		return nil, err
@@ -277,7 +277,7 @@ func (s *StockService) GetStockEntryById(stockId string) (*models.StockEntriesRe
 }
 
 func (s *StockService) UpdateStockById(stockId string, request models.CreatePurchaseRequest) (*models.PurchaseDataResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -418,7 +418,7 @@ func (s *StockService) UpdateStockById(stockId string, request models.CreatePurc
 }
 
 func (s *StockService) GetStockItemById(stockItemId string) (*models.StockEntryResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var stockItem models.StockItem
 	if err := db.Where("uuid = ? AND deleted = false", stockItemId).First(&stockItem).Error; err != nil {
@@ -473,7 +473,7 @@ func (s *StockService) GetStockItemById(stockItemId string) (*models.StockEntryR
 }
 
 func (s *StockService) CreateStockSort(request models.SubmitSortRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -517,7 +517,7 @@ func (s *StockService) CreateStockSort(request models.SubmitSortRequest) error {
 }
 
 func (s *StockService) UpdateStockSort(request models.SubmitSortRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -570,7 +570,7 @@ func (s *StockService) UpdateStockSort(request models.SubmitSortRequest) error {
 }
 
 func (s *StockService) DeleteStockEntryById(stockEntryId string) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -648,7 +648,7 @@ func (s *StockService) DeleteStockEntryById(stockEntryId string) error {
 }
 
 func (s *StockService) GetAllStockSorts() ([]models.StockSortResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var stockSorts []models.StockSort
 	if err := db.

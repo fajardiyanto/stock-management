@@ -19,7 +19,7 @@ func NewPaymentService() repository.PaymentRepository {
 
 func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlowResponse, error) {
 	var payments []models.Payment
-	if err := config.GetDBConn().Orm().Debug().Model(&models.Payment{}).Where("user_id = ? AND deleted = false", userId).Find(&payments).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.Payment{}).Where("user_id = ? AND deleted = false", userId).Find(&payments).Error; err != nil {
 		return nil, err
 	}
 
@@ -27,7 +27,7 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 	var totalIncome, totalOutcome int
 
 	var user models.User
-	if err := config.GetDBConn().Orm().Debug().Model(&models.User{}).Where("uuid = ? AND status = false", userId).Find(&user).Error; err != nil {
+	if err := config.GetDBConn().Model(&models.User{}).Where("uuid = ? AND status = false", userId).Find(&user).Error; err != nil {
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 func (p *PaymentService) GetAllBalance(userId string) (int, error) {
 	var payments []models.Payment
 
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	if err := db.
 		Model(&models.Payment{}).
@@ -102,7 +102,7 @@ func (p *PaymentService) GetAllBalance(userId string) (int, error) {
 }
 
 func (p *PaymentService) CreateManualPayment(userId string, requests []models.CreateManualPaymentRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -135,7 +135,7 @@ func (p *PaymentService) CreateManualPayment(userId string, requests []models.Cr
 }
 
 func (p *PaymentService) DeleteManualPayment(paymentId string) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -181,7 +181,7 @@ func (p *PaymentService) DeleteManualPayment(paymentId string) error {
 }
 
 func (p *PaymentService) GetAllPaymentByFieldId(id string, field string) (*models.CashFlowResponse, error) {
-	query := config.GetDBConn().Orm().Debug().Model(&models.Payment{})
+	query := config.GetDBConn().Model(&models.Payment{})
 
 	switch field {
 	case "purchase":
@@ -228,7 +228,7 @@ func (p *PaymentService) GetAllPaymentByFieldId(id string, field string) (*model
 }
 
 func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentPurchaseRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -283,7 +283,7 @@ func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentP
 }
 
 func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSaleRequest) error {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {

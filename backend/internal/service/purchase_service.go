@@ -20,7 +20,7 @@ func NewPurchaseService(userRepo repository.UserRepository) repository.PurchaseR
 }
 
 func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (*models.PurchaseDataResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -153,7 +153,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 }
 
 func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models.PurchaseResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	if filter.PageNo < 1 {
 		filter.PageNo = 1
@@ -288,7 +288,7 @@ func (p *PurchaseService) UpdatePurchase(purchaseId string, request models.Updat
 	}
 
 	var purchase models.Purchase
-	if err := config.GetDBConn().Orm().Debug().Model(&purchase).Where("uuid = ? AND deleted = false", purchaseId).Updates(purchaseRequest).Error; err != nil {
+	if err := config.GetDBConn().Model(&purchase).Where("uuid = ? AND deleted = false", purchaseId).Updates(purchaseRequest).Error; err != nil {
 		return err
 	}
 

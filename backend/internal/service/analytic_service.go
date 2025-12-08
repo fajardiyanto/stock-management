@@ -15,7 +15,7 @@ func NewAnalyticService() repository.AnalyticRepository {
 }
 
 func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var totalStock int64
 	if err := db.Model(&models.StockSort{}).
@@ -77,7 +77,7 @@ func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, err
 }
 
 func (s *AnalyticService) GetDailyGetAnalyticStats(date string) (*models.DailyAnalyticStatsResponse, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var totalPurchaseWeight int64
 	if err := db.Model(&models.StockItem{}).
@@ -121,7 +121,7 @@ func (s *AnalyticService) GetDailyGetAnalyticStats(date string) (*models.DailyAn
 }
 
 func (s *AnalyticService) GetSalesTrendData(year string) ([]models.SalesTrendData, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var sales []models.SalesResult
 	if err := db.Model(&models.ItemSales{}).
@@ -167,7 +167,7 @@ func (s *AnalyticService) GetSalesTrendData(year string) ([]models.SalesTrendDat
 }
 
 func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistributionData, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var stockDistribution []models.StockDistributionDataResult
 	if err := db.Table("stock_items si").
@@ -194,7 +194,7 @@ func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistribution
 }
 
 func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var userData []models.UserData
 	if err := db.Table("purchase p").
@@ -210,7 +210,7 @@ func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
 }
 
 func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
-	db := config.GetDBConn().Orm().Debug()
+	db := config.GetDBConn()
 
 	var userData []models.UserData
 	if err := db.Table("sales p").
