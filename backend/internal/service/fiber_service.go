@@ -4,7 +4,7 @@ import (
 	"dashboard-app/internal/config"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"strings"
 	"time"
@@ -17,7 +17,7 @@ func NewFiberService() repository.FiberRepository {
 }
 
 func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPaginationResponse, error) {
-	db := config.GetDBConn().Orm().Model(&models.Fiber{})
+	db := config.GetDBConn().Orm().Debug().Model(&models.Fiber{})
 
 	if filter.Size <= 0 {
 		filter.Size = 10
@@ -50,12 +50,21 @@ func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 
 	var responseData []models.FiberResponse
 	for _, fiber := range fibers {
+
+		var sale models.Sale
+		if err := config.GetDBConn().Orm().Debug().Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).
+			First(&sale).Error; err != nil {
+			return nil, err
+		}
+
 		responseData = append(responseData, models.FiberResponse{
-			Uuid:      fiber.Uuid,
-			Name:      fiber.Name,
-			Status:    fiber.Status,
-			Deleted:   fiber.Deleted,
-			CreatedAt: fiber.CreatedAt,
+			Uuid:        fiber.Uuid,
+			Name:        fiber.Name,
+			Status:      fiber.Status,
+			StockSortId: fiber.StockSortId,
+			SaleCode:    fmt.Sprintf("SELL%d", sale.ID),
+			Deleted:     fiber.Deleted,
+			CreatedAt:   fiber.CreatedAt,
 		})
 	}
 
@@ -70,52 +79,52 @@ func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 }
 
 func (f *FiberService) GetFiberById(id string) (*models.FiberResponse, error) {
-	db := config.GetDBConn().Orm()
+	db := config.GetDBConn().Orm().Debug()
 
 	var fiber models.Fiber
+	var sale models.Sale
 
 	if err := db.Where("uuid = ? AND deleted = false", id).First(&fiber).Error; err != nil {
 		return nil, err
 	}
 
+	if err := db.Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).
+		First(&sale).Error; err != nil {
+		return nil, err
+	}
+
 	response := &models.FiberResponse{
-		Uuid:      fiber.Uuid,
-		Name:      fiber.Name,
-		Status:    fiber.Status,
-		Deleted:   fiber.Deleted,
-		CreatedAt: fiber.CreatedAt,
+		Uuid:        fiber.Uuid,
+		Name:        fiber.Name,
+		Status:      fiber.Status,
+		StockSortId: fiber.StockSortId,
+		SaleCode:    fmt.Sprintf("SELL%d", sale.ID),
+		Deleted:     fiber.Deleted,
+		CreatedAt:   fiber.CreatedAt,
 	}
 
 	return response, nil
 }
 
 func (f *FiberService) CreateFiber(request models.FiberRequest) (*models.FiberResponse, error) {
-	db := config.GetDBConn().Orm()
-
-	var lastCreated models.Fiber
-
-	if request.Name == "" || request.Status == "" {
-		return nil, errors.New("name and status are required")
-	}
-
 	newFiber := models.Fiber{
-		Uuid:   uuid.New().String(),
-		Name:   request.Name,
-		Status: request.Status,
+		Uuid:        uuid.New().String(),
+		Name:        request.Name,
+		Status:      request.Status,
+		StockSortId: "",
 	}
 
-	if err := db.Create(&newFiber).Error; err != nil {
+	if err := config.GetDBConn().Orm().Debug().Create(&newFiber).Error; err != nil {
 		return nil, err
 	}
 
-	lastCreated = newFiber
-
 	response := &models.FiberResponse{
-		Uuid:      lastCreated.Uuid,
-		Name:      lastCreated.Name,
-		Status:    lastCreated.Status,
-		Deleted:   lastCreated.Deleted,
-		CreatedAt: lastCreated.CreatedAt,
+		Uuid:        newFiber.Uuid,
+		Name:        newFiber.Name,
+		Status:      newFiber.Status,
+		StockSortId: newFiber.StockSortId,
+		Deleted:     newFiber.Deleted,
+		CreatedAt:   newFiber.CreatedAt,
 	}
 
 	return response, nil
@@ -159,11 +168,12 @@ func (f *FiberService) GetAllUsedFibers() ([]models.FiberResponse, error) {
 	var responseData []models.FiberResponse
 	for _, fiber := range fibers {
 		responseData = append(responseData, models.FiberResponse{
-			Uuid:      fiber.Uuid,
-			Name:      fiber.Name,
-			Status:    fiber.Status,
-			Deleted:   fiber.Deleted,
-			CreatedAt: fiber.CreatedAt,
+			Uuid:        fiber.Uuid,
+			Name:        fiber.Name,
+			Status:      fiber.Status,
+			StockSortId: fiber.StockSortId,
+			Deleted:     fiber.Deleted,
+			CreatedAt:   fiber.CreatedAt,
 		})
 	}
 

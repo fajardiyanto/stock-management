@@ -43,9 +43,15 @@ func (s *SalesService) CreateSales(request models.SaleRequest) error {
 		ids := make([]string, 0, len(request.FiberList))
 
 		for _, v := range request.FiberList {
+			fiberUpdateData := map[string]interface{}{
+				"status":        "USED",
+				"stock_sort_id": v.ItemId,
+				"sale_id":       saleId,
+				"updated_at":    time.Now(),
+			}
 			if err := tx.Model(&models.Fiber{}).
 				Where("uuid = ? AND deleted = false", v.FiberId).
-				Update("status", "USED").Error; err != nil {
+				Updates(fiberUpdateData).Error; err != nil {
 				tx.Rollback()
 				return err
 			}

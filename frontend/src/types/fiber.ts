@@ -21,6 +21,8 @@ export interface FiberResponse {
     uuid: string;
     name: string;
     status: FiberStatus;
+    stock_sort_id: string;
+    sale_code: string;
     deleted: boolean;
     created_at: string;
 }

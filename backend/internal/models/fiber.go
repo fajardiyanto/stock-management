@@ -3,13 +3,15 @@ package models
 import "time"
 
 type Fiber struct {
-	ID        int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid      string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
-	Name      string    `json:"name" gorm:"column:name;not null"`
-	Status    string    `json:"status" gorm:"column:status"`
-	Deleted   bool      `json:"deleted" gorm:"column:deleted"`
-	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
+	ID          int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
+	Uuid        string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
+	Name        string    `json:"name" gorm:"column:name;not null"`
+	Status      string    `json:"status" gorm:"column:status"`
+	StockSortId string    `json:"stock_sort_id" gorm:"column:stock_sort_id"`
+	SaleId      string    `json:"sale_id" gorm:"column:sale_id"`
+	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 func (*Fiber) TableName() string {
@@ -17,16 +19,19 @@ func (*Fiber) TableName() string {
 }
 
 type FiberRequest struct {
-	Name   string `json:"name" validate:"required"`
-	Status string `json:"status" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Status      string `json:"status" validate:"required"`
+	StockSortId string `json:"stock_sort_id"`
 }
 
 type FiberResponse struct {
-	Uuid      string    `json:"uuid"`
-	Name      string    `json:"name"`
-	Status    string    `json:"status"`
-	Deleted   bool      `json:"deleted"`
-	CreatedAt time.Time `json:"created_at"`
+	Uuid        string    `json:"uuid"`
+	Name        string    `json:"name"`
+	Status      string    `json:"status"`
+	StockSortId string    `json:"stock_sort_id"`
+	SaleCode    string    `json:"sale_code"`
+	Deleted     bool      `json:"deleted"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type FiberPaginationResponse struct {
