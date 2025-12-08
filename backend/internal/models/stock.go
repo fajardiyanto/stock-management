@@ -110,10 +110,10 @@ type StockResponse struct {
 type StockEntryFilter struct {
 	Size         int    `form:"size"`
 	PageNo       int    `form:"page_no"`
-	StockId      string `form:"stock_id"`
 	SupplierId   string `form:"supplier_id"`
 	PurchaseDate string `form:"purchase_date"`
 	AgeInDay     string `form:"age_in_day"`
+	Keyword      string `form:"keyword"`
 }
 
 type StockSortRequest struct {

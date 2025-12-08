@@ -10,9 +10,6 @@ export const stockService = {
         queryParams.append('page', String(filters.page || 1));
         queryParams.append('size', String(filters.size || 10));
 
-        if (filters.stock_id) {
-            queryParams.append('stock_id', filters.stock_id);
-        }
         if (filters.supplier_id) {
             queryParams.append('supplier_id', filters.supplier_id);
         }
@@ -21,6 +18,9 @@ export const stockService = {
         }
         if (filters.age_in_day && filters.age_in_day !== '0') {
             queryParams.append('age_in_day', filters.age_in_day);
+        }
+        if (filters.keyword) {
+            queryParams.append('keyword', filters.keyword);
         }
 
         const response = await apiCall<ApiResponse<StockEntriesPagination>>(

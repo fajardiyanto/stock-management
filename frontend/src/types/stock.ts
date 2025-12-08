@@ -56,10 +56,10 @@ export interface SupplierOption {
 export interface StockEntriesFilters {
     page?: number;
     size?: number;
-    stock_id?: string;
     supplier_id?: string;
     purchase_date?: string;
     age_in_day?: string;
+    keyword?: string;
 }
 
 export interface StockSortInfoCardResponse {

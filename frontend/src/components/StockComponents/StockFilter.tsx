@@ -12,7 +12,6 @@ interface StockFilterProps {
 }
 
 const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
-    const [stockId, setStockId] = useState("");
     const [supplierId, setSupplierId] = useState("");
     const [date, setDate] = useState("");
     const [ageInDayKey, setAgeInDayKey] = useState(AGE_FILTER_OPTIONS[0].key);
@@ -20,6 +19,7 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [isFiltering, setIsFiltering] = useState(false);
+    const [keyword, setKeyword] = useState("");
 
     const { showToast } = useToast();
 
@@ -58,10 +58,10 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
     const handleSearch = () => {
         setIsFiltering(true);
         const filters: StockEntriesFilters = {
-            stock_id: stockId || undefined,
             supplier_id: supplierId || undefined,
             purchase_date: date || undefined,
             age_in_day: ageInDayKey === "0" ? undefined : ageInDayKey,
+            keyword: keyword || undefined,
         };
 
         onSearch(filters);
@@ -69,10 +69,10 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
     };
 
     const handleReset = () => {
-        setStockId("");
         setSupplierId("");
         setDate("");
         setAgeInDayKey("0");
+        setKeyword("");
         onReset();
     };
 
@@ -119,9 +119,9 @@ const StockFilter: React.FC<StockFilterProps> = ({ onSearch, onReset }) => {
                         />
                         <input
                             type="text"
-                            placeholder="Cari ID Stok"
-                            value={stockId}
-                            onChange={(e) => setStockId(e.target.value)}
+                            placeholder="Cari ID Stok atau Nama Item"
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
                             onKeyPress={handleKeyPress}
                             disabled={isFiltering || loading}

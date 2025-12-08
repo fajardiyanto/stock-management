@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"strconv"
 	"time"
 )
 
@@ -30,10 +31,6 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 	offset := (filter.PageNo - 1) * filter.Size
 
 	query := db.Model(&models.StockEntry{})
-
-	if filter.StockId != "" {
-		query = query.Where("id = ?", filter.StockId)
-	}
 
 	if filter.SupplierId != "" {
 		var stockIDs []string
@@ -78,6 +75,47 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 			query = query.Where("created_at < ?", now.Add(-240*time.Hour))
 		case "GT_30": // More than 30 days
 			query = query.Where("created_at < ?", now.Add(-720*time.Hour))
+		}
+	}
+
+	if filter.Keyword != "" {
+		if _, err := strconv.Atoi(filter.Keyword); err == nil {
+			if filter.Keyword != "" {
+				query = query.Where("id = ?", filter.Keyword)
+			}
+		} else {
+			var stockIDs []string
+
+			var itemStockIDs []string
+			db.Model(&models.StockItem{}).
+				Where("deleted = false AND item_name ILIKE ?", "%"+filter.Keyword+"%").
+				Pluck("stock_entry_id", &itemStockIDs)
+
+			var sortItemIDs []string
+			db.Model(&models.StockSort{}).
+				Where("deleted = false AND sorted_item_name ILIKE ?", "%"+filter.Keyword+"%").
+				Pluck("stock_item_id", &sortItemIDs)
+
+			var sortStockIDs []string
+			if len(sortItemIDs) > 0 {
+				db.Model(&models.StockItem{}).
+					Where("uuid IN ? AND deleted = false", sortItemIDs).
+					Pluck("stock_entry_id", &sortStockIDs)
+			}
+
+			stockIDs = append(stockIDs, itemStockIDs...)
+			stockIDs = append(stockIDs, sortStockIDs...)
+
+			if len(stockIDs) == 0 {
+				return &models.StockResponse{
+					Size:   filter.Size,
+					PageNo: filter.PageNo,
+					Total:  0,
+					Data:   []models.StockEntriesResponse{},
+				}, nil
+			}
+
+			query = query.Where("uuid IN ?", stockIDs)
 		}
 	}
 
