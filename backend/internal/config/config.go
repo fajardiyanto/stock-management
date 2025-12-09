@@ -42,7 +42,7 @@ func InitMysql(db databaseInterface.Database) {
 			&models.ItemAddOnn{},
 			&models.ItemSales{},
 		); err != nil {
-			logger.Error("Error when migrate table, with err: ", err)
+			logger.Error("Error when migrate table, with err: %s", err)
 			return
 		}
 	}

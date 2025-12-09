@@ -7,7 +7,7 @@ database:
   mysql:
     enable: true
     driver: postgresql
-    host: 127.0.0.1
+    host: postgres
     port: 5432
     username: postgres
     password: postgres

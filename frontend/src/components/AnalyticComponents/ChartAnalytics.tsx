@@ -107,7 +107,7 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                                 fill="#8884d8"
                                 dataKey="value"
                             >
-                                {stockDistributionData.map((entry, index) => (
+                                {stockDistributionData?.map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.color}
@@ -125,58 +125,78 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
                         Performa Supplier
                     </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                            data={supplierData}
-                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis
-                                tickFormatter={(value) => formatRupiah(value)}
-                            />
-                            <Tooltip
-                                formatter={(value: number) =>
-                                    formatRupiah(value)
-                                }
-                            />
-                            <Legend />
-                            <Bar
-                                dataKey="total"
-                                fill="#8b5cf6"
-                                name="Total Pembelian"
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    {supplierData && (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart
+                                data={supplierData}
+                                margin={{
+                                    top: 20,
+                                    right: 10,
+                                    left: 60,
+                                    bottom: 5,
+                                }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis
+                                    width={80}
+                                    tickFormatter={(value) =>
+                                        formatRupiah(value)
+                                    }
+                                />
+                                <Tooltip
+                                    formatter={(value: number) =>
+                                        formatRupiah(value)
+                                    }
+                                />
+                                <Legend />
+                                <Bar
+                                    dataKey="total"
+                                    fill="#8b5cf6"
+                                    name="Total Pembelian"
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
                         Performa Customer
                     </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                            data={customerData}
-                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis
-                                tickFormatter={(value) => formatRupiah(value)}
-                            />
-                            <Tooltip
-                                formatter={(value: number) =>
-                                    formatRupiah(value)
-                                }
-                            />
-                            <Legend />
-                            <Bar
-                                dataKey="total"
-                                fill="#8b5cf6"
-                                name="Total Pembelian"
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    {customerData && (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart
+                                data={customerData}
+                                margin={{
+                                    top: 20,
+                                    right: 10,
+                                    left: 60,
+                                    bottom: 5,
+                                }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis
+                                    width={80}
+                                    tickFormatter={(value) =>
+                                        formatRupiah(value)
+                                    }
+                                />
+                                <Tooltip
+                                    formatter={(value: number) =>
+                                        formatRupiah(value)
+                                    }
+                                />
+                                <Legend />
+                                <Bar
+                                    dataKey="total"
+                                    fill="#8b5cf6"
+                                    name="Total Pembelian"
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </div>
         </div>
