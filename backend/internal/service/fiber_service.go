@@ -50,22 +50,22 @@ func (f *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 
 	var responseData []models.FiberResponse
 	for _, fiber := range fibers {
-
 		var sale models.Sale
-		if err := config.GetDBConn().Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).
-			First(&sale).Error; err != nil {
-			return nil, err
-		}
+		config.GetDBConn().Model(&models.Sale{}).Where("uuid = ? AND deleted = false", fiber.SaleId).First(&sale)
 
-		responseData = append(responseData, models.FiberResponse{
+		fiberResponse := models.FiberResponse{
 			Uuid:        fiber.Uuid,
 			Name:        fiber.Name,
 			Status:      fiber.Status,
 			StockSortId: fiber.StockSortId,
-			SaleCode:    fmt.Sprintf("SELL%d", sale.ID),
 			Deleted:     fiber.Deleted,
 			CreatedAt:   fiber.CreatedAt,
-		})
+		}
+		if sale.ID != 0 {
+			fiberResponse.SaleCode = fmt.Sprintf("SELL%d", sale.ID)
+		}
+
+		responseData = append(responseData, fiberResponse)
 	}
 
 	response := models.FiberPaginationResponse{

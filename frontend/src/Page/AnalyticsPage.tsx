@@ -1,247 +1,104 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { User } from "../types/user";
-import {
-    DashboardStats,
-    SalesTrendData,
-    StockDistributionData,
-    UserData,
-    DailyDashboardStats,
-} from "../types/analytic";
 import TopStatsAnalytics from "../components/AnalyticComponents/TopStatsAnalytics";
 import SummarySaleDayTable from "../components/AnalyticComponents/SummarySaleDayTable";
 import ChartAnalytics from "../components/AnalyticComponents/ChartAnalytics";
-import { analyticService } from "../services/analyticService";
-import { useToast } from "../contexts/ToastContext";
 import { getDefaultDateOnly } from "../utils/DefaultDate";
+import { useDashboardStats } from "../hooks/analytics/useDashboardStats";
+import { useDailyDashboardStats } from "../hooks/analytics/useDailyDashboardStats";
+import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
+import { useStockDistributionData } from "../hooks/analytics/useStockDistributionData";
+import { usePerformanceData } from "../hooks/analytics/usePerformanceData";
 
 interface AnalyticsPageProps {
     userData: User | null;
 }
 
 const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string>("");
-    const [stats, setStats] = useState<DashboardStats>({} as DashboardStats);
-    const [dailyStats, setDailyStats] = useState<DailyDashboardStats>(
-        {} as DailyDashboardStats
-    );
     const [selectedDate, setSelectedDate] = useState<string>(
         getDefaultDateOnly()
     );
-    const [salesTrendData, setSalesTrendData] = useState<SalesTrendData[]>([]);
-    const [stockDistributionData, setStockDistributionData] = useState<
-        StockDistributionData[]
-    >([]);
-    const [supplierData, setSupplierData] = useState<UserData[]>([]);
-    const [customerData, setCustomerData] = useState<UserData[]>([]);
 
-    const { showToast } = useToast();
+    const {
+        stats,
+        loading: dashboardStatsLoading,
+        error: dashboardStatsError,
+        refetch: refetchDashboardStats,
+    } = useDashboardStats();
 
-    const fetchDashboardStats = useCallback(async () => {
-        setLoading(true);
-        setError("");
+    const {
+        dailyStats,
+        loading: dailyDashboardStatsLoading,
+        error: dailyDashboardStatsError,
+        refetch: refetchDailyDashboardStats,
+    } = useDailyDashboardStats(selectedDate);
 
-        try {
-            const response = await analyticService.getDashboardStats();
+    const {
+        salesTrendData,
+        loading: salesTrendDataLoading,
+        error: salesTrendDataError,
+        refetch: refetchSalesTrendData,
+    } = useSalesTrendData();
 
-            if (response.status_code === 200) {
-                setStats(response.data);
-            } else {
-                setError(response.message || "Failed to fetch dashboard stats");
-                showToast(
-                    response.message || "Failed to fetch dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
+    const {
+        stockDistributionData,
+        loading: stockDistributionDataLoading,
+        error: stockDistributionDataError,
+        refetch: refetchStockDistributionData,
+    } = useStockDistributionData();
 
-    const fetchDailyDashboardStats = useCallback(async () => {
-        setLoading(true);
-        setError("");
+    const {
+        userData: supplierData,
+        loading: supplierPerformanceDataLoading,
+        error: supplierPerformanceDataError,
+        refetch: refetchSupplierPerformanceData,
+    } = usePerformanceData("supplier");
 
-        try {
-            const response = await analyticService.getDailyDashboardStats(
-                selectedDate
-            );
+    const {
+        userData: customerData,
+        loading: customerPerformanceDataLoading,
+        error: customerPerformanceDataError,
+        refetch: refetchCustomerPerformanceData,
+    } = usePerformanceData("customer");
 
-            if (response.status_code === 200) {
-                setDailyStats(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch daily dashboard stats"
-                );
-                showToast(
-                    response.message || "Failed to fetch daily dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch daily dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch daily dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedDate, showToast]);
+    const refreshButton = () => {
+        refetchDashboardStats();
+        refetchDailyDashboardStats();
+        refetchSalesTrendData();
+        refetchStockDistributionData();
+        refetchSupplierPerformanceData();
+        refetchCustomerPerformanceData();
+    };
 
-    const fetchSalesTrendData = useCallback(async () => {
-        setLoading(true);
-        setError("");
-
-        try {
-            const response = await analyticService.getSalesTrendData("2025");
-
-            if (response.status_code === 200) {
-                setSalesTrendData(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch daily dashboard stats"
-                );
-                showToast(
-                    response.message || "Failed to fetch daily dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch daily dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch daily dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    const fetchStockDistributionData = useCallback(async () => {
-        setLoading(true);
-        setError("");
-
-        try {
-            const response = await analyticService.getStockDistributionData();
-
-            if (response.status_code === 200) {
-                setStockDistributionData(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch daily dashboard stats"
-                );
-                showToast(
-                    response.message || "Failed to fetch daily dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch daily dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch daily dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    const fetchSupplierPerformanceData = useCallback(async () => {
-        setLoading(true);
-        setError("");
-
-        try {
-            const response = await analyticService.getSupplierPerformance();
-
-            if (response.status_code === 200) {
-                setSupplierData(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch daily dashboard stats"
-                );
-                showToast(
-                    response.message || "Failed to fetch daily dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch daily dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch daily dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    const fetchCustomerPerformanceData = useCallback(async () => {
-        setLoading(true);
-        setError("");
-
-        try {
-            const response = await analyticService.getCustomerPerformance();
-
-            if (response.status_code === 200) {
-                setCustomerData(response.data);
-            } else {
-                setError(
-                    response.message || "Failed to fetch daily dashboard stats"
-                );
-                showToast(
-                    response.message || "Failed to fetch daily dashboard stats",
-                    "error"
-                );
-            }
-        } catch (err) {
-            setError("Failed to fetch daily dashboard stats. Please try again");
-            showToast(
-                "Failed to fetch daily dashboard stats. Please try again",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    useEffect(() => {
-        fetchDailyDashboardStats();
-        fetchDashboardStats();
-        fetchSalesTrendData();
-        fetchStockDistributionData();
-        fetchSupplierPerformanceData();
-        fetchCustomerPerformanceData();
-    }, [
-        fetchDashboardStats,
-        fetchDailyDashboardStats,
-        fetchSalesTrendData,
-        fetchStockDistributionData,
-        fetchSupplierPerformanceData,
-        fetchCustomerPerformanceData,
-    ]);
-
-    if (loading) {
+    if (
+        dashboardStatsLoading ||
+        dailyDashboardStatsLoading ||
+        salesTrendDataLoading ||
+        stockDistributionDataLoading ||
+        supplierPerformanceDataLoading ||
+        customerPerformanceDataLoading
+    ) {
         return (
             <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
-                <div className="text-gray-500">Loading purchases...</div>
+                <div className="text-gray-500">Loading dashboard...</div>
             </div>
         );
     }
 
-    if (error) {
+    if (
+        dashboardStatsError ||
+        dailyDashboardStatsError ||
+        salesTrendDataError ||
+        stockDistributionDataError ||
+        supplierPerformanceDataError ||
+        customerPerformanceDataError
+    ) {
         return (
             <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
                 <p className="font-bold mb-2">Error Loading Data</p>
-                <p>{error}</p>
+                <p>{dashboardStatsError}</p>
                 <button
-                    onClick={fetchDashboardStats}
+                    onClick={refreshButton}
                     className="mt-4 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200 transition"
                 >
                     Retry Loading

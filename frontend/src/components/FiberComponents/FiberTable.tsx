@@ -44,7 +44,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
     onDelete,
     onStatusChange,
 }) => {
-    const startIdx = (currentPage - 1) * data.size + 1;
+    const startIdx = (currentPage - 1) * (data?.size ?? 0) + 1;
 
     return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
@@ -103,9 +103,11 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                         {getStatusBadge(unit.status)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            {unit.sale_code}
-                                        </span>
+                                        {unit.sale_code && (
+                                            <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {unit.sale_code}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2 items-center">

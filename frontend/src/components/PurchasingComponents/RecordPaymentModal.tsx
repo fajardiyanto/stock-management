@@ -8,7 +8,7 @@ import { cleanNumber } from "../../utils/CleanNumber";
 import { useToast } from "../../contexts/ToastContext";
 import { getDefaultDate } from "../../utils/DefaultDate";
 import { paymentService } from "../../services/paymentService";
-import { SummaryBox, ProgressBox } from "../../utils/Box";
+import { SummaryBox, ProgressBox } from "../Box";
 import { MaxDate } from "../../utils/MaxDate";
 
 interface RecordPaymentModalProps {
