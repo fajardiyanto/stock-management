@@ -14,16 +14,16 @@ import { MenuId, MenuItem } from "../types";
 
 interface SidebarProps {
     isOpen: boolean;
-    toggleSidebar: () => void;
     activeMenu: MenuId;
+    toggleSidebar: () => void;
     setActiveMenu: (menu: MenuId) => void;
     onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
-    toggleSidebar,
     activeMenu,
+    toggleSidebar,
     setActiveMenu,
     onLogout,
 }) => {

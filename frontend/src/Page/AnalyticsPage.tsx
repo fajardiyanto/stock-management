@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { User } from "../types/user";
 import TopStatsAnalytics from "../components/AnalyticComponents/TopStatsAnalytics";
 import SummarySaleDayTable from "../components/AnalyticComponents/SummarySaleDayTable";
 import ChartAnalytics from "../components/AnalyticComponents/ChartAnalytics";
@@ -9,12 +8,11 @@ import { useDailyDashboardStats } from "../hooks/analytics/useDailyDashboardStat
 import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
 import { useStockDistributionData } from "../hooks/analytics/useStockDistributionData";
 import { usePerformanceData } from "../hooks/analytics/usePerformanceData";
+import { authService } from "../services/authService";
 
-interface AnalyticsPageProps {
-    userData: User | null;
-}
+const AnalyticsPage: React.FC = () => {
+    const userData = authService.getUser();
 
-const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userData }) => {
     const [selectedDate, setSelectedDate] = useState<string>(
         getDefaultDateOnly()
     );

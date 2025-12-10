@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { authService } from "../services/authService";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { User } from "../types/user";
 import { MenuId } from "../types";
 import UserManagementPage from "./UserManagementPage";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
@@ -17,6 +16,7 @@ import SaleCreationPage from "./SaleCreationPage";
 import SaleUpdatePage from "./SaleUpdatePage";
 import MultiplePrintInvoicePage from "./MultiplePrintInvoicePage";
 import AnalyticsPage from "./AnalyticsPage";
+import { getDefaultActiveMenu } from "../utils/GetDefaultActiveMenu";
 
 interface DashboardProps {
     onLogout: () => void;
@@ -24,16 +24,15 @@ interface DashboardProps {
 
 const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
-    const [activeMenu, setActiveMenu] = useState<MenuId>("dashboard");
-    const [userData, setUserData] = useState<User | null>(null);
+    const [activeMenu, setActiveMenu] = useState<MenuId>(
+        getDefaultActiveMenu()
+    );
+    const [maxWidth, setMaxWidth] = useState(
+        localStorage.getItem("maxWidth") || ""
+    );
 
     const navigate = useNavigate();
     const location = useLocation();
-
-    useEffect(() => {
-        const user = authService.getUser();
-        setUserData(user);
-    }, []);
 
     const handleLogout = () => {
         authService.logout();
@@ -49,23 +48,35 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
         );
     }
 
+    const setActiveMenuButton = (menu: MenuId) => {
+        setActiveMenu(menu);
+        navigate(`/dashboard/${menu}`);
+        localStorage.setItem("activeMenu", menu);
+    };
+
+    const handleWidthChange = (width: string) => {
+        setMaxWidth(width);
+        localStorage.setItem("maxWidth", width);
+    };
+
     return (
         <div className="flex h-screen bg-gray-100">
             <Sidebar
                 isOpen={sidebarOpen}
-                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
                 activeMenu={activeMenu}
-                setActiveMenu={(menu) => {
-                    setActiveMenu(menu);
-                    navigate(`/dashboard/${menu}`);
-                }}
+                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                setActiveMenu={(menu) => setActiveMenuButton(menu)}
                 onLogout={handleLogout}
             />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Navbar activeMenu={activeMenu} userData={userData} />
+                <Navbar
+                    activeMenu={activeMenu}
+                    onLogout={handleLogout}
+                    onWidthChange={handleWidthChange}
+                />
                 <main className="flex-1 overflow-y-auto p-6">
                     {/* max-w-9xl  */}
-                    <div className="mx-auto">
+                    <div className={`mx-auto ${maxWidth}`}>
                         <Routes>
                             <Route
                                 path="users"
@@ -113,7 +124,7 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                             />
                             <Route
                                 path="analytics"
-                                element={<AnalyticsPage userData={userData} />}
+                                element={<AnalyticsPage />}
                             />
                         </Routes>
                     </div>
