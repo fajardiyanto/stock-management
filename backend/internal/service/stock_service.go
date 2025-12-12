@@ -80,9 +80,7 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 
 	if filter.Keyword != "" {
 		if _, err := strconv.Atoi(filter.Keyword); err == nil {
-			if filter.Keyword != "" {
-				query = query.Where("id = ?", filter.Keyword)
-			}
+			query = query.Where("id = ?", filter.Keyword)
 		} else {
 			var stockIDs []string
 

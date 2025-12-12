@@ -4,6 +4,7 @@ import (
 	"dashboard-app/internal/config"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
+	"dashboard-app/util/apperror"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -85,7 +86,14 @@ func (s *Sales) GetAllSalesHandler(c *gin.Context) {
 
 	data, err := s.salesRepository.GetAllSales(filter)
 	if err != nil {
-		config.GetLogger().Error(err)
+		if appErr, ok := apperror.AsAppError(err); ok {
+			config.GetLogger().Error(err)
+			c.JSON(appErr.Code, models.HTTPResponseError{
+				StatusCode: appErr.Code,
+				Message:    appErr.Message,
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),

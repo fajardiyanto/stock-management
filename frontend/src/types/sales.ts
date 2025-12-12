@@ -41,7 +41,7 @@ export interface SaleFilter {
     page?: number;
     size?: number;
     payment_status?: PaymentStatus;
-    id?: string;
+    keyword?: string;
     sales_id?: string;
     sales_date?: string;
     customer_id?: string;

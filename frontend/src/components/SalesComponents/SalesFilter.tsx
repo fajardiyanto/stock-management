@@ -27,7 +27,7 @@ const SalesFilter: React.FC<SalesFilterProps> = ({
     const handleSearch = () => {
         setIsFiltering(true);
         onSearch({
-            id: search || undefined,
+            keyword: search || undefined,
             payment_status:
                 paymentStatusKey === ""
                     ? undefined
@@ -87,7 +87,7 @@ const SalesFilter: React.FC<SalesFilterProps> = ({
                         />
                         <input
                             type="text"
-                            placeholder="ID"
+                            placeholder="Cari ID Stok atau Nama Item"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyPress={handleKeyPress}

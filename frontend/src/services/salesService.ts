@@ -26,8 +26,8 @@ export const salesService = {
         if (filters.customer_id) {
             queryParams.append('customer_id', filters.customer_id);
         }
-        if (filters.id) {
-            queryParams.append('id', filters.id);
+        if (filters.keyword) {
+            queryParams.append('keyword', filters.keyword);
         }
         if (filters.sales_id) {
             queryParams.append('sales_id', filters.sales_id);

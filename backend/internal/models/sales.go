@@ -4,8 +4,8 @@ import "time"
 
 type Sale struct {
 	ID              int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid            string    `json:"uuid" gorm:"column:uuid"`
-	CustomerId      string    `json:"customer_id" gorm:"column:customer_id"`
+	Uuid            string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
+	CustomerId      string    `json:"customer_id" gorm:"column:customer_id;type:varchar(36)"`
 	PurchaseDate    time.Time `json:"purchase_date" gorm:"column:purchase_date"`
 	PaidAmount      int       `json:"paid_amount" gorm:"column:paid_amount"`
 	RemainingAmount int       `json:"remaining_amount" gorm:"column:remaining_amount"`
@@ -24,8 +24,8 @@ func (*Sale) TableName() string {
 
 type ItemAddOnn struct {
 	ID          int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid        string    `json:"uuid" gorm:"column:uuid"`
-	SaleId      string    `json:"sale_id" gorm:"column:sale_id"`
+	Uuid        string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
+	SaleId      string    `json:"sale_id" gorm:"column:sale_id;type:varchar(36)"`
 	AddOnnName  string    `json:"add_onn_name" gorm:"column:add_onn_name"`
 	AddOnnPrice int       `json:"add_onn_price" gorm:"column:add_onn_price"`
 	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
@@ -39,10 +39,10 @@ func (*ItemAddOnn) TableName() string {
 
 type ItemSales struct {
 	ID               int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Uuid             string    `json:"uuid" gorm:"column:uuid"`
-	StockSortId      string    `json:"stock_sort_id" gorm:"column:stock_sort_id"`
+	Uuid             string    `json:"uuid" gorm:"column:uuid;type:varchar(36)"`
+	StockSortId      string    `json:"stock_sort_id" gorm:"column:stock_sort_id;type:varchar(36)"`
 	StockCode        string    `json:"stock_code" gorm:"column:stock_code"`
-	SaleId           string    `json:"sale_id" gorm:"column:sale_id"`
+	SaleId           string    `json:"sale_id" gorm:"column:sale_id;type:varchar(36)"`
 	Weight           int       `json:"weight" gorm:"column:weight"`
 	PricePerKilogram int       `json:"price_per_kilogram" gorm:"column:price_per_kilogram"`
 	TotalAmount      int       `json:"total_amount" gorm:"column:total_amount"`
@@ -116,11 +116,11 @@ type SaleResponse struct {
 type SalesFilter struct {
 	Size          int    `form:"size"`
 	PageNo        int    `form:"page_no"`
-	Id            string `form:"id"`
 	SalesId       string `form:"sales_id"`
 	CustomerId    string `form:"customer_id"`
 	SalesDate     string `form:"sales_date"`
 	PaymentStatus string `form:"payment_status"`
+	Keyword       string `form:"keyword"`
 	//LastPaymentDate string `form:"last_payment_date"`
 }
 
@@ -129,4 +129,21 @@ type SalePaginationResponse struct {
 	PageNo int            `json:"page_no"`
 	Total  int            `json:"total"`
 	Data   []SaleResponse `json:"data"`
+}
+
+type RelatedDataSales struct {
+	ItemSales  []ItemSales
+	StockSorts []StockSort
+	AddOns     []ItemAddOnn
+	Fibers     []Fiber
+}
+
+type RawSalesData struct {
+	Sale
+	CustomerUuid     string     `gorm:"column:customer_uuid"`
+	CustomerName     string     `gorm:"column:customer_name"`
+	CustomerPhone    string     `gorm:"column:customer_phone"`
+	CustomerAddress  string     `gorm:"column:customer_address"`
+	CustomerShipping string     `gorm:"column:customer_shipping_address"`
+	LastPaymentDate  *time.Time `gorm:"column:last_payment_date"`
 }
