@@ -25,6 +25,8 @@ func NewSalesHandler(salesRepository repository.SalesRepository, validator *vali
 }
 
 func (s *Sales) CreateSalesHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var req models.SaleRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,7 +53,7 @@ func (s *Sales) CreateSalesHandler(c *gin.Context) {
 		return
 	}
 
-	if err := s.salesRepository.CreateSales(req); err != nil {
+	if err := s.salesRepository.CreateSales(ctx, req); err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
 			StatusCode: http.StatusInternalServerError,
@@ -67,6 +69,8 @@ func (s *Sales) CreateSalesHandler(c *gin.Context) {
 }
 
 func (s *Sales) GetAllSalesHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var filter models.SalesFilter
 
 	if err := c.BindQuery(&filter); err != nil {
@@ -84,7 +88,7 @@ func (s *Sales) GetAllSalesHandler(c *gin.Context) {
 		filter.Size = 10
 	}
 
-	data, err := s.salesRepository.GetAllSales(filter)
+	data, err := s.salesRepository.GetAllSales(ctx, filter)
 	if err != nil {
 		if appErr, ok := apperror.AsAppError(err); ok {
 			config.GetLogger().Error(err)
@@ -109,9 +113,11 @@ func (s *Sales) GetAllSalesHandler(c *gin.Context) {
 }
 
 func (s *Sales) DeleteSaleHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	saleId := c.Param("saleId")
 
-	err := s.salesRepository.DeleteSale(saleId)
+	err := s.salesRepository.DeleteSale(ctx, saleId)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
@@ -128,9 +134,11 @@ func (s *Sales) DeleteSaleHandler(c *gin.Context) {
 }
 
 func (s *Sales) GetSaleByIdHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	saleId := c.Param("saleId")
 
-	data, err := s.salesRepository.GetSaleById(saleId)
+	data, err := s.salesRepository.GetSaleById(ctx, saleId)
 	if err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
@@ -148,6 +156,8 @@ func (s *Sales) GetSaleByIdHandler(c *gin.Context) {
 }
 
 func (s *Sales) UpdateSalesHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	saleId := c.Param("saleId")
 	var req models.SaleRequest
 
@@ -175,7 +185,7 @@ func (s *Sales) UpdateSalesHandler(c *gin.Context) {
 		return
 	}
 
-	if err := s.salesRepository.UpdateSales(saleId, req); err != nil {
+	if err := s.salesRepository.UpdateSales(ctx, saleId, req); err != nil {
 		config.GetLogger().Error(err)
 		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
 			StatusCode: http.StatusInternalServerError,

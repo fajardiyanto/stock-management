@@ -1,11 +1,14 @@
 package repository
 
-import "dashboard-app/internal/models"
+import (
+	"context"
+	"dashboard-app/internal/models"
+)
 
 type SalesRepository interface {
-	CreateSales(models.SaleRequest) error
-	GetAllSales(models.SalesFilter) (*models.SalePaginationResponse, error)
-	DeleteSale(string) error
-	GetSaleById(string) (*models.SaleResponse, error)
-	UpdateSales(string, models.SaleRequest) error
+	CreateSales(context.Context, models.SaleRequest) error
+	GetAllSales(context.Context, models.SalesFilter) (*models.SalePaginationResponse, error)
+	DeleteSale(context.Context, string) error
+	GetSaleById(context.Context, string) (*models.SaleResponse, error)
+	UpdateSales(context.Context, string, models.SaleRequest) error
 }

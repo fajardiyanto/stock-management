@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"dashboard-app/internal/config"
 	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
@@ -20,8 +21,8 @@ func NewSalesService() repository.SalesRepository {
 	return &SalesService{}
 }
 
-func (s *SalesService) CreateSales(request models.SaleRequest) error {
-	db := config.GetDBConn()
+func (s *SalesService) CreateSales(ctx context.Context, request models.SaleRequest) error {
+	db := config.GetDBConn().WithContext(ctx)
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -179,14 +180,14 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 			ids = append(ids, fmt.Sprintf("'%s'", stock.Uuid))
 		}
 
-		sql := fmt.Sprintf(`
+		updateStockSortsQuery := fmt.Sprintf(`
 			UPDATE stock_sorts 
 			SET current_weight = CASE uuid %s END,
 			    updated_at = NOW()
 			WHERE uuid IN (%s)
 		`, strings.Join(cases, " "), strings.Join(ids, ","))
 
-		if err := tx.Exec(sql).Error; err != nil {
+		if err := tx.Exec(updateStockSortsQuery).Error; err != nil {
 			return fmt.Errorf("failed to update stock sorts: %w", err)
 		}
 	}
@@ -194,8 +195,9 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 	return nil
 }
 
-func (s *SalesService) UpdateSales(id string, request models.SaleRequest) error {
-	db := config.GetDBConn()
+func (s *SalesService) UpdateSales(ctx context.Context, id string, request models.SaleRequest) error {
+	db := config.GetDBConn().WithContext(ctx)
+
 	tx := db.Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
@@ -378,8 +380,9 @@ func (s *SalesService) updateAddOns(tx *gorm.DB, saleId string, newAddOns []mode
 	return nil
 }
 
-func (s *SalesService) DeleteSale(saleId string) error {
-	db := config.GetDBConn()
+func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
+	db := config.GetDBConn().WithContext(ctx)
+
 	tx := db.Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
@@ -486,8 +489,8 @@ func (s *SalesService) DeleteSale(saleId string) error {
 	return tx.Commit().Error
 }
 
-func (s *SalesService) GetSaleById(saleId string) (*models.SaleResponse, error) {
-	db := config.GetDBConn()
+func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.SaleResponse, error) {
+	db := config.GetDBConn().WithContext(ctx)
 
 	var result models.RawSalesData
 
@@ -665,8 +668,8 @@ func (s *SalesService) buildSaleResponse(
 	}
 }
 
-func (s *SalesService) GetAllSales(filter models.SalesFilter) (*models.SalePaginationResponse, error) {
-	db := config.GetDBConn()
+func (s *SalesService) GetAllSales(ctx context.Context, filter models.SalesFilter) (*models.SalePaginationResponse, error) {
+	db := config.GetDBConn().WithContext(ctx)
 
 	if filter.PageNo < 1 {
 		filter.PageNo = 1
