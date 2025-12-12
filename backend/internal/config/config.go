@@ -1,7 +1,10 @@
 package config
 
 import (
+	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	databaseInterface "github.com/fajarardiyanto/flt-go-database/interfaces"
@@ -45,6 +48,8 @@ func InitMysql(db databaseInterface.Database) {
 			logger.Error("Error when migrate table, with err: %s", err)
 			return
 		}
+
+		autoInitSuperAdmin(database.Orm())
 	}
 }
 
@@ -60,4 +65,34 @@ func GetLogger() interfaces.Logger {
 	logger = lib.NewLib()
 	logger.Init(models.GetConfig().Name)
 	return logger
+}
+
+func autoInitSuperAdmin(db *gorm.DB) {
+	password := "123"
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	defaultAdmin := models.User{
+		Uuid:            uuid.New().String(),
+		Name:            "Fajar",
+		Phone:           "123",
+		Password:        string(hash),
+		Role:            constants.SuperAdminRole,
+		Status:          true,
+		Address:         "123 Main Street, Jakarta",
+		ShippingAddress: "",
+	}
+
+	result := db.Where("phone = ?", defaultAdmin.Phone).
+		FirstOrCreate(&defaultAdmin)
+
+	if result.Error != nil {
+		logger.Error("Failed to auto-create SUPER_ADMIN: %v", result.Error)
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		logger.Info("SUPER_ADMIN already exists — skip creating")
+	} else {
+		logger.Info("SUPER_ADMIN created successfully")
+	}
 }

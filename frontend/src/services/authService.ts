@@ -19,12 +19,15 @@ export const authService = {
         const data: LoginResponse = await response.json();
         localStorage.setItem("token", data.data?.token);
         localStorage.setItem("user", JSON.stringify(data.data?.user));
+        localStorage.setItem("activeMenu", "analytics");
         return data;
     },
 
     logout: (): void => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("maxWidth");
+        localStorage.removeItem("activeMenu");
     },
 
     getToken: (): string | null => {
