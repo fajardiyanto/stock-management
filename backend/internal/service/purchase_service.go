@@ -2,7 +2,7 @@ package service
 
 import (
 	"dashboard-app/internal/config"
-	"dashboard-app/internal/constatnts"
+	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"fmt"
@@ -69,7 +69,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		Uuid:          uuid.New().String(),
 		SupplierID:    request.SupplierID,
 		PurchaseDate:  request.PurchaseDate,
-		PaymentStatus: constatnts.PaymentNotMadeYet,
+		PaymentStatus: constants.PaymentNotMadeYet,
 		TotalAmount:   totalAmount,
 		StockId:       stockEntry.Uuid,
 		Deleted:       false,
@@ -86,7 +86,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 		Uuid:        uuid.New().String(),
 		UserId:      request.SupplierID,
 		Total:       totalAmount,
-		Type:        constatnts.Income,
+		Type:        constants.Income,
 		Description: fmt.Sprintf("Hutang Buying STOCK%d", stockEntry.ID),
 		PurchaseId:  purchase.Uuid,
 		Deleted:     false,

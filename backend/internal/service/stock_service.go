@@ -486,7 +486,7 @@ func (s *StockService) CreateStockSort(request models.SubmitSortRequest) error {
 			ItemName:         v.SortedItemName,
 			Weight:           v.Weight,
 			PricePerKilogram: v.PricePerKilogram,
-			CurrentWeight:    v.CurrentWeight,
+			CurrentWeight:    v.Weight,
 			TotalCost:        v.PricePerKilogram * v.Weight,
 			IsShrinkage:      v.IsShrinkage,
 			Deleted:          false,

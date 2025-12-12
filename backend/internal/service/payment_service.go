@@ -2,7 +2,7 @@ package service
 
 import (
 	"dashboard-app/internal/config"
-	"dashboard-app/internal/constatnts"
+	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"fmt"
@@ -50,19 +50,19 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 			UpdatedAt:   payment.UpdatedAt,
 		}
 
-		if payment.Type == constatnts.Expense {
+		if payment.Type == constants.Expense {
 			result.IsDeleted = true
 		}
 
-		if user.Role == constatnts.SupplierRole && payment.PurchaseId == "" && payment.Type != constatnts.Income {
+		if user.Role == constants.SupplierRole && payment.PurchaseId == "" && payment.Type != constants.Income {
 			result.IsDeleted = true
 		}
 
-		if user.Role == constatnts.BuyerRole && payment.SalesId == "" && payment.Type != constatnts.Income {
+		if user.Role == constants.BuyerRole && payment.SalesId == "" && payment.Type != constants.Income {
 			result.IsDeleted = true
 		}
 
-		if payment.Type == constatnts.Income && payment.PurchaseId == "" && payment.SalesId == "" {
+		if payment.Type == constants.Income && payment.PurchaseId == "" && payment.SalesId == "" {
 			result.IsDeleted = true
 		}
 
@@ -243,9 +243,9 @@ func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentP
 	paidAmount := purchase.PaidAmount + request.Total
 	remainingAmount := purchase.TotalAmount - paidAmount
 
-	paymentStatus := constatnts.PartialPayment
+	paymentStatus := constants.PartialPayment
 	if purchase.TotalAmount == paidAmount {
-		paymentStatus = constatnts.PaymentInFull
+		paymentStatus = constants.PaymentInFull
 	}
 
 	purchaseRequest := map[string]interface{}{
@@ -298,9 +298,9 @@ func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSale
 	paidAmount := sale.PaidAmount + request.Total
 	remainingAmount := sale.TotalAmount - paidAmount
 
-	paymentStatus := constatnts.PartialPayment
+	paymentStatus := constants.PartialPayment
 	if sale.TotalAmount == paidAmount {
-		paymentStatus = constatnts.PaymentInFull
+		paymentStatus = constants.PaymentInFull
 	}
 
 	saleRequest := map[string]interface{}{

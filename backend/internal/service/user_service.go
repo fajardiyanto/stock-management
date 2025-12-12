@@ -2,7 +2,7 @@ package service
 
 import (
 	"dashboard-app/internal/config"
-	"dashboard-app/internal/constatnts"
+	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"dashboard-app/pkg/jwt"
@@ -136,7 +136,7 @@ func (s *UserService) GetAllUser(page, size int, name, phone, role string) (*mod
 	var total int64
 
 	query := db.Model(&models.User{}).
-		Where("role != ? AND status = true", constatnts.SuperAdminRole)
+		Where("role != ? AND status = true", constants.SuperAdminRole)
 
 	if name != "" {
 		query = query.Where("name ILIKE ?", "%"+name+"%") // postgres

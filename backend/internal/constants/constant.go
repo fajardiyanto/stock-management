@@ -1,4 +1,4 @@
-package constatnts
+package constants
 
 const (
 	SuperAdminRole    = "SUPER_ADMIN"
