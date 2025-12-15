@@ -57,6 +57,7 @@ const mapApiToFormState = (
             item_id: fiber.uuid,
             fiber_id: fiber.uuid,
             fiber_name: fiber.name,
+            weight: 0,
         })
     );
 

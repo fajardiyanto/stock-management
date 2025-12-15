@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Trash2, ChevronDown, X } from "lucide-react";
 import { SelectedSaleItem, FiberAllocation } from "../../types/sales";
 import { FiberList } from "../../types/fiber";
@@ -28,10 +28,25 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
     const [error, setError] = useState("");
 
     const fiber = fiberList.find((f) => f.uuid === selectedFiber);
+    const usedFiberIds = new Set(
+        fiberAllocations.map((alloc) => alloc.fiber_id)
+    );
+    const availableFibers = fiberList.filter(
+        (fiber) => !usedFiberIds.has(fiber.uuid)
+    );
 
-    const itemsNeedingAllocation = selectedItems.filter((item) => {
-        return !fiberAllocations.some((alloc) => alloc.item_id === item.tempId);
-    });
+    const itemsNeedingAllocation = selectedItems
+        .map((item) => {
+            const allocatedWeight = fiberAllocations
+                .filter((alloc) => alloc.item_id === item.tempId)
+                .reduce((sum, alloc) => sum + alloc.weight, 0);
+
+            return {
+                ...item,
+                remainingWeight: item.weight - allocatedWeight,
+            };
+        })
+        .filter((item) => item.remainingWeight > 0);
 
     const handleAllocationInputChange = (itemId: string, value: string) => {
         setSelectedItemToAllocate((prev) => ({ ...prev, [itemId]: value }));
@@ -45,10 +60,12 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
         }
 
         const allocationsToSubmit: FiberAllocation[] = [];
-        // let totalWeightAllocated = 0;
+        let totalWeightAllocated = 0;
+        let totalRequiredWeight = 0;
 
         itemsNeedingAllocation.forEach((item) => {
             const weight = parseFloat(selectedItemToAllocate[item.tempId]) || 0;
+            totalRequiredWeight += item.weight;
 
             if (weight > 0) {
                 if (weight > item.weight) {
@@ -62,8 +79,10 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                     item_id: item.tempId,
                     fiber_id: fiber.uuid,
                     fiber_name: fiber.name,
+                    weight: weight,
                 });
-                // totalWeightAllocated += weight;
+                totalWeightAllocated += weight;
+                handleAllocationInputChange(item.tempId, "0");
             }
         });
 
@@ -76,9 +95,17 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
 
         allocationsToSubmit.forEach(onAllocate);
 
-        setSelectedFiber("");
-        setSelectedItemToAllocate({});
+        if (totalWeightAllocated === totalRequiredWeight) {
+            setSelectedFiber("");
+            setSelectedItemToAllocate({});
+        }
     };
+
+    useEffect(() => {
+        if (selectedFiber && usedFiberIds.has(selectedFiber)) {
+            setSelectedFiber("");
+        }
+    }, [fiberAllocations, selectedFiber]);
 
     if (exportSale) return null;
 
@@ -108,7 +135,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                             disabled={itemsNeedingAllocation.length === 0}
                         >
                             <option value="">Pilih Fiber</option>
-                            {fiberList.map((f) => (
+                            {availableFibers.map((f) => (
                                 <option key={f.uuid} value={f.uuid}>
                                     {f.name}
                                 </option>
@@ -132,8 +159,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                     {itemsNeedingAllocation.length === 0 &&
                     selectedItems.length > 0 ? (
                         <p className="text-gray-500 text-sm">
-                            Semua item sudah dialokasikan ke fiber lain (MOCK
-                            CHECK)
+                            Semua item sudah dialokasikan ke fiber
                         </p>
                     ) : itemsNeedingAllocation.length === 0 &&
                       selectedItems.length === 0 ? (
@@ -159,7 +185,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                                         /kg
                                     </p>
                                     <p className="text-xs font-semibold text-gray-700">
-                                        Berat Sisa: {item.weight} kg
+                                        Berat Sisa: {item.remainingWeight} kg
                                     </p>
                                 </div>
 
@@ -254,10 +280,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                             </tr>
                         ) : (
                             fiberAllocations.map((alloc, index) => (
-                                <tr
-                                    key={alloc.fiber_id + alloc.item_id}
-                                    className="hover:bg-gray-50"
-                                >
+                                <tr key={index} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {alloc.fiber_name}
                                         <p className="text-xs text-gray-400">

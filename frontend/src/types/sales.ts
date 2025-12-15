@@ -95,6 +95,7 @@ export interface FiberAllocation {
     item_id: string;
     fiber_id: string;
     fiber_name: string;
+    weight: number;
 }
 
 export interface SelectedAddOn extends CreateAddOnRequest {
