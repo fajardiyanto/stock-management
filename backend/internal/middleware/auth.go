@@ -21,13 +21,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		userID, err := jwt.ValidateToken(parts[1])
+		_, err := jwt.ValidateToken(parts[1])
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			return
 		}
 
-		c.Set("userID", userID)
 		c.Next()
 	}
 }
