@@ -1,11 +1,14 @@
 package service
 
 import (
+	"dashboard-app/pkg/apperror"
+	"fmt"
+	"time"
+
 	"dashboard-app/internal/config"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"dashboard-app/util"
-	"fmt"
 )
 
 type AnalyticService struct{}
@@ -14,213 +17,412 @@ func NewAnalyticService() repository.AnalyticRepository {
 	return &AnalyticService{}
 }
 
+// GetAnalyticStats =====================================================
+// GET ANALYTIC STATS - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, error) {
 	db := config.GetDBConn()
 
-	var totalStock int64
-	if err := db.Model(&models.StockSort{}).
-		Where("deleted = false").
-		Pluck("COALESCE(SUM(current_weight), 0) AS total_stock", &totalStock).
-		Error; err != nil {
-		return nil, err
+	// Single optimized query using CTEs to fetch all stats at once
+	var result models.AnalyticStatsResponse
+	if err := db.Raw(`
+		WITH stock_totals AS (
+			SELECT COALESCE(SUM(current_weight), 0) AS total_stock
+			FROM stock_sorts
+			WHERE deleted = false
+		),
+		fiber_totals AS (
+			SELECT COUNT(*) AS total_fiber
+			FROM fibers
+			WHERE status = 'FREE' AND deleted = false
+		),
+		purchase_totals AS (
+			SELECT
+				COALESCE(SUM(total_payment), 0) AS total_purchase,
+				COALESCE(SUM(weight), 0) AS total_purchase_weight
+			FROM stock_items
+			WHERE deleted = false
+		),
+		sales_totals AS (
+			SELECT
+				COALESCE(SUM(total_amount), 0) AS total_sales,
+				COALESCE(SUM(weight), 0) AS total_sales_weight
+			FROM item_sales
+			WHERE deleted = false
+		)
+		SELECT
+			st.total_stock,
+			ft.total_fiber,
+			pt.total_purchase,
+			sa.total_sales,
+			pt.total_purchase_weight,
+			sa.total_sales_weight
+		FROM stock_totals st
+		CROSS JOIN fiber_totals ft
+		CROSS JOIN purchase_totals pt
+		CROSS JOIN sales_totals sa
+	`).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch analytics stats: ", err)
 	}
 
-	var totalFiber int64
-	if err := db.Model(&models.Fiber{}).
-		Where("status = 'FREE' AND deleted = false").
-		Count(&totalFiber).Error; err != nil {
-		return nil, err
-	}
-
-	var totalPurchase int64
-	if err := db.Model(&models.StockItem{}).
-		Where("deleted = false").
-		Pluck("COALESCE(SUM(total_payment), 0) AS total_purchase", &totalPurchase).
-		Error; err != nil {
-		return nil, err
-	}
-
-	var totalSales int64
-	if err := db.Model(&models.ItemSales{}).
-		Where("deleted = false").
-		Pluck("COALESCE(SUM(total_amount), 0) AS total_sales", &totalSales).
-		Error; err != nil {
-		return nil, err
-	}
-
-	var totalPurchaseWeight int64
-	if err := db.Model(&models.StockItem{}).
-		Where("deleted = false").
-		Pluck("COALESCE(SUM(weight), 0) AS total_purchase_weight", &totalPurchaseWeight).
-		Error; err != nil {
-		return nil, err
-	}
-
-	var totalSalesWeight int64
-	if err := db.Model(&models.ItemSales{}).
-		Where("deleted = false").
-		Pluck("COALESCE(SUM(weight), 0) AS total_purchase_weight", &totalSalesWeight).
-		Error; err != nil {
-		return nil, err
-	}
-
-	response := models.AnalyticStatsResponse{
-		TotalStock:          totalStock,
-		TotalFiber:          totalFiber,
-		TotalPurchase:       totalPurchase,
-		TotalSales:          totalSales,
-		TotalPurchaseWeight: totalPurchaseWeight,
-		TotalSalesWeight:    totalSalesWeight,
-	}
-
-	return &response, nil
+	return &models.AnalyticStatsResponse{
+		TotalStock:          result.TotalStock,
+		TotalFiber:          result.TotalFiber,
+		TotalPurchase:       result.TotalPurchase,
+		TotalSales:          result.TotalSales,
+		TotalPurchaseWeight: result.TotalPurchaseWeight,
+		TotalSalesWeight:    result.TotalSalesWeight,
+	}, nil
 }
 
+// GetDailyGetAnalyticStats - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetDailyGetAnalyticStats(date string) (*models.DailyAnalyticStatsResponse, error) {
 	db := config.GetDBConn()
 
-	var totalPurchaseWeight int64
-	if err := db.Model(&models.StockItem{}).
-		Where("deleted = false AND DATE(created_at) = ?", date).
-		Pluck("COALESCE(SUM(weight), 0)", &totalPurchaseWeight).Error; err != nil {
-		return nil, err
+	// Single query with CTEs for daily stats
+	var result models.DailyAnalyticStatsResponse
+	if err := db.Raw(`
+		WITH daily_purchases AS (
+			SELECT
+				COALESCE(SUM(weight), 0) AS purchase_weight,
+				COALESCE(SUM(total_payment), 0) AS purchase_value
+			FROM stock_items
+			WHERE deleted = false
+			AND DATE(created_at) = ?
+		),
+		daily_sales AS (
+			SELECT
+				COALESCE(SUM(weight), 0) AS sales_weight,
+				COALESCE(SUM(total_amount), 0) AS sales_value
+			FROM item_sales
+			WHERE deleted = false
+			AND DATE(created_at) = ?
+		)
+		SELECT
+			dp.purchase_weight AS daily_purchase_weight,
+			dp.purchase_value AS daily_purchase_value,
+			ds.sales_weight AS daily_sales_weight,
+			ds.sales_value AS daily_sales_value
+		FROM daily_purchases dp
+		CROSS JOIN daily_sales ds
+	`, date, date).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch daily stats: ", err)
 	}
 
-	var totalPurchase int64
-	if err := db.Model(&models.StockItem{}).
-		Where("deleted = false AND DATE(created_at) = ?", date).
-		Pluck("COALESCE(SUM(total_payment), 0) AS total_purchase", &totalPurchase).
-		Error; err != nil {
-		return nil, err
-	}
-
-	var totalSalesWeight int64
-	if err := db.Model(&models.ItemSales{}).
-		Where("deleted = false AND DATE(created_at) = ?", date).
-		Pluck("COALESCE(SUM(weight), 0) AS total_purchase_weight", &totalSalesWeight).
-		Error; err != nil {
-		return nil, err
-	}
-
-	var totalSales int64
-	if err := db.Model(&models.ItemSales{}).
-		Where("deleted = false AND DATE(created_at) = ?", date).
-		Pluck("COALESCE(SUM(total_amount), 0) AS total_sales", &totalSales).
-		Error; err != nil {
-		return nil, err
-	}
-
-	response := models.DailyAnalyticStatsResponse{
-		DailyPurchaseWeight: totalPurchaseWeight,
-		DailyPurchaseValue:  totalPurchase,
-		DailySalesWeight:    totalSalesWeight,
-		DailySalesValue:     totalSales,
-	}
-
-	return &response, nil
+	return &models.DailyAnalyticStatsResponse{
+		DailyPurchaseWeight: result.DailyPurchaseWeight,
+		DailyPurchaseValue:  result.DailyPurchaseValue,
+		DailySalesWeight:    result.DailySalesWeight,
+		DailySalesValue:     result.DailySalesValue,
+	}, nil
 }
 
+// GetSalesTrendData - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetSalesTrendData(year string) ([]models.SalesTrendData, error) {
 	db := config.GetDBConn()
 
-	var sales []models.SalesResult
-	if err := db.Model(&models.ItemSales{}).
-		Select("DATE_TRUNC('month', created_at) AS month, SUM(total_amount) AS total").
-		Where("deleted = false AND EXTRACT(YEAR FROM created_at) = ?", 2025).
-		Group("month").
-		Order("month ASC").
-		Scan(&sales).Error; err != nil {
-		return nil, err
+	// Single query to get both sales and purchases data
+	var monthlyData []models.SalesTrendDataRow
+	if err := db.Raw(`
+		WITH sales_by_month AS (
+			SELECT
+				EXTRACT(MONTH FROM created_at)::int AS month,
+				COALESCE(SUM(total_amount), 0) AS total
+			FROM item_sales
+			WHERE deleted = false
+			AND EXTRACT(YEAR FROM created_at) = ?
+			GROUP BY EXTRACT(MONTH FROM created_at)
+		),
+		purchases_by_month AS (
+			SELECT
+				EXTRACT(MONTH FROM created_at)::int AS month,
+				COALESCE(SUM(total_payment), 0) AS total
+			FROM stock_items
+			WHERE deleted = false
+			AND EXTRACT(YEAR FROM created_at) = ?
+			GROUP BY EXTRACT(MONTH FROM created_at)
+		),
+		months AS (
+			SELECT generate_series(1, 12) AS month
+		)
+		SELECT
+			m.month,
+			COALESCE(s.total, 0) AS sales_revenue,
+			COALESCE(p.total, 0) AS purchase_revenue
+		FROM months m
+		LEFT JOIN sales_by_month s ON s.month = m.month
+		LEFT JOIN purchases_by_month p ON p.month = m.month
+		ORDER BY m.month
+	`, year, year).Scan(&monthlyData).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch sales trend data: ", err)
 	}
 
-	var purchases []models.PurchaseResult
-	if err := db.Model(&models.StockItem{}).
-		Select("DATE_TRUNC('month', created_at) AS month, SUM(total_payment) AS total").
-		Where("deleted = false AND EXTRACT(YEAR FROM created_at) = ?", year).
-		Group("month").
-		Order("month ASC").
-		Scan(&purchases).Error; err != nil {
-		return nil, err
+	// Build response with month names
+	monthNames := []string{
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 	}
-
-	monthNames := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
 	result := make([]models.SalesTrendData, 12)
-	for i := 0; i < 12; i++ {
-		result[i] = models.SalesTrendData{
-			Month:           monthNames[i],
-			SalesRevenue:    0,
-			PurchaseRevenue: 0,
+
+	for _, r := range monthlyData {
+		if r.Month >= 1 && r.Month <= 12 {
+			result[r.Month-1] = models.SalesTrendData{
+				Month:           monthNames[r.Month-1],
+				SalesRevenue:    r.SalesRevenue,
+				PurchaseRevenue: r.PurchaseRevenue,
+			}
 		}
-	}
-
-	for _, row := range sales {
-		m := int(row.Month.Month()) - 1
-		result[m].SalesRevenue = row.TotalRevenue
-	}
-
-	for _, row := range purchases {
-		m := int(row.Month.Month()) - 1
-		result[m].PurchaseRevenue = row.TotalPayment
 	}
 
 	return result, nil
 }
 
+// GetStockDistributionData - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistributionData, error) {
 	db := config.GetDBConn()
 
-	var stockDistribution []models.StockDistributionDataResult
-	if err := db.Table("stock_items si").
-		Select("si.id AS id, COALESCE(SUM(si.weight), 0) AS value").
-		Joins("LEFT JOIN stock_entries se ON si.stock_entry_id = se.uuid").
-		Where("si.deleted = false").
-		Group("si.id").
-		Scan(&stockDistribution).Error; err != nil {
-		return nil, err
+	// Optimized query with proper grouping
+
+	var distributions []models.StockDistResult
+	if err := db.Raw(`
+		SELECT
+			se.id AS stock_entry_id,
+			COALESCE(SUM(si.weight), 0) AS total_weight
+		FROM stock_items si
+		INNER JOIN stock_entries se ON se.uuid = si.stock_entry_id
+		WHERE si.deleted = false
+		AND se.deleted = false
+		GROUP BY se.id
+		HAVING SUM(si.weight) > 0
+		ORDER BY se.id
+	`).Scan(&distributions).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock distribution: ", err)
 	}
 
-	var results []models.StockDistributionData
-	for _, v := range stockDistribution {
-		result := models.StockDistributionData{
-			Name:  fmt.Sprintf("STOCK%d", v.Id),
-			Value: int64(v.Value),
+	results := make([]models.StockDistributionData, 0, len(distributions))
+	for _, dist := range distributions {
+		results = append(results, models.StockDistributionData{
+			Name:  fmt.Sprintf("STOCK%d", dist.StockEntryID),
+			Value: dist.TotalWeight,
 			Color: util.RandomHexColor(),
-		}
-
-		results = append(results, result)
+		})
 	}
 
 	return results, nil
 }
 
+// GetSupplierPerformance - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
 	db := config.GetDBConn()
 
 	var userData []models.UserData
-	if err := db.Table("purchase p").
-		Select("u.name as name, COALESCE(SUM(p.total_amount), 0) as total").
-		Joins(`LEFT JOIN "user" u ON u.uuid = p.supplier_id`).
-		Where("p.deleted = false").
-		Group("u.name").
-		Scan(&userData).Error; err != nil {
-		return nil, err
+	if err := db.Raw(`
+		SELECT
+			u.name,
+			COALESCE(SUM(p.total_amount), 0) AS total
+		FROM purchase p
+		INNER JOIN "user" u ON u.uuid = p.supplier_id
+		WHERE p.deleted = false
+		AND u.status = true
+		GROUP BY u.uuid, u.name
+		HAVING SUM(p.total_amount) > 0
+		ORDER BY total DESC
+	`).Scan(&userData).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch supplier performance: ", err)
 	}
 
 	return userData, nil
 }
 
+// GetCustomerPerformance - Optimized with Single Query
+// =====================================================
 func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
 	db := config.GetDBConn()
 
 	var userData []models.UserData
-	if err := db.Table("sales p").
-		Select("u.name as name, COALESCE(SUM(p.total_amount), 0) as total").
-		Joins(`LEFT JOIN "user" u ON u.uuid = p.customer_id`).
-		Where("p.deleted = false").
-		Group("u.name").
-		Scan(&userData).Error; err != nil {
-		return nil, err
+	if err := db.Raw(`
+		SELECT
+			u.name,
+			COALESCE(SUM(s.total_amount), 0) AS total
+		FROM sales s
+		INNER JOIN "user" u ON u.uuid = s.customer_id
+		WHERE s.deleted = false
+		AND u.status = true
+		GROUP BY u.uuid, u.name
+		HAVING SUM(s.total_amount) > 0
+		ORDER BY total DESC
+	`).Scan(&userData).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch customer performance: ", err)
 	}
 
 	return userData, nil
+}
+
+// GetAnalyticsWithCache - Cached version for frequently accessed data
+func (s *AnalyticService) GetAnalyticsWithCache(cacheKey string, ttl time.Duration) (*models.AnalyticStatsResponse, error) {
+	// Implement caching logic here if you have a cache library
+	// For now, just call the regular method
+	return s.GetAnalyticStats()
+}
+
+// GetDateRangeStats - Get stats for a specific date range
+func (s *AnalyticService) GetDateRangeStats(startDate, endDate string) (*models.DateRangeStatsResponse, error) {
+	db := config.GetDBConn()
+
+	var result models.DateRangeStatsResponse
+	if err := db.Raw(`
+		WITH purchase_stats AS (
+			SELECT
+				COUNT(*) AS purchase_count,
+				COALESCE(SUM(weight), 0) AS purchase_weight,
+				COALESCE(SUM(total_payment), 0) AS purchase_value
+			FROM stock_items
+			WHERE deleted = false
+			AND DATE(created_at) BETWEEN ? AND ?
+		),
+		sales_stats AS (
+			SELECT
+				COUNT(*) AS sales_count,
+				COALESCE(SUM(weight), 0) AS sales_weight,
+				COALESCE(SUM(total_amount), 0) AS sales_value
+			FROM item_sales
+			WHERE deleted = false
+			AND DATE(created_at) BETWEEN ? AND ?
+		)
+		SELECT
+			ps.purchase_weight AS total_purchase_weight,
+			ps.purchase_value AS total_purchase_value,
+			ss.sales_weight AS total_sales_weight,
+			ss.sales_value AS total_sales_value,
+			ps.purchase_count,
+			ss.sales_count
+		FROM purchase_stats ps
+		CROSS JOIN sales_stats ss
+	`, startDate, endDate, startDate, endDate).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch date range stats: ", err)
+	}
+
+	return &models.DateRangeStatsResponse{
+		TotalPurchaseWeight: result.TotalPurchaseWeight,
+		TotalPurchaseValue:  result.TotalPurchaseValue,
+		TotalSalesWeight:    result.TotalSalesWeight,
+		TotalSalesValue:     result.TotalSalesValue,
+		PurchaseCount:       result.PurchaseCount,
+		SalesCount:          result.SalesCount,
+		StartDate:           startDate,
+		EndDate:             endDate,
+	}, nil
+}
+
+// GetTopPerformingItems - Get top-selling items
+func (s *AnalyticService) GetTopPerformingItems(limit int) ([]models.ItemPerformance, error) {
+	db := config.GetDBConn()
+
+	var items []models.ItemPerformance
+	if err := db.Raw(`
+		SELECT
+			ss.sorted_item_name AS item_name,
+			COUNT(DISTINCT i.uuid) AS sales_count,
+			COALESCE(SUM(i.weight), 0) AS total_weight,
+			COALESCE(SUM(i.total_amount), 0) AS total_revenue
+		FROM item_sales i
+		INNER JOIN stock_sorts ss ON ss.uuid = i.stock_sort_id
+		WHERE i.deleted = false
+		AND ss.deleted = false
+		GROUP BY ss.sorted_item_name
+		ORDER BY total_revenue DESC
+		LIMIT ?
+	`, limit).Scan(&items).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch top performing items: ", err)
+	}
+
+	return items, nil
+}
+
+// GetProfitAnalysis - Calculate profit margins
+func (s *AnalyticService) GetProfitAnalysis() (*models.ProfitAnalysis, error) {
+	db := config.GetDBConn()
+
+	var result models.ProfitAnalysis
+	if err := db.Raw(`
+		WITH costs AS (
+			SELECT COALESCE(SUM(total_payment), 0) AS total_cost
+			FROM stock_items
+			WHERE deleted = false
+		),
+		revenues AS (
+			SELECT COALESCE(SUM(total_amount), 0) AS total_revenue
+			FROM item_sales
+			WHERE deleted = false
+		)
+		SELECT
+			c.total_cost AS total_purchase_cost,
+			r.total_revenue AS total_sales_revenue,
+			(r.total_revenue - c.total_cost) AS gross_profit,
+			CASE
+				WHEN r.total_revenue > 0
+				THEN ((r.total_revenue - c.total_cost)::float / r.total_revenue::float) * 100
+				ELSE 0
+			END AS profit_margin
+		FROM costs c
+		CROSS JOIN revenues r
+	`).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch profit analysis: ", err)
+	}
+
+	return &models.ProfitAnalysis{
+		TotalPurchaseCost: result.TotalPurchaseCost,
+		TotalSalesRevenue: result.TotalSalesRevenue,
+		GrossProfit:       result.GrossProfit,
+		ProfitMargin:      result.ProfitMargin,
+	}, nil
+}
+
+// GetInventoryTurnover - Calculate inventory turnover metrics
+func (s *AnalyticService) GetInventoryTurnover() (*models.InventoryTurnover, error) {
+	db := config.GetDBConn()
+
+	var result models.InventoryTurnover
+	if err := db.Raw(`
+		WITH inventory_stats AS (
+			SELECT
+				AVG(current_weight) AS avg_inventory
+			FROM stock_sorts
+			WHERE deleted = false
+		),
+		sales_stats AS (
+			SELECT
+				COALESCE(SUM(weight), 0) AS total_sold
+			FROM item_sales
+			WHERE deleted = false
+		)
+		SELECT
+			COALESCE(inv.avg_inventory, 0) AS average_inventory,
+			COALESCE(sal.total_sold, 0) AS total_sold,
+			CASE
+				WHEN inv.avg_inventory > 0
+				THEN sal.total_sold::float / inv.avg_inventory
+				ELSE 0
+			END AS turnover_rate,
+			CASE
+				WHEN sal.total_sold > 0
+				THEN (inv.avg_inventory / sal.total_sold::float) * 365
+				ELSE 0
+			END AS days_on_hand
+		FROM inventory_stats inv
+		CROSS JOIN sales_stats sal
+	`).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to fetch inventory turnover: ", err)
+	}
+
+	return &models.InventoryTurnover{
+		AverageInventory: result.AverageInventory,
+		TotalSold:        result.TotalSold,
+		TurnoverRate:     result.TurnoverRate,
+		DaysOnHand:       result.DaysOnHand,
+	}, nil
 }

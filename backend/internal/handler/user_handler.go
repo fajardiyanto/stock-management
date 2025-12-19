@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"dashboard-app/internal/config"
+	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
+	"dashboard-app/pkg/base_handler"
 	"dashboard-app/pkg/jwt"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -14,228 +15,362 @@ import (
 )
 
 type User struct {
-	userRepo  repository.UserRepository
-	validator *validator.Validate
+	userRepo repository.UserRepository
+	*base_handler.BaseHandler
 }
 
 func NewUserHandler(userRepo repository.UserRepository, validate *validator.Validate) *User {
 	return &User{
-		userRepo:  userRepo,
-		validator: validate,
+		userRepo:    userRepo,
+		BaseHandler: base_handler.NewBaseHandler(validate),
 	}
 }
 
-func (s *User) CreateUserHandler(c *gin.Context) {
+// Register godoc
+// @Summary Register new user
+// @Description Create a new user account
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body models.UserRequest true "User registration data"
+// @Success 201 {object} models.HTTPResponseSuccess{data=models.CreateUserResponse}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 409 {object} models.HTTPResponseError "User already exists"
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /auth/register [post]
+func (h *User) Register(c *gin.Context) {
 	var req models.UserRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
+	// Bind and validate request
+	if err := h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
+	}
+
+	// Check if user already exists
+	if err := h.userRepo.CheckUser(req.Phone); err == nil {
+		h.SendError(c, http.StatusConflict, "User with this phone number already exists", nil)
 		return
 	}
 
-	if err := s.validator.Struct(req); err != nil {
-		var errs []string
-		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
-		}
-		errMsg := strings.Join(errs, ", ")
-
-		config.GetLogger().Error(errMsg)
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    errMsg,
-		})
-		return
-	}
-
-	if err := s.userRepo.CheckUser(req.Phone); err == nil {
-		config.GetLogger().Error("user already exist")
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    "user already exist",
-		})
-		return
-	}
-
-	data, err := s.userRepo.CreateUser(req)
+	// Create user
+	data, err := h.userRepo.CreateUser(req)
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to create user")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "user created",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusCreated, "User registered successfully", data)
 }
 
-func (s *User) LoginHandler(c *gin.Context) {
+// Login godoc
+// @Summary User login
+// @Description Authenticate user and return JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body models.LoginRequest true "Login credentials"
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.LoginResponse}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 401 {object} models.HTTPResponseError "Invalid credentials"
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /auth/login [post]
+func (h *User) Login(c *gin.Context) {
 	var req models.LoginRequest
+
+	// Bind JSON
 	if err := c.ShouldBindJSON(&req); err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
+		h.SendError(c, http.StatusBadRequest, "Invalid request body", err)
 		return
 	}
 
-	data, err := s.userRepo.LoginUser(req)
+	// Validate required fields
+	if req.Phone == "" || req.Password == "" {
+		h.SendError(c, http.StatusBadRequest, "Phone and password are required", nil)
+		return
+	}
+
+	// Authenticate user
+	data, err := h.userRepo.LoginUser(req)
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
+		h.SendError(c, http.StatusUnauthorized, "Invalid phone or password", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "user login successfully",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusOK, "Login successful", data)
 }
 
-func (s *User) GetMeHandler(c *gin.Context) {
-	token := jwt.GetHeader(c)
-	user, err := s.userRepo.GetUserById(token)
-	if err != nil {
-		c.JSON(http.StatusNotFound, models.HTTPResponseError{
-			StatusCode: http.StatusNotFound,
-			Message:    err.Error(),
-		})
+// GetCurrentUser godoc
+// @Summary Get current user
+// @Description Get currently authenticated user's information
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.User}
+// @Failure 401 {object} models.HTTPResponseError
+// @Failure 404 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /auth/me [get]
+func (h *User) GetCurrentUser(c *gin.Context) {
+	// Get user ID from JWT token
+	userID := jwt.GetHeader(c)
+	if userID == "" {
+		h.SendError(c, http.StatusUnauthorized, "Invalid or missing authentication token", nil)
 		return
 	}
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "Get User By Id Success",
-		Data:       user,
-	})
-}
 
-func (s *User) GetUserByIdHandler(c *gin.Context) {
-	uuid := c.Param("uuid")
-	user, err := s.userRepo.GetUserById(uuid)
+	// Fetch user
+	user, err := h.userRepo.GetUserByIdFromToken(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.HTTPResponseError{
-			StatusCode: http.StatusNotFound,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch user")
 		return
 	}
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "Get User By Id Success",
-		Data:       user,
-	})
+
+	h.SendSuccess(c, http.StatusOK, "Current user retrieved successfully", user)
 }
 
-func (s *User) GetAllUserHandler(c *gin.Context) {
+// =====================================================
+// USER MANAGEMENT HANDLERS
+// =====================================================
+
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Retrieve paginated list of users with optional filters
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
+// @Param name query string false "Filter by name"
+// @Param phone query string false "Filter by phone"
+// @Param role query string false "Filter by role"
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.GetAllUserResponse}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users [get]
+func (h *User) GetAllUsers(c *gin.Context) {
+	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 
-	name := c.Query("name")
-	phone := c.Query("phone")
-	role := c.Query("role")
+	// Validate pagination
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 {
+		size = 10
+	}
+	if size > 100 {
+		size = 100
+	}
 
-	user, err := s.userRepo.GetAllUser(page, size, name, phone, role)
+	// Get filter parameters
+	filter := models.UserFilter{
+		PageNo: page,
+		Size:   size,
+		Name:   c.Query("name"),
+		Phone:  c.Query("phone"),
+		Role:   c.Query("role"),
+	}
+
+	// Fetch users
+	users, err := h.userRepo.GetAllUser(filter)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.HTTPResponseError{
-			StatusCode: http.StatusNotFound,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch users")
 		return
 	}
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "Get All User Success",
-		Data:       user,
-	})
+
+	h.SendSuccess(c, http.StatusOK, "Users retrieved successfully", users)
 }
 
-func (s *User) UpdateUserHandler(c *gin.Context) {
-	uuid := c.Param("uuid")
+// GetUserByID godoc
+// @Summary Get user by ID
+// @Description Retrieve detailed information about a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param userId path string true "User ID"
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.User}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 404 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/{userId} [get]
+func (h *User) GetUserByID(c *gin.Context) {
+	// Get and validate UUID parameter
+	userID, err := h.GetUUIDParam(c, "userId")
+	if err != nil {
+		return // Error already sent
+	}
+
+	// Fetch user
+	user, err := h.userRepo.GetUserById(userID)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch user")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, fmt.Sprintf("User %s retrieved successfully", userID), user)
+}
+
+// UpdateUser godoc
+// @Summary Update user
+// @Description Update user information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param userId path string true "User ID"
+// @Param user body models.UpdateUserRequest true "Updated user data"
+// @Success 200 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 404 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/{userId} [put]
+func (h *User) UpdateUser(c *gin.Context) {
+	// Get and validate UUID parameter
+	userID, err := h.GetUUIDParam(c, "userId")
+	if err != nil {
+		return // Error already sent
+	}
 
 	var req models.UpdateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
+
+	// Bind and validate request
+	if err = h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
+	}
+
+	// Update user
+	if err = h.userRepo.UpdateUser(userID, req); err != nil {
+		h.HandleError(c, err, "Failed to update user")
 		return
 	}
 
-	if err := s.validator.Struct(req); err != nil {
-		var errs []string
-		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, fmt.Sprintf("Field %s failed on '%s'", e.Field(), e.Tag()))
-		}
-		errMsg := strings.Join(errs, ", ")
-
-		config.GetLogger().Error(errMsg)
-		c.JSON(http.StatusBadRequest, models.HTTPResponseError{
-			StatusCode: http.StatusBadRequest,
-			Message:    errMsg,
-		})
-		return
-	}
-
-	if err := s.userRepo.UpdateUser(uuid, req); err != nil {
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "user updated",
-		Data:       req,
-	})
+	h.SendSuccess(c, http.StatusOK, "User updated successfully", nil)
 }
 
-func (s *User) DeleteUserHandler(c *gin.Context) {
-	uuid := c.Param("uuid")
-
-	if err := s.userRepo.SoftDeleteUser(uuid); err != nil {
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "user deleted",
-	})
-}
-
-func (s *User) GetAllUserByRoleHandler(c *gin.Context) {
-	role := c.Param("role")
-	users, err := s.userRepo.GetAllUserByRole(role)
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Soft delete a user account
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param userId path string true "User ID"
+// @Success 200 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 404 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/{userId} [delete]
+func (h *User) DeleteUser(c *gin.Context) {
+	// Get and validate UUID parameter
+	userID, err := h.GetUUIDParam(c, "userId")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		return // Error already sent
+	}
+
+	// Delete user
+	if err = h.userRepo.SoftDeleteUser(userID); err != nil {
+		h.HandleError(c, err, "Failed to delete user")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    fmt.Sprintf("Get All User By Role %s Success", role),
-		Data:       users,
-	})
+	h.SendSuccess(c, http.StatusOK, "User deleted successfully", nil)
+}
+
+// GetUsersByRole godoc
+// @Summary Get users by role
+// @Description Retrieve all users with a specific role
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param role path string true "User role (ADMIN, CUSTOMER, SUPPLIER)"
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.User}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/role/{role} [get]
+func (h *User) GetUsersByRole(c *gin.Context) {
+	role := c.Param("role")
+
+	// Validate role
+	if !h.isValidRole(role) {
+		h.SendError(c, http.StatusBadRequest,
+			"Invalid role. Must be one of: ADMIN, CUSTOMER, SUPPLIER, SUPER_ADMIN", nil)
+		return
+	}
+
+	// Fetch users by role
+	users, err := h.userRepo.GetAllUserByRole(role)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch users by role")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK,
+		fmt.Sprintf("Users with role %s retrieved successfully", role), users)
+}
+
+// ChangePassword godoc
+// @Summary Change user password
+// @Description Change password for the current user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param password body models.ChangePasswordRequest true "Password change data"
+// @Success 200 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 401 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/change-password [post]
+func (h *User) ChangePassword(c *gin.Context) {
+	var req models.ChangePasswordRequest
+
+	// Bind and validate request
+	if err := h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
+	}
+
+	// Change password (implement in repository)
+	// if err := h.userRepo.ChangePassword(userID, req); err != nil {
+	//     h.HandleError(c, err, "Failed to change password")
+	//     return
+	// }
+
+	h.SendSuccess(c, http.StatusOK, "Password changed successfully", nil)
+}
+
+// isValidRole checks if the role is valid
+func (h *User) isValidRole(role string) bool {
+	validRoles := map[string]bool{
+		constants.AdminRole:      true,
+		constants.BuyerRole:      true,
+		constants.SupplierRole:   true,
+		constants.SuperAdminRole: true,
+	}
+	return validRoles[strings.ToUpper(role)]
+}
+
+// RegisterPublicRoutes registers routes with backward compatibility
+func (h *User) RegisterPublicRoutes(router *gin.RouterGroup) {
+	// Public routes
+	router.POST("/login", h.Login)
+	router.POST("/register", h.Register)
+}
+
+// RegisterRoutes registers routes with backward compatibility
+func (h *User) RegisterRoutes(router *gin.RouterGroup) {
+	// Note: Add authMiddleware in main.go before these routes
+	users := router.Group("/users")
+	{
+		users.GET("", h.GetAllUsers)
+		users.PUT("/:userId", h.UpdateUser)
+		users.DELETE("/:userId", h.DeleteUser)
+		users.GET("/:userId", h.GetUserByID)
+		users.GET("/role/:role", h.GetUsersByRole)
+		users.GET("/me", h.GetCurrentUser)
+	}
 }

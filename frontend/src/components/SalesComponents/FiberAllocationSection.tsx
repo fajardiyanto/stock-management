@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, ChevronDown, X } from "lucide-react";
 import { SelectedSaleItem, FiberAllocation } from "../../types/sales";
 import { FiberList } from "../../types/fiber";
@@ -28,9 +28,9 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
     const [error, setError] = useState("");
 
     const fiber = fiberList.find((f) => f.uuid === selectedFiber);
-    const usedFiberIds = new Set(
-        fiberAllocations.map((alloc) => alloc.fiber_id)
-    );
+    const usedFiberIds = useMemo(() => {
+        return new Set(fiberAllocations.map((alloc) => alloc.fiber_id));
+    }, [fiberAllocations]);
     const availableFibers = fiberList.filter(
         (fiber) => !usedFiberIds.has(fiber.uuid)
     );
@@ -105,7 +105,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
         if (selectedFiber && usedFiberIds.has(selectedFiber)) {
             setSelectedFiber("");
         }
-    }, [fiberAllocations, selectedFiber]);
+    }, [fiberAllocations, selectedFiber, usedFiberIds]);
 
     if (exportSale) return null;
 

@@ -1,6 +1,12 @@
 import { ApiResponse } from "../types";
 import { apiCall } from "./";
-import { DashboardStats, DailyDashboardStats, SalesTrendData, StockDistributionData, UserData } from "../types/analytic";
+import {
+    DashboardStats,
+    DailyDashboardStats,
+    SalesTrendData,
+    StockDistributionData,
+    UserData,
+} from "../types/analytic";
 
 export const analyticService = {
     getDashboardStats: async (): Promise<ApiResponse<DashboardStats>> => {
@@ -10,21 +16,27 @@ export const analyticService = {
         return response;
     },
 
-    getDailyDashboardStats: async (date: string): Promise<ApiResponse<DailyDashboardStats>> => {
+    getDailyDashboardStats: async (
+        date: string
+    ): Promise<ApiResponse<DailyDashboardStats>> => {
         const response = await apiCall<ApiResponse<DailyDashboardStats>>(
             `/analytics/daily/${date}/stats`
         );
         return response;
     },
 
-    getSalesTrendData: async (year: string): Promise<ApiResponse<SalesTrendData[]>> => {
+    getSalesTrendData: async (
+        year: string
+    ): Promise<ApiResponse<SalesTrendData[]>> => {
         const response = await apiCall<ApiResponse<SalesTrendData[]>>(
             `/analytics/sales/trend/${year}`
         );
         return response;
     },
 
-    getStockDistributionData: async (): Promise<ApiResponse<StockDistributionData[]>> => {
+    getStockDistributionData: async (): Promise<
+        ApiResponse<StockDistributionData[]>
+    > => {
         const response = await apiCall<ApiResponse<StockDistributionData[]>>(
             `/analytics/stock/distribution`
         );
@@ -45,4 +57,3 @@ export const analyticService = {
         return response;
     },
 };
-

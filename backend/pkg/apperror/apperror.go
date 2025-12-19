@@ -35,8 +35,8 @@ func NewTooManyRequests(msg string) *AppError {
 	return &AppError{Code: 429, Message: msg}
 }
 
-func NewUnprocessableEntity(msg string) *AppError {
-	return &AppError{Code: 422, Message: msg}
+func NewUnprocessableEntity(msg string, err error) *AppError {
+	return &AppError{Code: 422, Message: msg, Err: err}
 }
 
 func NewTimeout(msg string) *AppError {

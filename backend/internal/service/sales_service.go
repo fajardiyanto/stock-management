@@ -6,9 +6,10 @@ import (
 	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/util/apperror"
+	"dashboard-app/pkg/apperror"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+		return apperror.NewUnprocessableEntity("failed to begin transaction: ", tx.Error)
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -54,7 +55,7 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 				"updated_at": time.Now(),
 			}).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to update fibers: %w", err)
+			return apperror.NewUnprocessableEntity("failed to update fibers: ", err)
 		}
 
 		fiberList = strings.Join(fiberIDs, ",")
@@ -75,7 +76,7 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 
 	if err := tx.Create(&sale).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to create sale: %w", err)
+		return apperror.NewUnprocessableEntity("failed to create sale: ", err)
 	}
 
 	if len(request.ItemSales) > 0 {
@@ -99,7 +100,7 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 
 		if err := tx.Create(&itemAddOns).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to create add-ons: %w", err)
+			return apperror.NewUnprocessableEntity("failed to create add-ons: ", err)
 		}
 	}
 
@@ -117,10 +118,14 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 
 	if err := tx.Create(&payment).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to create payment: %w", err)
+		return apperror.NewUnprocessableEntity("failed to create payment: ", err)
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
 }
 
 func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []models.ItemSalesRequest) error {
@@ -135,7 +140,7 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 
 	var stockSorts []models.StockSort
 	if err := tx.Where("uuid IN ?", stockSortIDs).Find(&stockSorts).Error; err != nil {
-		return fmt.Errorf("failed to fetch stock sorts: %w", err)
+		return apperror.NewNotFound("stock sorts not found")
 	}
 
 	stockSortMap := make(map[string]*models.StockSort)
@@ -149,7 +154,7 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 	for _, v := range items {
 		stockSort, exists := stockSortMap[v.StockSortId]
 		if !exists {
-			return fmt.Errorf("stock sort not found: %s", v.StockSortId)
+			return apperror.NewNotFound(fmt.Sprintf("stock sort not found: %s", v.StockSortId))
 		}
 
 		itemSales = append(itemSales, models.ItemSales{
@@ -168,7 +173,7 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 	}
 
 	if err := tx.Create(&itemSales).Error; err != nil {
-		return fmt.Errorf("failed to create item sales: %w", err)
+		return apperror.NewUnprocessableEntity("failed to create item sales: ", err)
 	}
 
 	if len(stockUpdates) > 0 {
@@ -188,7 +193,7 @@ func (s *SalesService) batchCreateItemSales(tx *gorm.DB, saleId string, items []
 		`, strings.Join(cases, " "), strings.Join(ids, ","))
 
 		if err := tx.Exec(updateStockSortsQuery).Error; err != nil {
-			return fmt.Errorf("failed to update stock sorts: %w", err)
+			return apperror.NewUnprocessableEntity("failed to update stock sorts: ", err)
 		}
 	}
 
@@ -200,7 +205,7 @@ func (s *SalesService) UpdateSales(ctx context.Context, id string, request model
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+		return apperror.NewInternal("failed to begin transaction: %w", tx.Error)
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -211,7 +216,7 @@ func (s *SalesService) UpdateSales(ctx context.Context, id string, request model
 	var sale models.Sale
 	if err := tx.Where("uuid = ? AND deleted = false", id).First(&sale).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("sale not found: %w", err)
+		return apperror.NewNotFound(fmt.Sprintf("sale not found: %v", err))
 	}
 
 	if err := s.updateFibers(tx, &sale, request); err != nil {
@@ -237,7 +242,7 @@ func (s *SalesService) UpdateSales(ctx context.Context, id string, request model
 
 	if err := tx.Save(&sale).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update sale: %w", err)
+		return apperror.NewUnprocessableEntity("failed to update sale: %w", err)
 	}
 
 	if err := tx.Model(&models.Payment{}).
@@ -248,10 +253,14 @@ func (s *SalesService) UpdateSales(ctx context.Context, id string, request model
 			"updated_at": time.Now(),
 		}).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update payment: %w", err)
+		return apperror.NewUnprocessableEntity("failed to update payment: %w", err)
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
 }
 
 func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request models.SaleRequest) error {
@@ -261,7 +270,7 @@ func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request mode
 			if err := tx.Model(&models.Fiber{}).
 				Where("uuid IN ?", oldFiberIDs).
 				Update("status", "FREE").Error; err != nil {
-				return fmt.Errorf("failed to free old fibers: %w", err)
+				return apperror.NewUnprocessableEntity("failed to free old fibers: ", err)
 			}
 		}
 	}
@@ -279,7 +288,7 @@ func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request mode
 				"sale_id":    sale.Uuid,
 				"updated_at": time.Now(),
 			}).Error; err != nil {
-			return fmt.Errorf("failed to allocate new fibers: %w", err)
+			return apperror.NewUnprocessableEntity("failed to allocate new fibers: ", err)
 		}
 
 		sale.FiberList = strings.Join(newFiberIDs, ",")
@@ -299,7 +308,7 @@ func (s *SalesService) updateItemSales(tx *gorm.DB, saleId string, newItems []mo
 	if err := tx.Table("item_sales").
 		Where("sale_id = ? AND deleted = false", saleId).
 		Find(&oldItems).Error; err != nil {
-		return fmt.Errorf("failed to fetch old items: %w", err)
+		return apperror.NewNotFound(fmt.Sprintf("item sale not found for: %s", saleId))
 	}
 
 	if len(oldItems) > 0 {
@@ -313,7 +322,7 @@ func (s *SalesService) updateItemSales(tx *gorm.DB, saleId string, newItems []mo
 
 		var stockSorts []models.StockSort
 		if err := tx.Where("uuid IN ?", stockSortIDs).Find(&stockSorts).Error; err != nil {
-			return fmt.Errorf("failed to fetch stock sorts: %w", err)
+			return apperror.NewNotFound(fmt.Sprintf("stock sort not found for: %s", saleId))
 		}
 
 		for i := range stockSorts {
@@ -336,14 +345,14 @@ func (s *SalesService) updateItemSales(tx *gorm.DB, saleId string, newItems []mo
 		`, strings.Join(cases, " "), strings.Join(ids, ","))
 
 		if err := tx.Exec(sql).Error; err != nil {
-			return fmt.Errorf("failed to restore stock weights: %w", err)
+			return apperror.NewUnprocessableEntity("failed to restore stock weights: ", err)
 		}
 	}
 
 	if err := tx.Model(&models.ItemSales{}).
 		Where("sale_id = ?", saleId).
 		Update("deleted", true).Error; err != nil {
-		return fmt.Errorf("failed to delete old items: %w", err)
+		return apperror.NewUnprocessableEntity("failed to delete old items: ", err)
 	}
 
 	if len(newItems) > 0 {
@@ -357,7 +366,7 @@ func (s *SalesService) updateAddOns(tx *gorm.DB, saleId string, newAddOns []mode
 	if err := tx.Model(&models.ItemAddOnn{}).
 		Where("sale_id = ?", saleId).
 		Update("deleted", true).Error; err != nil {
-		return fmt.Errorf("failed to delete old add-ons: %w", err)
+		return apperror.NewUnprocessableEntity("failed to delete old add-ons: ", err)
 	}
 
 	if len(newAddOns) > 0 {
@@ -373,7 +382,7 @@ func (s *SalesService) updateAddOns(tx *gorm.DB, saleId string, newAddOns []mode
 		}
 
 		if err := tx.Create(&itemAddOns).Error; err != nil {
-			return fmt.Errorf("failed to create new add-ons: %w", err)
+			return apperror.NewUnprocessableEntity("failed to create new add-ons: ", err)
 		}
 	}
 
@@ -385,7 +394,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+		return apperror.NewInternal("failed to begin transaction: %w", tx.Error)
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -403,7 +412,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 		Preload("Items", "deleted = false").
 		First(&saleData).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("sale not found: %w", err)
+		return apperror.NewNotFound(fmt.Sprintf("sale not found: %v", err))
 	}
 
 	if len(saleData.Items) > 0 {
@@ -418,7 +427,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 		var stockSorts []models.StockSort
 		if err := tx.Where("uuid IN ?", stockSortIDs).Find(&stockSorts).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to fetch stock sorts: %w", err)
+			return apperror.NewUnprocessableEntity("failed to fetch stock sorts: %w", err)
 		}
 
 		for i := range stockSorts {
@@ -442,7 +451,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 
 		if err := tx.Exec(sql).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to restore stock weights: %w", err)
+			return apperror.NewUnprocessableEntity("failed to restore stock weights: ", err)
 		}
 	}
 
@@ -461,7 +470,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 					Where("uuid IN ? AND deleted = false", cleanIDs).
 					Update("status", "FREE").Error; err != nil {
 					tx.Rollback()
-					return fmt.Errorf("failed to free fibers: %w", err)
+					return apperror.NewUnprocessableEntity("failed to free fibers: ", err)
 				}
 			}
 		}
@@ -482,11 +491,15 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 			Where(update.where, saleId).
 			Update("deleted", true).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to delete records: %w", err)
+			return apperror.NewUnprocessableEntity("failed to delete records: ", err)
 		}
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
 }
 
 func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.SaleResponse, error) {
@@ -514,7 +527,7 @@ func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.
 		) p ON TRUE`).
 		Where("s.uuid = ? AND s.deleted = false", saleId).
 		Scan(&result).Error; err != nil {
-		return nil, fmt.Errorf("sale not found: %w", err)
+		return nil, apperror.NewNotFound(fmt.Sprintf("sale not found: %v", err))
 	}
 
 	itemSales, stockSorts, err := s.fetchItemSalesWithStockSorts(db, saleId)
@@ -525,7 +538,7 @@ func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.
 	var addOns []models.ItemAddOnn
 	if err = db.Where("sale_id = ? AND deleted = false", saleId).
 		Find(&addOns).Error; err != nil {
-		return nil, fmt.Errorf("failed to fetch add-ons: %w", err)
+		return nil, apperror.NewNotFound(fmt.Sprintf("add-onn not found: %v", err))
 	}
 
 	fiberUsedList, err := s.fetchFiberList(db, result.FiberList, result.ExportSale)
@@ -540,7 +553,7 @@ func (s *SalesService) fetchItemSalesWithStockSorts(db *gorm.DB, saleId string) 
 	var itemSales []models.ItemSales
 	if err := db.Where("sale_id = ? AND deleted = false", saleId).
 		Find(&itemSales).Error; err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch item sales: %w", err)
+		return nil, nil, apperror.NewNotFound(fmt.Sprintf("item sale not found: %v", err))
 	}
 
 	if len(itemSales) == 0 {
@@ -559,7 +572,7 @@ func (s *SalesService) fetchItemSalesWithStockSorts(db *gorm.DB, saleId string) 
 	var stockSorts []models.StockSort
 	if err := db.Where("uuid IN ?", stockSortIDs).
 		Find(&stockSorts).Error; err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch stock sorts: %w", err)
+		return nil, nil, apperror.NewNotFound(fmt.Sprintf("stock sorts not found: %s", err))
 	}
 
 	stockSortMap := make(map[string]models.StockSort)
@@ -588,10 +601,7 @@ func (s *SalesService) fetchFiberList(db *gorm.DB, fiberList string, isExportSal
 	}
 
 	var fibers []models.Fiber
-	if err := db.Where("uuid IN ? AND deleted = false", cleanIDs).
-		Find(&fibers).Error; err != nil {
-		return nil, fmt.Errorf("failed to fetch fibers: %w", err)
-	}
+	db.Where("uuid IN ?", cleanIDs).Find(&fibers)
 
 	result := make([]models.FiberUsedList, 0, len(fibers))
 	for _, fiber := range fibers {
@@ -708,9 +718,10 @@ func (s *SalesService) GetAllSales(ctx context.Context, filter models.SalesFilte
 		Limit(filter.Size).
 		Offset(offset).
 		Scan(&rawSales).Error; err != nil {
-		errMsg := "Failed to fetch sales data"
-		config.GetLogger().Error("%s: %s", errMsg, err.Error())
-		return nil, apperror.NewInternal(errMsg, err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound(fmt.Sprintf("sales data not found: %v", err))
+		}
+		return nil, apperror.NewUnprocessableEntity("Failed to fetch sales data", err)
 	}
 
 	if len(rawSales) == 0 {
@@ -851,7 +862,7 @@ func (s *SalesService) fetchRelatedData(db *gorm.DB, saleIDs []string) (models.R
 		Where("i.sale_id IN ?", saleIDs).
 		Where("i.deleted = FALSE").
 		Scan(&data.ItemSales).Error; err != nil {
-		return data, fmt.Errorf("failed to fetch item sales: %w", err)
+		return data, apperror.NewUnprocessableEntity("failed to fetch item sales: ", err)
 	}
 
 	stockSortIDs := make([]string, 0, len(data.ItemSales))
@@ -866,20 +877,20 @@ func (s *SalesService) fetchRelatedData(db *gorm.DB, saleIDs []string) (models.R
 	if len(stockSortIDs) > 0 {
 		if err := db.Where("uuid IN ?", stockSortIDs).
 			Find(&data.StockSorts).Error; err != nil {
-			return data, fmt.Errorf("failed to fetch stock sorts: %w", err)
+			return data, apperror.NewNotFound(fmt.Sprintf("stock sorts not found: %v", err))
 		}
 	}
 
 	if err := db.Where("sale_id IN ?", saleIDs).
 		Where("deleted = FALSE").
 		Find(&data.AddOns).Error; err != nil {
-		return data, fmt.Errorf("failed to fetch add-ons: %w", err)
+		return data, apperror.NewNotFound(fmt.Sprintf("add-ons not found: %v", err))
 	}
 
 	if err := db.Where("sale_id IN ?", saleIDs).
 		Where("deleted = FALSE").
 		Find(&data.Fibers).Error; err != nil {
-		return data, fmt.Errorf("failed to fetch fibers: %w", err)
+		return data, apperror.NewNotFound(fmt.Sprintf("fibers not found: %v", err))
 	}
 
 	return data, nil

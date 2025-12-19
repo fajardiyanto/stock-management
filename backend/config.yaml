@@ -2,7 +2,7 @@ version: v1.0.0
 name: Stock Fish Management
 port: 8000
 api_secret: 24bc50d85ad8fa9cda686145cf1f8aa
-environment: production
+environment: development
 database:
   mysql:
     enable: true

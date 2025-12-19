@@ -1,4 +1,12 @@
-import { CreateUserRequest, LoginRequest, LoginResponse, UpdateUserRequest, User, UserFilters, UserPaginatedData } from "../types/user";
+import {
+    CreateUserRequest,
+    LoginRequest,
+    LoginResponse,
+    UpdateUserRequest,
+    User,
+    UserFilters,
+    UserPaginatedData,
+} from "../types/user";
 import { ApiResponse } from "../types";
 import { API_BASE_URL } from "../constants/constants";
 import { apiCall } from ".";
@@ -43,17 +51,19 @@ export const authService = {
         return !!localStorage.getItem("token");
     },
 
-    getListUsers: async (filters: UserFilters = {}): Promise<ApiResponse<UserPaginatedData>> => {
+    getListUsers: async (
+        filters: UserFilters = {}
+    ): Promise<ApiResponse<UserPaginatedData>> => {
         const queryParams = new URLSearchParams();
 
-        queryParams.append('page', String(filters.page || 1));
-        queryParams.append('size', String(filters.size || 10));
+        queryParams.append("page", String(filters.page || 1));
+        queryParams.append("size", String(filters.size || 10));
 
         if (filters.phone) {
-            queryParams.append('phone', filters.phone);
+            queryParams.append("phone", filters.phone);
         }
         if (filters.name) {
-            queryParams.append('name', filters.name);
+            queryParams.append("name", filters.name);
         }
 
         const response = await apiCall<ApiResponse<UserPaginatedData>>(
@@ -64,38 +74,48 @@ export const authService = {
     },
 
     getUserById: async (uuid: string): Promise<ApiResponse<User>> => {
-        const response = await apiCall<ApiResponse<User>>(`/user/${uuid}`);
+        const response = await apiCall<ApiResponse<User>>(`/users/${uuid}`);
         return response;
     },
 
-    createUser: async (userData: CreateUserRequest): Promise<ApiResponse<User>> => {
-        const response = await apiCall<ApiResponse<User>>('/register', {
-            method: 'POST',
-            body: JSON.stringify(userData)
+    createUser: async (
+        userData: CreateUserRequest
+    ): Promise<ApiResponse<User>> => {
+        const response = await apiCall<ApiResponse<User>>("/register", {
+            method: "POST",
+            body: JSON.stringify(userData),
         });
 
         return response;
     },
 
-    updateUser: async (uuid: string, userData: UpdateUserRequest): Promise<ApiResponse<UpdateUserRequest>> => {
-        const response = await apiCall<ApiResponse<UpdateUserRequest>>(`/user/${uuid}`, {
-            method: 'PUT',
-            body: JSON.stringify(userData)
-        });
+    updateUser: async (
+        uuid: string,
+        userData: UpdateUserRequest
+    ): Promise<ApiResponse<UpdateUserRequest>> => {
+        const response = await apiCall<ApiResponse<UpdateUserRequest>>(
+            `/users/${uuid}`,
+            {
+                method: "PUT",
+                body: JSON.stringify(userData),
+            }
+        );
 
         return response;
     },
 
     deleteUser: async (uuid: string): Promise<ApiResponse<null>> => {
-        const response = await apiCall<ApiResponse<null>>(`/user/${uuid}`, {
-            method: 'DELETE'
+        const response = await apiCall<ApiResponse<null>>(`/users/${uuid}`, {
+            method: "DELETE",
         });
 
         return response;
     },
 
     getListUserRoles: async (role: string): Promise<ApiResponse<User[]>> => {
-        const response = await apiCall<ApiResponse<User[]>>(`/user/role/${role}`);
+        const response = await apiCall<ApiResponse<User[]>>(
+            `/users/role/${role}`
+        );
         return response;
-    }
+    },
 };

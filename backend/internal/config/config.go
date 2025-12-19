@@ -44,6 +44,7 @@ func InitMysql(db databaseInterface.Database) {
 			&models.Sale{},
 			&models.ItemAddOnn{},
 			&models.ItemSales{},
+			&models.AuditLog{},
 		); err != nil {
 			logger.Error("Error when migrate table, with err: %s", err)
 			return
@@ -54,11 +55,15 @@ func InitMysql(db databaseInterface.Database) {
 }
 
 func GetDBConn() *gorm.DB {
-	if models.GetConfig().Environment == "development" {
-		return database.Orm().Debug()
-	} else {
+	if models.GetConfig().Environment == "production" {
 		return database.Orm()
+	} else {
+		return database.Orm().Debug()
 	}
+}
+
+func GetDBConnAuditTrail() *gorm.DB {
+	return database.Orm()
 }
 
 func GetLogger() interfaces.Logger {

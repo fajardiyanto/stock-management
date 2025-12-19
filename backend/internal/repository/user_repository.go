@@ -8,7 +8,7 @@ type UserRepository interface {
 	LoginUser(models.LoginRequest) (*models.LoginResponse, error)
 	GetUserById(string) (*models.User, error)
 	GetUserByIdFromToken(string) (*models.User, error)
-	GetAllUser(int, int, string, string, string) (*models.GetAllUserResponse, error)
+	GetAllUser(models.UserFilter) (*models.GetAllUserResponse, error)
 	UpdateUser(string, models.UpdateUserRequest) error
 	SoftDeleteUser(string) error
 	GetAllUserByRole(string) ([]models.User, error)

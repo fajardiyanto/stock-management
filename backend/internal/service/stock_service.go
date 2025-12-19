@@ -1,15 +1,18 @@
 package service
 
 import (
-	"dashboard-app/internal/config"
-	"dashboard-app/internal/models"
-	"dashboard-app/internal/repository"
+	"dashboard-app/pkg/apperror"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"strconv"
-	"time"
+
+	"dashboard-app/internal/config"
+	"dashboard-app/internal/models"
+	"dashboard-app/internal/repository"
 )
 
 type StockService struct{}
@@ -18,165 +21,241 @@ func NewStockService() repository.StockRepository {
 	return &StockService{}
 }
 
+// GetAllStockEntries - Optimized
+// =====================================================
 func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*models.StockResponse, error) {
 	db := config.GetDBConn()
 
+	// Normalize pagination
 	if filter.PageNo < 1 {
 		filter.PageNo = 1
 	}
 	if filter.Size < 1 {
 		filter.Size = 10
 	}
-
 	offset := (filter.PageNo - 1) * filter.Size
 
-	query := db.Model(&models.StockEntry{})
+	// Build optimized query with single JOIN
+	query := db.Table("stock_entries AS se").
+		Select(`
+			se.uuid,
+			se.id,
+			se.created_at,
+			p.uuid AS purchase_uuid,
+			p.supplier_id,
+			p.purchase_date,
+			u.uuid AS supplier_uuid,
+			u.name AS supplier_name,
+			u.phone AS supplier_phone
+		`).
+		Joins("INNER JOIN purchase p ON p.stock_id = se.uuid AND p.deleted = false").
+		Joins("INNER JOIN \"user\" u ON u.uuid = p.supplier_id AND u.status = true").
+		Where("se.deleted = false")
 
+	// Apply filters efficiently
+	query = s.applyStockFilters(query, filter, db)
+
+	// Get total count
+	var total int64
+	countQuery := *query
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to count stock entries: ", err)
+	}
+
+	// Fetch stock entries with related data
+	var stockData []models.StockData
+	if err := query.
+		Order("se.created_at DESC").
+		Limit(filter.Size).
+		Offset(offset).
+		Scan(&stockData).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("stock entries not found")
+		}
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock entries: ", err)
+	}
+
+	if len(stockData) == 0 {
+		return &models.StockResponse{
+			Size:   filter.Size,
+			PageNo: filter.PageNo,
+			Total:  int(total),
+			Data:   []models.StockEntriesResponse{},
+		}, nil
+	}
+
+	// Extract stock entry IDs
+	stockEntryIDs := make([]string, len(stockData))
+	for i, data := range stockData {
+		stockEntryIDs[i] = data.Uuid
+	}
+
+	// Fetch all related data in batch
+	stockItemsMap, stockSortsMap, err := s.fetchStockItemsAndSorts(db, stockEntryIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build response
+	responses := s.buildStockEntriesResponse(stockData, stockItemsMap, stockSortsMap)
+
+	return &models.StockResponse{
+		Size:   filter.Size,
+		PageNo: filter.PageNo,
+		Total:  int(total),
+		Data:   responses,
+	}, nil
+}
+
+// Apply filters efficiently
+func (s *StockService) applyStockFilters(query *gorm.DB, filter models.StockEntryFilter, db *gorm.DB) *gorm.DB {
 	if filter.SupplierId != "" {
-		var stockIDs []string
-		if err := db.Model(&models.Purchase{}).
-			Where("supplier_id = ? AND deleted = false", filter.SupplierId).
-			Pluck("stock_id", &stockIDs).Error; err != nil {
-			return nil, err
-		}
-
-		if len(stockIDs) == 0 {
-			return &models.StockResponse{
-				Size:   filter.Size,
-				PageNo: filter.PageNo,
-				Total:  0,
-				Data:   []models.StockEntriesResponse{},
-			}, nil
-		}
-
-		query = query.Where("uuid IN ?", stockIDs)
+		query = query.Where("p.supplier_id = ?", filter.SupplierId)
 	}
 
 	if filter.PurchaseDate != "" {
-		parsed, err := time.Parse("2006-01-02", filter.PurchaseDate)
-		if err == nil {
-			var stockIDs []string
-			db.Model(&models.Purchase{}).
-				Where("DATE(purchase_date) = ?", parsed.Format("2006-01-02")).
-				Pluck("stock_id", &stockIDs)
-
-			query = query.Where("uuid IN ?", stockIDs)
+		if parsed, err := time.Parse("2006-01-02", filter.PurchaseDate); err == nil {
+			query = query.Where("DATE(p.purchase_date) = ?", parsed.Format("2006-01-02"))
 		}
 	}
 
 	if filter.AgeInDay != "" {
 		now := time.Now()
 		switch filter.AgeInDay {
-		case "LT_1": // Less than 1 day
-			query = query.Where("created_at >= ?", now.Add(-24*time.Hour))
-		case "GT_1": // More than 1 day
-			query = query.Where("created_at < ?", now.Add(-24*time.Hour))
-		case "GT_10": // More than 10 days
-			query = query.Where("created_at < ?", now.Add(-240*time.Hour))
-		case "GT_30": // More than 30 days
-			query = query.Where("created_at < ?", now.Add(-720*time.Hour))
+		case "LT_1":
+			query = query.Where("se.created_at >= ?", now.Add(-24*time.Hour))
+		case "GT_1":
+			query = query.Where("se.created_at < ?", now.Add(-24*time.Hour))
+		case "GT_10":
+			query = query.Where("se.created_at < ?", now.Add(-240*time.Hour))
+		case "GT_30":
+			query = query.Where("se.created_at < ?", now.Add(-720*time.Hour))
 		}
 	}
 
 	if filter.Keyword != "" {
-		if _, err := strconv.Atoi(filter.Keyword); err == nil {
-			query = query.Where("id = ?", filter.Keyword)
-		} else {
-			var stockIDs []string
+		query = s.applyKeywordFilter(query, filter.Keyword, db)
+	}
 
-			var itemStockIDs []string
-			db.Model(&models.StockItem{}).
-				Where("deleted = false AND item_name ILIKE ?", "%"+filter.Keyword+"%").
-				Pluck("stock_entry_id", &itemStockIDs)
+	return query
+}
 
-			var sortItemIDs []string
-			db.Model(&models.StockSort{}).
-				Where("deleted = false AND sorted_item_name ILIKE ?", "%"+filter.Keyword+"%").
-				Pluck("stock_item_id", &sortItemIDs)
+// Apply keyword filter with optimized query
+func (s *StockService) applyKeywordFilter(query *gorm.DB, keyword string, db *gorm.DB) *gorm.DB {
+	if _, err := strconv.Atoi(keyword); err == nil {
+		// Numeric keyword - search by ID
+		return query.Where("se.id = ?", keyword)
+	}
 
-			var sortStockIDs []string
-			if len(sortItemIDs) > 0 {
-				db.Model(&models.StockItem{}).
-					Where("uuid IN ? AND deleted = false", sortItemIDs).
-					Pluck("stock_entry_id", &sortStockIDs)
+	// Text keyword - search by item name using optimized CTE
+	var stockIDs []string
+	db.Raw(`
+		SELECT DISTINCT si.stock_entry_id
+		FROM stock_items si
+		WHERE si.deleted = false
+		AND si.item_name ILIKE ?
+		UNION
+		SELECT DISTINCT si.stock_entry_id
+		FROM stock_sorts ss
+		INNER JOIN stock_items si ON si.uuid = ss.stock_item_id
+		WHERE ss.deleted = false
+		AND si.deleted = false
+		AND ss.sorted_item_name ILIKE ?
+	`, "%"+keyword+"%", "%"+keyword+"%").Pluck("stock_entry_id", &stockIDs)
+
+	if len(stockIDs) == 0 {
+		return query.Where("1 = 0") // Return empty result
+	}
+
+	return query.Where("se.uuid IN ?", stockIDs)
+}
+
+// Fetch stock items and sorts in batch
+func (s *StockService) fetchStockItemsAndSorts(db *gorm.DB, stockEntryIDs []string) (
+	map[string][]models.StockItem,
+	map[string][]models.StockSort,
+	error,
+) {
+	// Fetch all stock items
+	var stockItems []models.StockItem
+	if err := db.Where("stock_entry_id IN ? AND deleted = false", stockEntryIDs).
+		Find(&stockItems).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, apperror.NewNotFound("stock items not found")
+		}
+		return nil, nil, apperror.NewUnprocessableEntity("failed to fetch stock items: %w", err)
+	}
+
+	// Build stock items map
+	stockItemsMap := make(map[string][]models.StockItem)
+	stockItemIDs := make([]string, 0, len(stockItems))
+	for _, item := range stockItems {
+		stockItemsMap[item.StockEntryID] = append(stockItemsMap[item.StockEntryID], item)
+		stockItemIDs = append(stockItemIDs, item.Uuid)
+	}
+
+	// Fetch all stock sorts
+	var stockSorts []models.StockSort
+	stockSortsMap := make(map[string][]models.StockSort)
+
+	if len(stockItemIDs) > 0 {
+		if err := db.Where("stock_item_id IN ? AND deleted = false", stockItemIDs).
+			Find(&stockSorts).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, nil, apperror.NewNotFound("stock sorts not found")
 			}
+			return nil, nil, apperror.NewUnprocessableEntity("failed to fetch stock sorts: ", err)
+		}
 
-			stockIDs = append(stockIDs, itemStockIDs...)
-			stockIDs = append(stockIDs, sortStockIDs...)
-
-			if len(stockIDs) == 0 {
-				return &models.StockResponse{
-					Size:   filter.Size,
-					PageNo: filter.PageNo,
-					Total:  0,
-					Data:   []models.StockEntriesResponse{},
-				}, nil
-			}
-
-			query = query.Where("uuid IN ?", stockIDs)
+		for _, sort := range stockSorts {
+			stockSortsMap[sort.StockItemID] = append(stockSortsMap[sort.StockItemID], sort)
 		}
 	}
 
-	query = query.Where("deleted = false")
+	return stockItemsMap, stockSortsMap, nil
+}
 
-	var total int64
-	query.Count(&total)
-
-	var stockEntries []models.StockEntry
-	if err := query.
-		Order("created_at desc").
-		Limit(filter.Size).
-		Offset(offset).
-		Find(&stockEntries).Error; err != nil {
-		return nil, err
-	}
-
-	stockEntriesResponse := make([]models.StockEntriesResponse, 0)
-
-	for _, stockEntry := range stockEntries {
-		var purchase models.Purchase
-		if err := db.Where("stock_id = ? AND deleted = false", stockEntry.Uuid).First(&purchase).Error; err != nil {
-			return nil, err
-		}
-
-		var supplier models.User
-		if err := db.Where("uuid = ? AND status = true", purchase.SupplierID).First(&supplier).Error; err != nil {
-			return nil, err
-		}
-
+// Build stock entries response
+func (s *StockService) buildStockEntriesResponse(
+	stockData []models.StockData,
+	stockItemsMap map[string][]models.StockItem,
+	stockSortsMap map[string][]models.StockSort,
+) []models.StockEntriesResponse {
+	responses := make([]models.StockEntriesResponse, 0, len(stockData))
+	for _, data := range stockData {
 		supplierDetail := models.GetUserDetail{
-			Uuid:  supplier.Uuid,
-			Name:  supplier.Name,
-			Phone: supplier.Phone,
+			Uuid:  data.SupplierUuid,
+			Name:  data.SupplierName,
+			Phone: data.SupplierPhone,
 		}
 
 		resp := models.StockEntriesResponse{
-			Uuid:         stockEntry.Uuid,
-			StockCode:    fmt.Sprintf("STOCK%d", stockEntry.ID),
-			AgeInDay:     int(time.Since(stockEntry.CreatedAt).Hours() / 24),
-			PurchaseId:   purchase.Uuid,
-			Supplier:     supplierDetail,
-			PurchaseDate: purchase.PurchaseDate.Format(time.RFC3339),
+			Uuid:              data.Uuid,
+			StockCode:         fmt.Sprintf("STOCK%d", data.ID),
+			AgeInDay:          int(time.Since(data.CreatedAt).Hours() / 24),
+			PurchaseId:        data.PurchaseUuid,
+			Supplier:          supplierDetail,
+			PurchaseDate:      data.PurchaseDate.Format(time.RFC3339),
+			StockItemResponse: make([]models.StockItemResponse, 0),
 		}
 
-		var stockItems []models.StockItem
-		db.Where("stock_entry_id = ? AND deleted = false", stockEntry.Uuid).Find(&stockItems)
-
-		for _, item := range stockItems {
+		// Add stock items
+		items := stockItemsMap[data.Uuid]
+		for _, item := range items {
 			itemResp := models.StockItemResponse{
-				Uuid:             item.Uuid,
-				StockEntryID:     item.StockEntryID,
-				ItemName:         item.ItemName,
-				Weight:           item.Weight,
-				PricePerKilogram: item.PricePerKilogram,
-				TotalPayment:     item.TotalPayment,
-				IsSorted:         item.IsSorted,
+				Uuid:               item.Uuid,
+				StockEntryID:       item.StockEntryID,
+				ItemName:           item.ItemName,
+				Weight:             item.Weight,
+				PricePerKilogram:   item.PricePerKilogram,
+				TotalPayment:       item.TotalPayment,
+				IsSorted:           item.IsSorted,
+				StockSortResponses: make([]models.StockSortResponse, 0),
 			}
 
-			var sorted []models.StockSort
-			db.Where("stock_item_id = ? AND deleted = false", item.Uuid).Find(&sorted)
-
-			for _, srt := range sorted {
+			// Add stock sorts
+			sorts := stockSortsMap[item.Uuid]
+			for _, srt := range sorts {
 				itemResp.StockSortResponses = append(itemResp.StockSortResponses,
 					models.StockSortResponse{
 						Uuid:             srt.Uuid,
@@ -193,68 +272,87 @@ func (s *StockService) GetAllStockEntries(filter models.StockEntryFilter) (*mode
 			resp.StockItemResponse = append(resp.StockItemResponse, itemResp)
 		}
 
-		stockEntriesResponse = append(stockEntriesResponse, resp)
+		responses = append(responses, resp)
 	}
 
-	return &models.StockResponse{
-		Size:   filter.Size,
-		PageNo: filter.PageNo,
-		Total:  int(total),
-		Data:   stockEntriesResponse,
-	}, nil
+	return responses
 }
 
+// GetStockEntryById - Optimized
+// =====================================================
 func (s *StockService) GetStockEntryById(stockId string) (*models.StockEntriesResponse, error) {
 	db := config.GetDBConn()
-	var stockEntry models.StockEntry
-	if err := db.Where("uuid = ? AND deleted = false", stockId).First(&stockEntry).Error; err != nil {
-		return nil, err
+
+	// Single optimized query with JOINs
+	var result struct {
+		Uuid          string    `gorm:"column:uuid"`
+		ID            int       `gorm:"column:id"`
+		CreatedAt     time.Time `gorm:"column:created_at"`
+		PurchaseUuid  string    `gorm:"column:purchase_uuid"`
+		PurchaseDate  time.Time `gorm:"column:purchase_date"`
+		SupplierUuid  string    `gorm:"column:supplier_uuid"`
+		SupplierName  string    `gorm:"column:supplier_name"`
+		SupplierPhone string    `gorm:"column:supplier_phone"`
 	}
 
-	var purchase models.Purchase
-	if err := db.Where("stock_id = ? AND deleted = false", stockEntry.Uuid).First(&purchase).Error; err != nil {
-		return nil, err
-	}
-
-	var supplier models.User
-	if err := db.Where("uuid = ? AND status = true", purchase.SupplierID).First(&supplier).Error; err != nil {
-		return nil, err
+	if err := db.Table("stock_entries AS se").
+		Select(`
+			se.uuid,
+			se.id,
+			se.created_at,
+			p.uuid AS purchase_uuid,
+			p.purchase_date,
+			u.uuid AS supplier_uuid,
+			u.name AS supplier_name,
+			u.phone AS supplier_phone
+		`).
+		Joins("INNER JOIN purchase p ON p.stock_id = se.uuid AND p.deleted = false").
+		Joins("INNER JOIN \"user\" u ON u.uuid = p.supplier_id AND u.status = true").
+		Where("se.uuid = ? AND se.deleted = false", stockId).
+		Scan(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("stock entries not found")
+		}
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock entries: ", err)
 	}
 
 	supplierDetail := models.GetUserDetail{
-		Uuid:  supplier.Uuid,
-		Name:  supplier.Name,
-		Phone: supplier.Phone,
+		Uuid:  result.SupplierUuid,
+		Name:  result.SupplierName,
+		Phone: result.SupplierPhone,
 	}
 
 	resp := models.StockEntriesResponse{
-		Uuid:         stockEntry.Uuid,
-		StockCode:    fmt.Sprintf("STOCK-%d", stockEntry.ID),
-		AgeInDay:     int(time.Since(stockEntry.CreatedAt).Hours() / 24),
-		PurchaseId:   purchase.Uuid,
-		Supplier:     supplierDetail,
-		PurchaseDate: purchase.PurchaseDate.Format(time.RFC3339),
+		Uuid:              result.Uuid,
+		StockCode:         fmt.Sprintf("STOCK-%d", result.ID),
+		AgeInDay:          int(time.Since(result.CreatedAt).Hours() / 24),
+		PurchaseId:        result.PurchaseUuid,
+		Supplier:          supplierDetail,
+		PurchaseDate:      result.PurchaseDate.Format(time.RFC3339),
+		StockItemResponse: make([]models.StockItemResponse, 0),
 	}
 
-	var stockItems []models.StockItem
-	db.Where("stock_entry_id = ? AND deleted = false", stockEntry.Uuid).Find(&stockItems)
+	// Fetch stock items with sorts in batch
+	stockItemsMap, stockSortsMap, err := s.fetchStockItemsAndSorts(db, []string{stockId})
+	if err != nil {
+		return nil, err
+	}
 
-	for _, item := range stockItems {
+	items := stockItemsMap[stockId]
+	for _, item := range items {
 		itemResp := models.StockItemResponse{
-			Uuid:             item.Uuid,
-			StockEntryID:     item.StockEntryID,
-			ItemName:         item.ItemName,
-			Weight:           item.Weight,
-			PricePerKilogram: item.PricePerKilogram,
-			TotalPayment:     item.TotalPayment,
+			Uuid:               item.Uuid,
+			StockEntryID:       item.StockEntryID,
+			ItemName:           item.ItemName,
+			Weight:             item.Weight,
+			PricePerKilogram:   item.PricePerKilogram,
+			TotalPayment:       item.TotalPayment,
+			IsSorted:           len(stockSortsMap[item.Uuid]) > 0,
+			StockSortResponses: make([]models.StockSortResponse, 0),
 		}
 
-		var sorted []models.StockSort
-		db.Where("stock_item_id = ? AND deleted = false", item.Uuid).Find(&sorted)
-
-		itemResp.IsSorted = len(sorted) > 0
-
-		for _, srt := range sorted {
+		sorts := stockSortsMap[item.Uuid]
+		for _, srt := range sorts {
 			itemResp.StockSortResponses = append(itemResp.StockSortResponses,
 				models.StockSortResponse{
 					Uuid:             srt.Uuid,
@@ -274,102 +372,113 @@ func (s *StockService) GetStockEntryById(stockId string) (*models.StockEntriesRe
 	return &resp, nil
 }
 
+// UpdateStockById - Optimized
+// =====================================================
 func (s *StockService) UpdateStockById(stockId string, request models.CreatePurchaseRequest) (*models.PurchaseDataResponse, error) {
 	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, apperror.NewInternal("failed to begin transaction: %w", tx.Error)
 	}
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 			panic(r)
-		} else if tx.Error != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
 		}
 	}()
 
-	var existingStockEntry models.StockEntry
-	if err := tx.Where("uuid = ? AND deleted = false", stockId).First(&existingStockEntry).Error; err != nil {
+	// Fetch existing records in single query
+	var stockEntry models.StockEntry
+	if err := tx.Where("uuid = ? AND deleted = false", stockId).
+		First(&stockEntry).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Errorf("Stock entry not found with ID: %s", stockId)
+			return nil, apperror.NewNotFound("stock entries not found")
 		}
-		return nil, err
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock entry: ", err)
 	}
 
-	var existingPurchase models.Purchase
-	if err := tx.Where("stock_id = ? AND deleted = false", existingStockEntry.Uuid).First(&existingPurchase).Error; err != nil {
+	var purchase models.Purchase
+	if err := tx.Where("stock_id = ? AND deleted = false", stockEntry.Uuid).
+		First(&purchase).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Errorf("Purchase record not found for stock ID: %s", stockId)
+			return nil, apperror.NewNotFound(fmt.Sprintf("purchase not found for stock: %s", stockId))
 		}
-		return nil, err
+		return nil, apperror.NewUnprocessableEntity("failed to fetch purchase entry: ", err)
 	}
 
-	stockItems := make([]models.StockItem, 0)
+	// Delete old stock items (soft delete)
+	if err := tx.Model(&models.StockItem{}).
+		Where("stock_entry_id = ? AND deleted = false", stockEntry.Uuid).
+		Update("deleted", true).Error; err != nil {
+		tx.Rollback()
+		return nil, apperror.NewUnprocessableEntity("failed to delete old stock items: %w", err)
+	}
+
+	// Prepare new stock items
+	stockItems := make([]models.StockItem, 0, len(request.StockItems))
 	var newTotalAmount int
+	now := time.Now()
+
 	for _, v := range request.StockItems {
 		totalPayment := v.Weight * v.PricePerKilogram
-		stockItem := models.StockItem{
+		stockItems = append(stockItems, models.StockItem{
 			Uuid:             uuid.New().String(),
-			StockEntryID:     existingStockEntry.Uuid,
+			StockEntryID:     stockEntry.Uuid,
 			ItemName:         v.ItemName,
 			Weight:           v.Weight,
 			PricePerKilogram: v.PricePerKilogram,
 			IsSorted:         false,
 			TotalPayment:     totalPayment,
 			Deleted:          false,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
-		}
+			CreatedAt:        now,
+			UpdatedAt:        now,
+		})
 		newTotalAmount += totalPayment
-		stockItems = append(stockItems, stockItem)
 	}
 
-	if err := tx.Where("stock_entry_id = ? AND deleted = false", existingStockEntry.Uuid).Delete(&models.StockItem{}).Error; err != nil {
-		return nil, err
-	}
-
+	// Batch insert new stock items
 	if len(stockItems) > 0 {
 		if err := tx.Create(&stockItems).Error; err != nil {
-			return nil, err
+			tx.Rollback()
+			return nil, apperror.NewUnprocessableEntity("failed to create stock items: %w", err)
 		}
 	}
 
-	updatePurchaseMap := map[string]interface{}{
-		"supplier_id":   request.SupplierID,
-		"purchase_date": request.PurchaseDate,
-		"total_amount":  newTotalAmount,
-		"updated_at":    time.Now(),
+	// Update purchase
+	if err := tx.Model(&purchase).
+		Updates(map[string]interface{}{
+			"supplier_id":   request.SupplierID,
+			"purchase_date": request.PurchaseDate,
+			"total_amount":  newTotalAmount,
+			"updated_at":    now,
+		}).Error; err != nil {
+		tx.Rollback()
+		return nil, apperror.NewUnprocessableEntity("failed to update purchase: %w", err)
 	}
 
-	if err := tx.Model(&existingPurchase).Where("uuid = ? AND deleted = false", existingPurchase.Uuid).Updates(updatePurchaseMap).Error; err != nil {
-		return nil, err
+	// Update payment
+	if err := tx.Model(&models.Payment{}).
+		Where("purchase_id = ? AND deleted = false", purchase.Uuid).
+		Updates(map[string]interface{}{
+			"total":      newTotalAmount,
+			"updated_at": now,
+		}).Error; err != nil {
+		tx.Rollback()
+		return nil, apperror.NewUnprocessableEntity("failed to update payment: %w", err)
 	}
 
-	existingPurchase.SupplierID = request.SupplierID
-	existingPurchase.PurchaseDate = request.PurchaseDate
-	existingPurchase.TotalAmount = newTotalAmount
-
-	var existingPayment models.Payment
-	if err := tx.Where("purchase_id = ? AND deleted = false", existingPurchase.Uuid).First(&existingPayment).Error; err != nil {
-		return nil, err
+	if err := tx.Commit().Error; err != nil {
+		return nil, apperror.NewInternal("failed to commit transaction: ", err)
 	}
 
-	updatePaymentMap := map[string]interface{}{
-		"total":      newTotalAmount,
-		"updated_at": time.Now(),
-	}
-
-	if err := tx.Model(&existingPayment).Where("uuid = ? AND deleted = false", existingPayment.Uuid).Updates(updatePaymentMap).Error; err != nil {
-		return nil, err
-	}
-
+	// Fetch supplier for response
 	var supplier models.User
-	if err := db.Where("uuid = ? AND status = true", request.SupplierID).First(&supplier).Error; err != nil {
-		return nil, err
+	if err := db.Where("uuid = ? AND status = true", request.SupplierID).
+		First(&supplier).Error; err != nil {
+		return nil, fmt.Errorf("supplier not found: %w", err)
 	}
 
 	userDetail := models.GetUserDetail{
@@ -378,317 +487,313 @@ func (s *StockService) UpdateStockById(stockId string, request models.CreatePurc
 		Phone: supplier.Phone,
 	}
 
+	// Build response
 	response := &models.PurchaseDataResponse{
-		PurchaseId:      existingPurchase.Uuid,
-		PurchaseDate:    existingPurchase.PurchaseDate.Format(time.RFC3339),
+		PurchaseId:      purchase.Uuid,
+		PurchaseDate:    request.PurchaseDate.Format(time.RFC3339),
 		Supplier:        userDetail,
-		StockId:         existingStockEntry.Uuid,
-		StockCode:       fmt.Sprintf("STOCK%d", existingStockEntry.ID),
+		StockId:         stockEntry.Uuid,
+		StockCode:       fmt.Sprintf("STOCK%d", stockEntry.ID),
 		TotalAmount:     newTotalAmount,
 		PaidAmount:      0,
 		RemainingAmount: newTotalAmount,
-		PaymentStatus:   existingPurchase.PaymentStatus,
+		PaymentStatus:   purchase.PaymentStatus,
 	}
 
 	response.StockEntry = &models.StockEntriesResponse{
-		Uuid:              existingStockEntry.Uuid,
-		StockCode:         fmt.Sprintf("STOCK-%d", existingStockEntry.ID),
-		AgeInDay:          int(time.Since(existingStockEntry.CreatedAt).Hours() / 24),
-		PurchaseId:        existingPurchase.Uuid,
+		Uuid:              stockEntry.Uuid,
+		StockCode:         fmt.Sprintf("STOCK-%d", stockEntry.ID),
+		AgeInDay:          int(time.Since(stockEntry.CreatedAt).Hours() / 24),
+		PurchaseId:        purchase.Uuid,
 		Supplier:          userDetail,
-		StockItemResponse: make([]models.StockItemResponse, 0),
+		StockItemResponse: make([]models.StockItemResponse, 0, len(stockItems)),
 	}
 
 	for _, item := range stockItems {
-		response.StockEntry.StockItemResponse = append(response.StockEntry.StockItemResponse, models.StockItemResponse{
-			Uuid:               item.Uuid,
-			StockEntryID:       existingStockEntry.Uuid,
-			ItemName:           item.ItemName,
-			Weight:             item.Weight,
-			PricePerKilogram:   item.PricePerKilogram,
-			TotalPayment:       item.TotalPayment,
-			IsSorted:           false,
-			StockSortResponses: []models.StockSortResponse{},
-		})
+		response.StockEntry.StockItemResponse = append(response.StockEntry.StockItemResponse,
+			models.StockItemResponse{
+				Uuid:               item.Uuid,
+				StockEntryID:       stockEntry.Uuid,
+				ItemName:           item.ItemName,
+				Weight:             item.Weight,
+				PricePerKilogram:   item.PricePerKilogram,
+				TotalPayment:       item.TotalPayment,
+				IsSorted:           false,
+				StockSortResponses: []models.StockSortResponse{},
+			})
 	}
 
 	return response, nil
 }
 
+// GetStockItemById - Optimized
+// =====================================================
 func (s *StockService) GetStockItemById(stockItemId string) (*models.StockEntryResponse, error) {
 	db := config.GetDBConn()
 
-	var stockItem models.StockItem
-	if err := db.Where("uuid = ? AND deleted = false", stockItemId).First(&stockItem).Error; err != nil {
-		return nil, err
+	// Single query with JOIN
+	var result struct {
+		ItemUuid         string `gorm:"column:item_uuid"`
+		StockEntryID     string `gorm:"column:stock_entry_id"`
+		ItemName         string `gorm:"column:item_name"`
+		Weight           int    `gorm:"column:weight"`
+		PricePerKilogram int    `gorm:"column:price_per_kilogram"`
+		TotalPayment     int    `gorm:"column:total_payment"`
+		IsSorted         bool   `gorm:"column:is_sorted"`
+		EntryUuid        string `gorm:"column:entry_uuid"`
+		EntryID          int    `gorm:"column:entry_id"`
 	}
 
-	var stockEntry models.StockEntry
-	if err := db.Where("uuid = ? AND deleted = false", stockItem.StockEntryID).First(&stockEntry).Error; err != nil {
-		return nil, err
-	}
-
-	var stockSort []models.StockSort
-	if err := db.Where("stock_item_id = ? AND deleted = false", stockItem.Uuid).Find(&stockSort).Error; err != nil {
-		return nil, err
-	}
-
-	result := models.StockEntryResponse{
-		Uuid:      stockEntry.Uuid,
-		StockCode: fmt.Sprintf("STOCK-%d", stockEntry.ID),
-		StockItemResponse: models.StockItemResponse{
-			Uuid:               stockItem.Uuid,
-			StockEntryID:       stockItem.StockEntryID,
-			ItemName:           stockItem.ItemName,
-			Weight:             stockItem.Weight,
-			PricePerKilogram:   stockItem.PricePerKilogram,
-			TotalPayment:       stockItem.TotalPayment,
-			AlreadySorted:      0,
-			IsSorted:           stockItem.IsSorted,
-			StockSortResponses: make([]models.StockSortResponse, 0),
-		},
-	}
-
-	var remainingWeight int
-	for _, v := range stockSort {
-		remainingWeight += v.Weight
-		stockSortResponse := models.StockSortResponse{
-			Uuid:             v.Uuid,
-			StockItemID:      v.StockItemID,
-			ItemName:         v.ItemName,
-			Weight:           v.Weight,
-			PricePerKilogram: v.PricePerKilogram,
-			CurrentWeight:    v.CurrentWeight,
-			TotalCost:        v.TotalCost,
-			IsShrinkage:      v.IsShrinkage,
+	if err := db.Table("stock_items AS si").
+		Select(`
+			si.uuid AS item_uuid,
+			si.stock_entry_id,
+			si.item_name,
+			si.weight,
+			si.price_per_kilogram,
+			si.total_payment,
+			si.is_sorted,
+			se.uuid AS entry_uuid,
+			se.id AS entry_id
+		`).
+		Joins("INNER JOIN stock_entries se ON se.uuid = si.stock_entry_id AND se.deleted = false").
+		Where("si.uuid = ? AND si.deleted = false", stockItemId).
+		Scan(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("stock item not found")
 		}
-
-		result.StockItemResponse.StockSortResponses = append(result.StockItemResponse.StockSortResponses, stockSortResponse)
+		return nil, apperror.NewUnprocessableEntity("failed to get stock item: ", err)
 	}
-	result.StockItemResponse.RemainingWeight = stockItem.Weight - remainingWeight
 
-	return &result, nil
+	// Fetch stock sorts
+	var stockSorts []models.StockSort
+	if err := db.Where("stock_item_id = ? AND deleted = false", stockItemId).
+		Find(&stockSorts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("stock sort not found")
+		}
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock sorts: ", err)
+	}
+
+	// Calculate remaining weight
+	var sortedWeight int
+	sortResponses := make([]models.StockSortResponse, 0, len(stockSorts))
+
+	for _, srt := range stockSorts {
+		sortedWeight += srt.Weight
+		sortResponses = append(sortResponses, models.StockSortResponse{
+			Uuid:             srt.Uuid,
+			StockItemID:      srt.StockItemID,
+			ItemName:         srt.ItemName,
+			Weight:           srt.Weight,
+			PricePerKilogram: srt.PricePerKilogram,
+			CurrentWeight:    srt.CurrentWeight,
+			TotalCost:        srt.TotalCost,
+			IsShrinkage:      srt.IsShrinkage,
+		})
+	}
+
+	return &models.StockEntryResponse{
+		Uuid:      result.EntryUuid,
+		StockCode: fmt.Sprintf("STOCK-%d", result.EntryID),
+		StockItemResponse: models.StockItemResponse{
+			Uuid:               result.ItemUuid,
+			StockEntryID:       result.StockEntryID,
+			ItemName:           result.ItemName,
+			Weight:             result.Weight,
+			PricePerKilogram:   result.PricePerKilogram,
+			TotalPayment:       result.TotalPayment,
+			IsSorted:           result.IsSorted,
+			RemainingWeight:    result.Weight - sortedWeight,
+			AlreadySorted:      sortedWeight,
+			StockSortResponses: sortResponses,
+		},
+	}, nil
 }
 
+// CreateStockSort - Optimized
+// =====================================================
 func (s *StockService) CreateStockSort(request models.SubmitSortRequest) error {
-	db := config.GetDBConn()
-
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	stockSorts := make([]models.StockSort, 0)
-	for _, v := range request.StockSortRequest {
-		stockSort := models.StockSort{
-			Uuid:             uuid.New().String(),
-			StockItemID:      request.StockItemId,
-			ItemName:         v.SortedItemName,
-			Weight:           v.Weight,
-			PricePerKilogram: v.PricePerKilogram,
-			CurrentWeight:    v.Weight,
-			TotalCost:        v.PricePerKilogram * v.Weight,
-			IsShrinkage:      v.IsShrinkage,
-			Deleted:          false,
-		}
-
-		stockSorts = append(stockSorts, stockSort)
-	}
-
-	if len(stockSorts) > 0 {
-		if err := tx.Create(&stockSorts).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	if err := tx.Model(&models.StockItem{}).Where("uuid = ? AND deleted = false", request.StockItemId).Update("is_sorted", true).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if tx.Commit().Error != nil {
-		return tx.Commit().Error
-	}
-
-	return nil
+	return s.saveStockSort(request, false)
 }
 
 func (s *StockService) UpdateStockSort(request models.SubmitSortRequest) error {
+	return s.saveStockSort(request, true)
+}
+
+func (s *StockService) saveStockSort(request models.SubmitSortRequest, isUpdate bool) error {
 	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return tx.Error
+		return apperror.NewInternal("failed to begin transaction: ", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
+	// Delete old sorts if updating
+	if isUpdate {
+		if err := tx.Model(&models.StockSort{}).
+			Where("stock_item_id = ? AND deleted = false", request.StockItemId).
+			Update("deleted", true).Error; err != nil {
+			tx.Rollback()
+			return apperror.NewUnprocessableEntity("failed to delete old sorts: ", err)
+		}
 	}
 
-	if err := tx.Where("stock_item_id = ? AND deleted = false", request.StockItemId).Delete(&models.StockSort{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+	// Batch insert new sorts
+	if len(request.StockSortRequest) > 0 {
+		stockSorts := make([]models.StockSort, 0, len(request.StockSortRequest))
+		now := time.Now()
 
-	stockSorts := make([]models.StockSort, 0)
-	for _, v := range request.StockSortRequest {
-		totalCost := v.PricePerKilogram * v.Weight
+		for _, v := range request.StockSortRequest {
+			currentWeight := v.Weight
+			if isUpdate {
+				currentWeight = v.CurrentWeight
+			}
 
-		stockSort := models.StockSort{
-			Uuid:             uuid.New().String(),
-			StockItemID:      request.StockItemId,
-			ItemName:         v.SortedItemName,
-			Weight:           v.Weight,
-			PricePerKilogram: v.PricePerKilogram,
-			CurrentWeight:    v.CurrentWeight,
-			TotalCost:        totalCost,
-			IsShrinkage:      v.IsShrinkage,
-			Deleted:          false,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
+			stockSorts = append(stockSorts, models.StockSort{
+				Uuid:             uuid.New().String(),
+				StockItemID:      request.StockItemId,
+				ItemName:         v.SortedItemName,
+				Weight:           v.Weight,
+				PricePerKilogram: v.PricePerKilogram,
+				CurrentWeight:    currentWeight,
+				TotalCost:        v.PricePerKilogram * v.Weight,
+				IsShrinkage:      v.IsShrinkage,
+				Deleted:          false,
+				CreatedAt:        now,
+				UpdatedAt:        now,
+			})
 		}
 
-		stockSorts = append(stockSorts, stockSort)
-	}
-
-	if len(stockSorts) > 0 {
 		if err := tx.Create(&stockSorts).Error; err != nil {
 			tx.Rollback()
-			return err
+			return apperror.NewUnprocessableEntity("failed to create stock sorts: ", err)
 		}
 	}
 
-	if err := tx.Model(&models.StockItem{}).Where("uuid = ? AND deleted = false", request.StockItemId).Update("is_sorted", true).Error; err != nil {
+	// Update stock item is_sorted flag
+	if err := tx.Model(&models.StockItem{}).
+		Where("uuid = ? AND deleted = false", request.StockItemId).
+		Update("is_sorted", true).Error; err != nil {
 		tx.Rollback()
-		return err
+		return apperror.NewUnprocessableEntity("failed to update stock item: %w", err)
 	}
 
-	if tx.Commit().Error != nil {
-		return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
 	}
 
 	return nil
 }
 
+// DeleteStockEntryById - Optimized with Batch Operations
+// =====================================================
 func (s *StockService) DeleteStockEntryById(stockEntryId string) error {
 	db := config.GetDBConn()
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return tx.Error
+		return apperror.NewInternal("failed to begin transaction: %w", tx.Error)
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
 
+	// Fetch purchase
 	var purchase models.Purchase
 	if err := tx.Where("stock_id = ? AND deleted = false", stockEntryId).
 		First(&purchase).Error; err != nil {
-
 		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Model(&models.Purchase{}).
-		Where("uuid = ?", purchase.Uuid).
-		Update("deleted", true).Error; err != nil {
-
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Model(&models.Payment{}).
-		Where("purchase_id = ? AND deleted = false", purchase.Uuid).
-		Update("deleted", true).Error; err != nil {
-
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Model(&models.StockEntry{}).
-		Where("uuid = ? AND deleted = false", stockEntryId).
-		Update("deleted", true).Error; err != nil {
-
-		tx.Rollback()
-		return err
-	}
-
-	var stockItems []models.StockItem
-	if err := tx.Where("stock_entry_id = ? AND deleted = false", stockEntryId).
-		Find(&stockItems).Error; err != nil {
-
-		tx.Rollback()
-		return err
-	}
-
-	if len(stockItems) > 0 {
-		stockItemIds := make([]string, 0)
-		for _, item := range stockItems {
-			stockItemIds = append(stockItemIds, item.Uuid)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apperror.NewNotFound("purchase not found")
 		}
+		return apperror.NewUnprocessableEntity("failed to fetch old purchases: %w", err)
+	}
 
-		if err := tx.Model(&models.StockSort{}).
-			Where("stock_item_id IN (?) AND deleted = false", stockItemIds).
+	// Batch soft delete all related records
+	updates := []struct {
+		model interface{}
+		where string
+		param interface{}
+	}{
+		{&models.Purchase{}, "uuid = ?", purchase.Uuid},
+		{&models.Payment{}, "purchase_id = ?", purchase.Uuid},
+		{&models.StockEntry{}, "uuid = ?", stockEntryId},
+		{&models.StockItem{}, "stock_entry_id = ?", stockEntryId},
+	}
+
+	for _, update := range updates {
+		if err := tx.Model(update.model).
+			Where(update.where, update.param).
 			Update("deleted", true).Error; err != nil {
-
 			tx.Rollback()
-			return err
+			return apperror.NewUnprocessableEntity("failed to delete records: %w", err)
 		}
 	}
 
-	if err := tx.Model(&models.StockItem{}).
-		Where("stock_entry_id = ? AND deleted = false", stockEntryId).
-		Update("deleted", true).Error; err != nil {
-
+	// Delete stock sorts for this entry
+	if err := tx.Exec(`
+		UPDATE stock_sorts
+		SET deleted = true
+		WHERE stock_item_id IN (
+			SELECT uuid FROM stock_items
+			WHERE stock_entry_id = ?
+		) AND deleted = false
+	`, stockEntryId).Error; err != nil {
 		tx.Rollback()
-		return err
+		return apperror.NewUnprocessableEntity("failed to delete stock sorts: %w", err)
 	}
 
-	if tx.Commit().Error != nil {
-		return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
 	}
 
 	return nil
 }
 
+// GetAllStockSorts - Optimized with Single JOIN
+// =====================================================
 func (s *StockService) GetAllStockSorts() ([]models.StockSortResponse, error) {
 	db := config.GetDBConn()
 
-	var stockSorts []models.StockSort
-	if err := db.
-		Model(&models.StockSort{}).
-		Where("deleted = false AND is_shrinkage = false AND current_weight != 0").
-		Find(&stockSorts).Error; err != nil {
-		return nil, err
+	// Single optimized query with JOINs
+	var results []models.StockSortResponse
+	if err := db.Table("stock_sorts AS ss").
+		Select(`
+			ss.id AS sort_id,
+			ss.uuid AS sort_uuid,
+			ss.stock_item_id,
+			ss.sorted_item_name AS item_name,
+			ss.weight,
+			ss.price_per_kilogram,
+			ss.current_weight,
+			ss.total_cost,
+			ss.is_shrinkage,
+			se.uuid AS entry_uuid,
+			se.id AS entry_id
+		`).
+		Joins("INNER JOIN stock_items si ON si.uuid = ss.stock_item_id AND si.deleted = false").
+		Joins("INNER JOIN stock_entries se ON se.uuid = si.stock_entry_id AND se.deleted = false").
+		Where("ss.deleted = false AND ss.is_shrinkage = false AND ss.current_weight != 0").
+		Scan(&results).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("stock sort not found")
+		}
+		return nil, apperror.NewUnprocessableEntity("failed to fetch stock sorts: %w", err)
 	}
 
-	response := make([]models.StockSortResponse, 0, len(stockSorts))
-
-	for _, ss := range stockSorts {
-		var stockItem models.StockItem
-		if err := db.
-			Model(&models.StockItem{}).
-			Where("uuid = ? AND deleted = false", ss.StockItemID).
-			First(&stockItem).Error; err != nil {
-			return nil, err
-		}
-
-		var stockEntry models.StockEntry
-		if err := db.
-			Model(&models.StockEntry{}).
-			Where("uuid = ? AND deleted = false", stockItem.StockEntryID).
-			First(&stockEntry).Error; err != nil {
-			return nil, err
-		}
-
-		response = append(response, models.StockSortResponse{
-			ID:               ss.ID,
-			Uuid:             ss.Uuid,
-			StockItemID:      ss.StockItemID,
-			ItemName:         ss.ItemName,
-			Weight:           ss.Weight,
-			PricePerKilogram: ss.PricePerKilogram,
-			StockEntryID:     stockEntry.Uuid,
-			StockCode:        fmt.Sprintf("STOCK%d", stockEntry.ID),
-			CurrentWeight:    ss.CurrentWeight,
-			TotalCost:        ss.TotalCost,
-			IsShrinkage:      ss.IsShrinkage,
-		})
+	for i := range results {
+		results[i].StockCode = fmt.Sprintf("STOCK%d", results[i].EntryId)
 	}
 
-	return response, nil
+	return results, nil
 }

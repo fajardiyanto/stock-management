@@ -225,7 +225,7 @@ const SaleCreationPage: React.FC = () => {
     const fetchFiberList = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await fiberService.getAllUsedFiber();
+            const response = await fiberService.getAllAvailableFiber();
             if (response.status_code === 200) {
                 if (response.data) {
                     const fiberOptions = response.data.map((fiber) => ({

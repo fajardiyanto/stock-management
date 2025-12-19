@@ -1,4 +1,12 @@
-export type MenuId = "dashboard" | "sales" | "purchase" | "stock" | "users" | "fiber" | "analytics";
+export type MenuId =
+    | "dashboard"
+    | "sales"
+    | "purchase"
+    | "stock"
+    | "users"
+    | "fiber"
+    | "analytics"
+    | "audit";
 
 export interface ApiError {
     message: string;
@@ -27,5 +35,5 @@ export const widthOptions = [
     { percent: "70%", label: "max-w-6xl" },
     { percent: "80%", label: "max-w-7xl" },
     { percent: "90%", label: "max-w-8xl" },
-    { percent: "100%", label: "max-w-9xl" }
+    { percent: "100%", label: "max-w-9xl" },
 ];

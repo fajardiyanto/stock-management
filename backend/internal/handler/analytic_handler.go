@@ -1,130 +1,180 @@
 package handler
 
 import (
-	"dashboard-app/internal/config"
-	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
+	"dashboard-app/pkg/base_handler"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 )
 
 type Analytic struct {
 	analyticRepository repository.AnalyticRepository
+	*base_handler.BaseHandler
 }
 
-func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository) *Analytic {
-	return &Analytic{analyticRepository: analyticRepository}
+func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository, validate *validator.Validate) *Analytic {
+	return &Analytic{
+		analyticRepository: analyticRepository,
+		BaseHandler:        base_handler.NewBaseHandler(validate),
+	}
 }
 
-func (s *Analytic) GetAnalyticStatsHandler(c *gin.Context) {
-	data, err := s.analyticRepository.GetAnalyticStats()
+// GetOverallStats godoc
+// @Summary Get overall statistics
+// @Description Retrieve overall business statistics including stock, sales, and purchases
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.AnalyticStatsResponse}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/stats [get]
+func (h *Analytic) GetOverallStats(c *gin.Context) {
+	// Fetch overall statistics
+	data, err := h.analyticRepository.GetAnalyticStats()
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch analytics statistics")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "get analytics stats",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusOK, "Overall statistics retrieved successfully", data)
 }
 
-func (s *Analytic) GetDailyAnalyticStatsHandler(c *gin.Context) {
+// GetDailyStats godoc
+// @Summary Get daily statistics
+// @Description Retrieve statistics for a specific date
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Param date path string true "Date in YYYY-MM-DD format"
+// @Success 200 {object} models.HTTPResponseSuccess{data=models.DailyAnalyticStatsResponse}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/daily/{date} [get]
+func (h *Analytic) GetDailyStats(c *gin.Context) {
 	date := c.Param("date")
 
-	data, err := s.analyticRepository.GetDailyGetAnalyticStats(date)
-	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+	// Validate date format
+	if !h.IsValidDate(date) {
+		h.SendError(c, http.StatusBadRequest, "Invalid date format. Use YYYY-MM-DD", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    fmt.Sprintf("get analytics stats for %s", date),
-		Data:       data,
-	})
+	// Fetch daily statistics
+	data, err := h.analyticRepository.GetDailyGetAnalyticStats(date)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch daily statistics")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, fmt.Sprintf("Statistics for %s retrieved successfully", date), data)
 }
 
-func (s *Analytic) GetSalesTrendDataHandler(c *gin.Context) {
+// GetSalesTrend godoc
+// @Summary Get sales trend data
+// @Description Retrieve monthly sales and purchase trends for a specific year
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Param year path string true "Year (YYYY)"
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.SalesTrendData}
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/trends/{year} [get]
+func (h *Analytic) GetSalesTrend(c *gin.Context) {
 	year := c.Param("year")
 
-	data, err := s.analyticRepository.GetSalesTrendData(year)
-	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+	// Validate year format
+	if !h.IsValidYear(year) {
+		h.SendError(c, http.StatusBadRequest, "Invalid year format. Use YYYY (e.g., 2025)", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "get sales trend data analytics",
-		Data:       data,
-	})
+	// Fetch sales trend data
+	data, err := h.analyticRepository.GetSalesTrendData(year)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch sales trend data")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, fmt.Sprintf("Sales trend for %s retrieved successfully", year), data)
 }
 
-func (s *Analytic) GetStockDistributionDataHandler(c *gin.Context) {
-	data, err := s.analyticRepository.GetStockDistributionData()
+// GetStockDistribution godoc
+// @Summary Get stock distribution
+// @Description Retrieve stock distribution across different stock entries
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.StockDistributionData}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/distribution [get]
+func (h *Analytic) GetStockDistribution(c *gin.Context) {
+	// Fetch stock distribution data
+	data, err := h.analyticRepository.GetStockDistributionData()
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch stock distribution")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "get stock distribution data analytics",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusOK, "Stock distribution retrieved successfully", data)
 }
 
-func (s *Analytic) GetSupplierPerformanceHandler(c *gin.Context) {
-	data, err := s.analyticRepository.GetSupplierPerformance()
+// GetSupplierPerformance godoc
+// @Summary Get supplier performance
+// @Description Retrieve performance metrics for all suppliers
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.UserData}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/suppliers [get]
+func (h *Analytic) GetSupplierPerformance(c *gin.Context) {
+	// Fetch supplier performance data
+	data, err := h.analyticRepository.GetSupplierPerformance()
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch supplier performance")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "get supplier performance data analytics",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusOK, "Supplier performance retrieved successfully", data)
 }
 
-func (s *Analytic) GetCustomerPerformanceHandler(c *gin.Context) {
-	data, err := s.analyticRepository.GetCustomerPerformance()
+// GetCustomerPerformance godoc
+// @Summary Get customer performance
+// @Description Retrieve performance metrics for all customers
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.UserData}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/customers [get]
+func (h *Analytic) GetCustomerPerformance(c *gin.Context) {
+	// Fetch customer performance data
+	data, err := h.analyticRepository.GetCustomerPerformance()
 	if err != nil {
-		config.GetLogger().Error(err)
-		c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-		})
+		h.HandleError(c, err, "Failed to fetch customer performance")
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPResponseSuccess{
-		StatusCode: http.StatusOK,
-		Message:    "get supplier performance data analytics",
-		Data:       data,
-	})
+	h.SendSuccess(c, http.StatusOK, "Customer performance retrieved successfully", data)
+}
+
+// RegisterRoutes registers all analytics routes
+func (h *Analytic) RegisterRoutes(router *gin.RouterGroup) {
+	analytics := router.Group("/analytics")
+	{
+		// Core analytics
+		analytics.GET("/stats", h.GetOverallStats)
+		analytics.GET("/daily/:date/stats", h.GetDailyStats)
+
+		// Trends and distribution
+		analytics.GET("/sales/trend/:year", h.GetSalesTrend)
+		analytics.GET("/stock/distribution", h.GetStockDistribution)
+
+		// Performance metrics
+		analytics.GET("/supplier/performance", h.GetSupplierPerformance)
+		analytics.GET("/customer/performance", h.GetCustomerPerformance)
+	}
 }

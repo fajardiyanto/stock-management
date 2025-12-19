@@ -52,9 +52,9 @@ func (*StockSort) TableName() string {
 }
 
 type StockItemRequest struct {
-	ItemName         string `json:"item_name"`
-	Weight           int    `json:"weight"`
-	PricePerKilogram int    `json:"price_per_kilogram"`
+	ItemName         string `json:"item_name" validate:"required"`
+	Weight           int    `json:"weight" validate:"required"`
+	PricePerKilogram int    `json:"price_per_kilogram" validate:"required"`
 }
 
 type StockEntriesResponse struct {
@@ -87,17 +87,18 @@ type StockItemResponse struct {
 }
 
 type StockSortResponse struct {
-	ID               int    `json:"id"`
-	Uuid             string `json:"uuid"`
-	StockItemID      string `json:"stock_item_id"`
-	ItemName         string `json:"sorted_item_name"`
-	StockEntryID     string `json:"stock_entry_id"`
+	ID               int    `json:"id" gorm:"column:sort_id"`
+	Uuid             string `json:"uuid" gorm:"column:sort_uuid"`
+	StockItemID      string `json:"stock_item_id" gorm:"column:stock_item_id"`
+	ItemName         string `json:"sorted_item_name" gorm:"column:item_name"`
+	StockEntryID     string `json:"stock_entry_id" gorm:"column:entry_uuid"`
 	StockCode        string `json:"stock_code"`
-	Weight           int    `json:"weight"`
-	PricePerKilogram int    `json:"price_per_kilogram"`
-	CurrentWeight    int    `json:"current_weight"`
-	TotalCost        int    `json:"total_cost"`
-	IsShrinkage      bool   `json:"is_shrinkage"`
+	Weight           int    `json:"weight" gorm:"column:weight"`
+	PricePerKilogram int    `json:"price_per_kilogram" gorm:"column:price_per_kilogram"`
+	CurrentWeight    int    `json:"current_weight" gorm:"column:current_weight"`
+	TotalCost        int    `json:"total_cost" gorm:"column:total_cost"`
+	IsShrinkage      bool   `json:"is_shrinkage" gorm:"column:is_shrinkage"`
+	EntryId          int    `json:"entry_id" gorm:"column:entry_id"`
 }
 
 type StockResponse struct {
@@ -127,4 +128,16 @@ type StockSortRequest struct {
 type SubmitSortRequest struct {
 	StockItemId      string             `json:"stock_item_uuid" validate:"required"`
 	StockSortRequest []StockSortRequest `json:"stock_sort_request"`
+}
+
+type StockData struct {
+	Uuid          string    `gorm:"column:uuid"`
+	ID            int       `gorm:"column:id"`
+	CreatedAt     time.Time `gorm:"column:created_at"`
+	PurchaseUuid  string    `gorm:"column:purchase_uuid"`
+	SupplierID    string    `gorm:"column:supplier_id"`
+	PurchaseDate  time.Time `gorm:"column:purchase_date"`
+	SupplierUuid  string    `gorm:"column:supplier_uuid"`
+	SupplierName  string    `gorm:"column:supplier_name"`
+	SupplierPhone string    `gorm:"column:supplier_phone"`
 }

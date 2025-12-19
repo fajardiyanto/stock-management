@@ -45,6 +45,22 @@ type PurchaseDataResponse struct {
 	LastPayment     string                `json:"last_payment"`
 }
 
+type PurchaseData struct {
+	Uuid            string     `gorm:"column:uuid"`
+	SupplierID      string     `gorm:"column:supplier_id"`
+	PurchaseDate    time.Time  `gorm:"column:purchase_date"`
+	PaymentStatus   string     `gorm:"column:payment_status"`
+	TotalAmount     int        `gorm:"column:total_amount"`
+	PaidAmount      int        `gorm:"column:paid_amount"`
+	StockId         string     `gorm:"column:stock_id"`
+	CreatedAt       time.Time  `gorm:"column:created_at"`
+	SupplierUuid    string     `gorm:"column:supplier_uuid"`
+	SupplierName    string     `gorm:"column:supplier_name"`
+	SupplierPhone   string     `gorm:"column:supplier_phone"`
+	StockEntryID    int        `gorm:"column:stock_entry_id"`
+	LastPaymentDate *time.Time `gorm:"column:last_payment_date"`
+}
+
 type PurchaseResponse struct {
 	Size   int                    `json:"size"`
 	PageNo int                    `json:"page_no"`

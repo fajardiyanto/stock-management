@@ -161,7 +161,7 @@ const UserManagementPage: React.FC = () => {
 
         try {
             const response = await authService.createUser(addFormData);
-            if (response.status_code === 200) {
+            if (response.status_code === 200 || response.status_code === 201) {
                 showToast("User created successfully!", "success");
                 handleCloseModal();
                 setCurrentPage(1);

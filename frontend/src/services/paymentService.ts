@@ -1,22 +1,32 @@
-import { CashFlowResponse, CreatePaymentReqeust, CreatePaymentSalesRequest, ManualEntryFormRequest } from "../types/payment";
+import {
+    CashFlowResponse,
+    CreatePaymentReqeust,
+    CreatePaymentSalesRequest,
+    ManualEntryFormRequest,
+} from "../types/payment";
 import { ApiResponse } from "../types";
 import { apiCall } from "./";
 
 export const paymentService = {
-    getAllPaymentByUserId: async (id: string): Promise<ApiResponse<CashFlowResponse>> => {
+    getAllPaymentByUserId: async (
+        id: string
+    ): Promise<ApiResponse<CashFlowResponse>> => {
         const response = await apiCall<ApiResponse<CashFlowResponse>>(
-            `/payments/user/${id}`
+            `/payment/user/${id}`
         );
         return response;
     },
 
-    createManualPayment: async (id: string, data: ManualEntryFormRequest[]): Promise<ApiResponse<any>> => {
+    createManualPayment: async (
+        id: string,
+        data: ManualEntryFormRequest[]
+    ): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
             `/payment/user/${id}manual/`,
             {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify(data),
             }
@@ -28,47 +38,48 @@ export const paymentService = {
         const response = await apiCall<ApiResponse<any>>(
             `/payment/${id}/manual`,
             {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
             }
         );
         return response;
     },
 
-    getAllPaymentBField: async (id: string, field: string): Promise<ApiResponse<CashFlowResponse>> => {
+    getAllPaymentBField: async (
+        id: string,
+        field: string
+    ): Promise<ApiResponse<CashFlowResponse>> => {
         const response = await apiCall<ApiResponse<CashFlowResponse>>(
-            `/purchase/${id}/payments/${field}`
+            `/payment/purchase/${id}/${field}`
         );
         return response;
     },
 
-    createPaymentByPurchaseId: async (data: CreatePaymentReqeust): Promise<ApiResponse<any>> => {
-        const response = await apiCall<ApiResponse<any>>(
-            `/payment/purchase`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }
-        );
+    createPaymentByPurchaseId: async (
+        data: CreatePaymentReqeust
+    ): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(`/payment/purchase`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
         return response;
     },
 
-    createPaymentBySaleId: async (data: CreatePaymentSalesRequest): Promise<ApiResponse<any>> => {
-        const response = await apiCall<ApiResponse<any>>(
-            `/payment/sale`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }
-        );
+    createPaymentBySaleId: async (
+        data: CreatePaymentSalesRequest
+    ): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(`/payment/sale`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
         return response;
-    }
-}
+    },
+};

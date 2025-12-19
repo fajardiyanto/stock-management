@@ -9,6 +9,7 @@ import {
     Warehouse,
     BoxIcon,
     HomeIcon,
+    Search,
 } from "lucide-react";
 import { MenuId, MenuItem } from "../types";
 
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { id: "purchase", label: "Management Pembelian", icon: ShoppingBasket },
         { id: "stock", label: "Management Stok", icon: Warehouse },
         { id: "users", label: "Management Akun", icon: Users },
+        { id: "audit", label: "Audit Trail", icon: Search },
     ];
 
     return (

@@ -66,8 +66,8 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                                 tickFormatter={(value) => formatRupiah(value)}
                             />
                             <Tooltip
-                                formatter={(value: number) =>
-                                    formatRupiah(value)
+                                formatter={(value: number | undefined) =>
+                                    value != null ? formatRupiah(value) : "-"
                                 }
                             />
                             <Legend />
@@ -145,8 +145,10 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                                     }
                                 />
                                 <Tooltip
-                                    formatter={(value: number) =>
-                                        formatRupiah(value)
+                                    formatter={(value: number | undefined) =>
+                                        value != null
+                                            ? formatRupiah(value)
+                                            : "-"
                                     }
                                 />
                                 <Legend />
@@ -184,8 +186,10 @@ const ChartAnalytics: React.FC<ChartAnalyticsProps> = ({
                                     }
                                 />
                                 <Tooltip
-                                    formatter={(value: number) =>
-                                        formatRupiah(value)
+                                    formatter={(value: number | undefined) =>
+                                        value != null
+                                            ? formatRupiah(value)
+                                            : "-"
                                     }
                                 />
                                 <Legend />

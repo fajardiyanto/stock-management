@@ -25,13 +25,13 @@ type FiberRequest struct {
 }
 
 type FiberResponse struct {
-	Uuid        string    `json:"uuid"`
-	Name        string    `json:"name"`
-	Status      string    `json:"status"`
-	StockSortId string    `json:"stock_sort_id"`
-	SaleCode    string    `json:"sale_code"`
-	Deleted     bool      `json:"deleted"`
-	CreatedAt   time.Time `json:"created_at"`
+	Uuid        string    `json:"uuid" gorm:"column:uuid"`
+	Name        string    `json:"name" gorm:"column:name"`
+	Status      string    `json:"status" gorm:"column:status"`
+	StockSortId string    `json:"stock_sort_id" gorm:"column:stock_sort_id"`
+	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	SaleCode    *string   `json:"sale_code" gorm:"column:sale_code"`
 }
 
 type FiberPaginationResponse struct {
@@ -61,4 +61,17 @@ type FiberAllocationRequest struct {
 type FiberUsedList struct {
 	FiberId   string `json:"uuid"`
 	FiberName string `json:"name"`
+}
+
+type FiberStatistics struct {
+	Total       int64   `json:"total"`
+	Free        int64   `json:"free"`
+	Used        int64   `json:"used"`
+	Utilization float64 `json:"utilization_percentage"`
+}
+
+type FiberStats struct {
+	Total int64 `gorm:"column:total"`
+	Free  int64 `gorm:"column:free"`
+	Used  int64 `gorm:"column:used"`
 }

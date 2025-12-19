@@ -13,8 +13,6 @@ type Config struct {
 	Port        string `yaml:"port"`
 	ApiSecret   string `yaml:"api_secret" default:"SECRET"`
 	Environment string `yaml:"environment" default:"PRODUCTION"`
-	Recording   bool   `yaml:"recording" default:"false"`
-	MessageKey  string `yaml:"message_key" default:"MESSAGE"`
 	Database    struct {
 		Mysql interfaces.SQLConfig `yaml:"mysql"`
 	} `yaml:"database"`

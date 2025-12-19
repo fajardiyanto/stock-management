@@ -16,6 +16,7 @@ import SaleCreationPage from "./SaleCreationPage";
 import SaleUpdatePage from "./SaleUpdatePage";
 import MultiplePrintInvoicePage from "./MultiplePrintInvoicePage";
 import AnalyticsPage from "./AnalyticsPage";
+import AuditLogPage from "./AuditTrailPage";
 import { getDefaultActiveMenu } from "../utils/GetDefaultActiveMenu";
 
 interface DashboardProps {
@@ -126,6 +127,7 @@ const DashboardPage: React.FC<DashboardProps> = ({ onLogout }) => {
                                 path="analytics"
                                 element={<AnalyticsPage />}
                             />
+                            <Route path="audit" element={<AuditLogPage />} />
                         </Routes>
                     </div>
                 </main>

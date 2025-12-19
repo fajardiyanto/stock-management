@@ -19,6 +19,10 @@ type User struct {
 	UpdatedAt                    time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
+func (*User) TableName() string {
+	return "user"
+}
+
 type LoginRequest struct {
 	Phone    string `json:"phone"`
 	Password string `json:"password"`
@@ -89,6 +93,15 @@ type GetUserDetail struct {
 	ShippingAddress string `json:"shipping_address"`
 }
 
-func (*User) TableName() string {
-	return "user"
+type UserFilter struct {
+	Size   int    `form:"size"`
+	PageNo int    `form:"page"`
+	Name   string `form:"name"`
+	Phone  string `form:"phone"`
+	Role   string `form:"role"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" validate:"required,min=6"`
+	NewPassword string `json:"new_password" validate:"required,min=6"`
 }

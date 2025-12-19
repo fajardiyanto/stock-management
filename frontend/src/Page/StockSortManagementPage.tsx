@@ -240,7 +240,7 @@ const StockSortManagementPage: React.FC = () => {
                 ? await stockService.updateStockSort(stockItemId, finalPayload)
                 : await stockService.createStockSort(finalPayload);
 
-            if (response.status_code === 200) {
+            if (response.status_code === 200 || response.status_code === 201) {
                 showToast(
                     isEditMode
                         ? "Hasil sortir berhasil diperbarui!"
@@ -264,6 +264,7 @@ const StockSortManagementPage: React.FC = () => {
             showToast(errorMessage, "error");
         } finally {
             setIsSubmitting(false);
+            navigate("/dashboard/stock");
         }
     };
 

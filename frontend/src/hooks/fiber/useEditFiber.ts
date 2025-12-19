@@ -21,7 +21,7 @@ export const useEditFiber = (): UseEditFiberResult => {
         try {
             const response = await fiberService.updateFiber(fiberId, data);
 
-            if (response.status_code === 200) {
+            if (response.status_code === 200 || response.status_code === 201) {
                 return true;
             }
 

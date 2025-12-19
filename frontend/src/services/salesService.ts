@@ -47,7 +47,7 @@ export const salesService = {
 
     deleteSale: async (saleId: string): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
-            `/sale/${saleId}`,
+            `/sales/${saleId}`,
             {
                 method: 'DELETE',
             }
@@ -57,7 +57,7 @@ export const salesService = {
 
     updateSales: async (id: string, data: SubmitSaleRequest): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
-            `/sale/${id}`,
+            `/sales/${id}`,
             {
                 method: 'PUT',
                 headers: {
@@ -71,7 +71,7 @@ export const salesService = {
 
     getSaleById: async (saleId: string): Promise<ApiResponse<SaleEntry[]>> => {
         const response = await apiCall<ApiResponse<SaleEntry[]>>(
-            `/sale/${saleId}`,
+            `/sales/${saleId}`,
         );
         return response;
     },

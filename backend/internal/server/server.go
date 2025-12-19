@@ -15,8 +15,12 @@ func Run() error {
 	config.Config()
 	validate := validator.New()
 
-	app := gin.Default()
+	app := gin.New()
 	app.Use(middleware.CORSMiddleware())
+
+	if models.GetConfig().Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	paymentService := service.NewPaymentService()
 	userService := service.NewUserService(paymentService)
@@ -25,6 +29,7 @@ func Run() error {
 	fiberService := service.NewFiberService()
 	salesService := service.NewSalesService()
 	analyticService := service.NewAnalyticService()
+	auditLogService := service.NewAuditLogService()
 
 	userHandler := handler.NewUserHandler(userService, validate)
 	purchaseHandler := handler.NewPurchaseHandler(purchaseService, validate)
@@ -32,62 +37,25 @@ func Run() error {
 	paymentHandler := handler.NewPaymentHandler(paymentService, validate)
 	fiberHandler := handler.NewFiberHandler(fiberService, validate)
 	salesHandler := handler.NewSalesHandler(salesService, validate)
-	analyticsHandler := handler.NewAnalyticsHandler(analyticService)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticService, validate)
+	auditLogHandler := handler.NewAuditLogHandler(auditLogService, validate)
 
 	api := app.Group("/v1/api")
-	api.POST("/login", userHandler.LoginHandler)
-	api.POST("/register", userHandler.CreateUserHandler)
+	api.Use(middleware.RequestResponseLogger())
+	api.Use(middleware.AuditTrailLogger())
+
+	userHandler.RegisterPublicRoutes(api)
 
 	api.Use(middleware.AuthMiddleware())
 	{
-		api.GET("/users", userHandler.GetAllUserHandler)
-		api.PUT("/user/:uuid", userHandler.UpdateUserHandler)
-		api.DELETE("/user/:uuid", userHandler.DeleteUserHandler)
-		api.GET("/user/:uuid", userHandler.GetUserByIdHandler)
-		api.GET("/user/role/:role", userHandler.GetAllUserByRoleHandler)
-
-		api.POST("/purchase", purchaseHandler.CreatePurchaseHandler)
-		api.GET("/purchases", purchaseHandler.GetAllPurchasesHandler)
-		api.PUT("/purchase/:purchaseId", purchaseHandler.UpdatePurchaseHandler)
-
-		api.GET("/stock-entries", stockHandler.GetAllStockEntriesHandler)
-		api.GET("/stock-entry/:stockId", stockHandler.GetStockEntryByIdHandler)
-		api.PUT("/stock-entry/:stockId", stockHandler.UpdateStockEntryHandler)
-		api.DELETE("/stock-entry/:stockId", stockHandler.DeleteStockEntryByIdHandler)
-
-		api.GET("/stock-item/:stockItemId", stockHandler.GetStockItemByIdHandler)
-
-		api.POST("/stock-sort/:stockItemId", stockHandler.CreateStockSortHandler)
-		api.PUT("/stock-sort/:stockItemId", stockHandler.UpdateStockSortHandler)
-		api.GET("/stock-sorts", stockHandler.GetAllStockSortsHandler)
-
-		api.GET("/payments/user/:userId", paymentHandler.GetAllPaymentFromUserIdHandler)
-		api.POST("/payment/user/:userId/manual", paymentHandler.CreateManualPaymentHandler)
-		api.DELETE("/payment/:paymentId/manual", paymentHandler.DeleteManualPaymentHandler)
-		api.GET("/purchase/:id/payments/:field", paymentHandler.GetAllPaymentByFieldIdHandler)
-		api.POST("/payment/purchase", paymentHandler.CreatePaymentByPurchaseIdHandler)
-		api.POST("/payment/sale", paymentHandler.CreatePaymentBySaleIdHandler)
-
-		api.GET("/fibers", fiberHandler.GetAllFibersHandler)
-		api.GET("/fiber/:fiberId", fiberHandler.GetFiberByIdHandler)
-		api.POST("/fiber", fiberHandler.CreateFiberHandler)
-		api.PUT("/fiber/:fiberId/mark", fiberHandler.MarkFiberAvailableHandler)
-		api.DELETE("/fiber/:fiberId", fiberHandler.DeleteFiberHandler)
-		api.PUT("/fiber/:fiberId", fiberHandler.UpdateFiberHandler)
-		api.GET("/fibers/used", fiberHandler.GetAllUsedFibersHandler)
-
-		api.POST("/sales", salesHandler.CreateSalesHandler)
-		api.GET("/sales", salesHandler.GetAllSalesHandler)
-		api.DELETE("/sale/:saleId", salesHandler.DeleteSaleHandler)
-		api.GET("/sale/:saleId", salesHandler.GetSaleByIdHandler)
-		api.PUT("/sale/:saleId", salesHandler.UpdateSalesHandler)
-
-		api.GET("/analytics/stats", analyticsHandler.GetAnalyticStatsHandler)
-		api.GET("/analytics/daily/:date/stats", analyticsHandler.GetDailyAnalyticStatsHandler)
-		api.GET("/analytics/sales/trend/:year", analyticsHandler.GetSalesTrendDataHandler)
-		api.GET("/analytics/stock/distribution", analyticsHandler.GetStockDistributionDataHandler)
-		api.GET("/analytics/supplier/performance", analyticsHandler.GetSupplierPerformanceHandler)
-		api.GET("/analytics/customer/performance", analyticsHandler.GetCustomerPerformanceHandler)
+		salesHandler.RegisterRoutes(api)
+		paymentHandler.RegisterRoutes(api)
+		stockHandler.RegisterRoutes(api)
+		analyticsHandler.RegisterRoutes(api)
+		fiberHandler.RegisterRoutes(api)
+		userHandler.RegisterRoutes(api)
+		purchaseHandler.RegisterRoutes(api)
+		auditLogHandler.RegisterRoutes(api)
 	}
 
 	return app.Run(":" + models.GetConfig().Port)

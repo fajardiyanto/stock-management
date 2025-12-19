@@ -1,0 +1,339 @@
+package service
+
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"dashboard-app/internal/models"
+)
+
+// CacheInterface - Define cache interface for flexibility
+type CacheInterface interface {
+	Get(key string) ([]byte, bool)
+	Set(key string, value []byte, ttl time.Duration) error
+	Delete(key string) error
+	Clear() error
+}
+
+// CachedAnalyticService - Wrapper with caching capabilities
+type CachedAnalyticService struct {
+	*AnalyticService
+	cache CacheInterface
+}
+
+func NewCachedAnalyticService(cache CacheInterface) *CachedAnalyticService {
+	return &CachedAnalyticService{
+		AnalyticService: &AnalyticService{},
+		cache:           cache,
+	}
+}
+
+// Cache TTL configurations
+const (
+	OverallStatsTTL       = 5 * time.Minute   // Overall stats cached for 5 minutes
+	DailyStatsTTL         = 1 * time.Hour     // Daily stats cached for 1 hour
+	MonthlyTrendTTL       = 6 * time.Hour     // Monthly trends cached for 6 hours
+	UserPerformanceTTL    = 15 * time.Minute  // User performance cached for 15 minutes
+	StockDistributionTTL  = 10 * time.Minute  // Stock distribution cached for 10 minutes
+)
+
+// =====================================================
+// CACHED METHODS
+// =====================================================
+
+func (s *CachedAnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, error) {
+	cacheKey := "analytics:overall_stats"
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result models.AnalyticStatsResponse
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return &result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetAnalyticStats()
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, OverallStatsTTL)
+	}
+
+	return result, nil
+}
+
+func (s *CachedAnalyticService) GetDailyGetAnalyticStats(date string) (*models.DailyAnalyticStatsResponse, error) {
+	cacheKey := fmt.Sprintf("analytics:daily_stats:%s", date)
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result models.DailyAnalyticStatsResponse
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return &result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetDailyGetAnalyticStats(date)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, DailyStatsTTL)
+	}
+
+	return result, nil
+}
+
+func (s *CachedAnalyticService) GetSalesTrendData(year string) ([]models.SalesTrendData, error) {
+	cacheKey := fmt.Sprintf("analytics:sales_trend:%s", year)
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result []models.SalesTrendData
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetSalesTrendData(year)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, MonthlyTrendTTL)
+	}
+
+	return result, nil
+}
+
+func (s *CachedAnalyticService) GetStockDistributionData() ([]models.StockDistributionData, error) {
+	cacheKey := "analytics:stock_distribution"
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result []models.StockDistributionData
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetStockDistributionData()
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, StockDistributionTTL)
+	}
+
+	return result, nil
+}
+
+func (s *CachedAnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
+	cacheKey := "analytics:supplier_performance"
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result []models.UserData
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetSupplierPerformance()
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, UserPerformanceTTL)
+	}
+
+	return result, nil
+}
+
+func (s *CachedAnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
+	cacheKey := "analytics:customer_performance"
+
+	// Try to get from cache
+	if cached, found := s.cache.Get(cacheKey); found {
+		var result []models.UserData
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	// Fetch from database
+	result, err := s.AnalyticService.GetCustomerPerformance()
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	if data, err := json.Marshal(result); err == nil {
+		s.cache.Set(cacheKey, data, UserPerformanceTTL)
+	}
+
+	return result, nil
+}
+
+// =====================================================
+// CACHE INVALIDATION HELPERS
+// =====================================================
+
+// InvalidateAnalyticsCache - Call this after data changes
+func (s *CachedAnalyticService) InvalidateAnalyticsCache() error {
+	keys := []string{
+		"analytics:overall_stats",
+		"analytics:stock_distribution",
+		"analytics:supplier_performance",
+		"analytics:customer_performance",
+	}
+
+	for _, key := range keys {
+		if err := s.cache.Delete(key); err != nil {
+			return fmt.Errorf("failed to invalidate cache key %s: %w", key, err)
+		}
+	}
+
+	return nil
+}
+
+// InvalidateDailyCache - Invalidate today's cache
+func (s *CachedAnalyticService) InvalidateDailyCache(date string) error {
+	cacheKey := fmt.Sprintf("analytics:daily_stats:%s", date)
+	return s.cache.Delete(cacheKey)
+}
+
+// InvalidateYearlyCache - Invalidate year's trend cache
+func (s *CachedAnalyticService) InvalidateYearlyCache(year string) error {
+	cacheKey := fmt.Sprintf("analytics:sales_trend:%s", year)
+	return s.cache.Delete(cacheKey)
+}
+
+// =====================================================
+// SIMPLE IN-MEMORY CACHE IMPLEMENTATION
+// =====================================================
+
+type InMemoryCache struct {
+	data map[string]cacheEntry
+}
+
+type cacheEntry struct {
+	value      []byte
+	expiration time.Time
+}
+
+func NewInMemoryCache() *InMemoryCache {
+	cache := &InMemoryCache{
+		data: make(map[string]cacheEntry),
+	}
+
+	// Start cleanup goroutine
+	go cache.cleanup()
+
+	return cache
+}
+
+func (c *InMemoryCache) Get(key string) ([]byte, bool) {
+	entry, exists := c.data[key]
+	if !exists {
+		return nil, false
+	}
+
+	if time.Now().After(entry.expiration) {
+		delete(c.data, key)
+		return nil, false
+	}
+
+	return entry.value, true
+}
+
+func (c *InMemoryCache) Set(key string, value []byte, ttl time.Duration) error {
+	c.data[key] = cacheEntry{
+		value:      value,
+		expiration: time.Now().Add(ttl),
+	}
+	return nil
+}
+
+func (c *InMemoryCache) Delete(key string) error {
+	delete(c.data, key)
+	return nil
+}
+
+func (c *InMemoryCache) Clear() error {
+	c.data = make(map[string]cacheEntry)
+	return nil
+}
+
+func (c *InMemoryCache) cleanup() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		now := time.Now()
+		for key, entry := range c.data {
+			if now.After(entry.expiration) {
+				delete(c.data, key)
+			}
+		}
+	}
+}
+
+// =====================================================
+// USAGE EXAMPLE
+// =====================================================
+/*
+// Initialize cache
+cache := NewInMemoryCache()
+analyticService := NewCachedAnalyticService(cache)
+
+// Get analytics (will cache automatically)
+stats, err := analyticService.GetAnalyticStats()
+
+// After data modification, invalidate cache
+if err := analyticService.InvalidateAnalyticsCache(); err != nil {
+    log.Printf("Failed to invalidate cache: %v", err)
+}
+
+// For Redis implementation:
+type RedisCache struct {
+    client *redis.Client
+}
+
+func (r *RedisCache) Get(key string) ([]byte, bool) {
+    val, err := r.client.Get(context.Background(), key).Bytes()
+    if err != nil {
+        return nil, false
+    }
+    return val, true
+}
+
+func (r *RedisCache) Set(key string, value []byte, ttl time.Duration) error {
+    return r.client.Set(context.Background(), key, value, ttl).Err()
+}
+
+func (r *RedisCache) Delete(key string) error {
+    return r.client.Del(context.Background(), key).Err()
+}
+
+func (r *RedisCache) Clear() error {
+    return r.client.FlushDB(context.Background()).Err()
+}
+*/
