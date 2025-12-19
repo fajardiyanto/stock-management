@@ -347,7 +347,7 @@ func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSale
 		Uuid:        uuid.New().String(),
 		SalesId:     sale.Uuid,
 		UserId:      sale.CustomerId,
-		Description: fmt.Sprintf("Pembayaran Selling %s", request.SalesCode),
+		Description: fmt.Sprintf("Pembayaran Buying %s", request.SalesCode),
 		Total:       request.Total,
 		Type:        constants.Expense,
 		Deleted:     false,
