@@ -12,4 +12,6 @@ type UserRepository interface {
 	UpdateUser(string, models.UpdateUserRequest) error
 	SoftDeleteUser(string) error
 	GetAllUserByRole(string) ([]models.User, error)
+	ChangePassword(string, models.ChangePasswordRequest) error
+	ResetPassword(string) (*models.ResetPasswordResponse, error)
 }

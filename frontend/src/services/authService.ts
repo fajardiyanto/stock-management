@@ -6,6 +6,9 @@ import {
     User,
     UserFilters,
     UserPaginatedData,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+    ResetPasswordResponse,
 } from "../types/user";
 import { ApiResponse } from "../types";
 import { API_BASE_URL } from "../constants/constants";
@@ -115,6 +118,31 @@ export const authService = {
     getListUserRoles: async (role: string): Promise<ApiResponse<User[]>> => {
         const response = await apiCall<ApiResponse<User[]>>(
             `/users/role/${role}`
+        );
+        return response;
+    },
+
+    changePassword: async (
+        data: ChangePasswordRequest
+    ): Promise<ApiResponse<ChangePasswordResponse>> => {
+        const response = await apiCall<ApiResponse<ChangePasswordResponse>>(
+            `/users/change-password`,
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    },
+
+    resetPassword: async (
+        userId: string
+    ): Promise<ApiResponse<ResetPasswordResponse>> => {
+        const response = await apiCall<ApiResponse<ResetPasswordResponse>>(
+            `/users/${userId}/reset-password`,
+            {
+                method: "PUT",
+            }
         );
         return response;
     },

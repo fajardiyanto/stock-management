@@ -102,6 +102,11 @@ type UserFilter struct {
 }
 
 type ChangePasswordRequest struct {
-	OldPassword string `json:"old_password" validate:"required,min=6"`
-	NewPassword string `json:"new_password" validate:"required,min=6"`
+	OldPassword     string `json:"old_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required"`
+	ConfirmPassword string `json:"confirm_password" validate:"required"`
+}
+
+type ResetPasswordResponse struct {
+	Password string `json:"password"`
 }

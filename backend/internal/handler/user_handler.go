@@ -325,22 +325,63 @@ func (h *User) GetUsersByRole(c *gin.Context) {
 // @Failure 400 {object} models.HTTPResponseError
 // @Failure 401 {object} models.HTTPResponseError
 // @Failure 500 {object} models.HTTPResponseError
-// @Router /users/change-password [post]
+// @Router /users/change-password [put]
 func (h *User) ChangePassword(c *gin.Context) {
+	token := jwt.GetHeader(c)
+	if token == "" {
+		h.SendError(c, http.StatusUnauthorized, "Invalid or missing authentication token", nil)
+		return
+	}
+
+	userId, err := jwt.ValidateToken(token)
+	if err != nil {
+		h.SendError(c, http.StatusUnauthorized, "Invalid authentication token", err)
+		return
+	}
+
 	var req models.ChangePasswordRequest
 
 	// Bind and validate request
-	if err := h.BindAndValidate(c, &req); err != nil {
+	if err = h.BindAndValidate(c, &req); err != nil {
 		return // Error already sent
 	}
 
 	// Change password (implement in repository)
-	// if err := h.userRepo.ChangePassword(userID, req); err != nil {
-	//     h.HandleError(c, err, "Failed to change password")
-	//     return
-	// }
+	if err = h.userRepo.ChangePassword(userId, req); err != nil {
+		h.HandleError(c, err, "Failed to change password")
+		return
+	}
 
 	h.SendSuccess(c, http.StatusOK, "Password changed successfully", nil)
+}
+
+// ResetPassword godoc
+// @Summary Change user password
+// @Description Change password for the current user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 401 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /users/{userId}/reset-password [put]
+func (h *User) ResetPassword(c *gin.Context) {
+	// Get and validate UUID parameter
+	userID, err := h.GetUUIDParam(c, "userId")
+	if err != nil {
+		return // Error already sent
+	}
+
+	// Change password (implement in repository)
+	data, err := h.userRepo.ResetPassword(userID)
+	if err != nil {
+		h.HandleError(c, err, "Failed to change password")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, "Password changed successfully", data)
 }
 
 // isValidRole checks if the role is valid
@@ -372,5 +413,7 @@ func (h *User) RegisterRoutes(router *gin.RouterGroup) {
 		users.GET("/:userId", h.GetUserByID)
 		users.GET("/role/:role", h.GetUsersByRole)
 		users.GET("/me", h.GetCurrentUser)
+		users.PUT("/change-password", h.ChangePassword)
+		users.PUT("/:userId/reset-password", h.ResetPassword)
 	}
 }

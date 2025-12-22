@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { authService } from "../services/authService";
 import { widthOptions } from "../types";
+import UserModalChangePassword from "./UserComponents/UserModalChangePassword";
 
 interface NavbarProps {
     activeMenu: string;
@@ -19,6 +20,7 @@ const Navbar: React.FC<NavbarProps> = ({
     const [openWidthMenu, setOpenWidthMenu] = useState(false);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const currentWidth = localStorage.getItem("maxWidth") || "";
+    const [openChangePassword, setOpenChangePassword] = useState(false);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -33,6 +35,10 @@ const Navbar: React.FC<NavbarProps> = ({
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const changePasswordClose = () => {
+        setOpenChangePassword(false);
+    };
 
     return (
         <header className="bg-white shadow-sm">
@@ -100,6 +106,18 @@ const Navbar: React.FC<NavbarProps> = ({
                                 )}
                             </div>
 
+                            <div className="relative">
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    onClick={() => {
+                                        setOpenChangePassword(true);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Ubah Password
+                                </button>
+                            </div>
+
                             <div className="border-t my-1" />
 
                             <button
@@ -111,6 +129,10 @@ const Navbar: React.FC<NavbarProps> = ({
                         </div>
                     )}
                 </div>
+
+                {openChangePassword && (
+                    <UserModalChangePassword onClose={changePasswordClose} />
+                )}
             </div>
         </header>
     );

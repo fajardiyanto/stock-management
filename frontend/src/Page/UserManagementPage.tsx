@@ -336,7 +336,7 @@ const UserManagementPage: React.FC = () => {
                 <UserModalForm
                     type="EDIT"
                     title={`Edit User: ${selectedUser.name}`}
-                    initialData={editFormData}
+                    initialData={selectedUser}
                     formData={editFormData}
                     setFormData={setEditFormData}
                     onSubmit={handleUpdateUser}
@@ -348,7 +348,7 @@ const UserManagementPage: React.FC = () => {
                 <UserModalForm
                     type="ADD"
                     title="Add New User"
-                    initialData={addFormData}
+                    initialData={selectedUser}
                     formData={addFormData}
                     setFormData={setAddFormData}
                     onSubmit={handleCreateUser}

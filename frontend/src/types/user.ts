@@ -27,7 +27,6 @@ export interface LoginResponse {
     };
 }
 
-
 export interface UserPaginatedData {
     size: number;
     page_no: number;
@@ -62,4 +61,18 @@ export interface CreateUserRequest {
     password: string;
     tax_payer_identification_number?: string;
     tax_payer_identification_number_raw?: string;
+}
+
+export interface ChangePasswordRequest {
+    old_password: string;
+    new_password: string;
+    confirm_password: string;
+}
+
+export interface ChangePasswordResponse {
+    message: string;
+}
+
+export interface ResetPasswordResponse {
+    password: string;
 }

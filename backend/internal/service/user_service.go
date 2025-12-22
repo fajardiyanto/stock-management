@@ -4,6 +4,8 @@ import (
 	"dashboard-app/pkg/apperror"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -510,4 +512,140 @@ func (s *UserService) SearchUsers(filters models.UserFilter) ([]models.User, err
 	}
 
 	return users, nil
+}
+
+func (s *UserService) ChangePassword(userId string, request models.ChangePasswordRequest) error {
+	// Validate that new password and confirmation match
+	if request.NewPassword != request.ConfirmPassword {
+		return apperror.NewBadRequest("new password and confirmation do not match")
+	}
+
+	// Validate that new password is different from old password
+	if request.OldPassword == request.NewPassword {
+		return apperror.NewBadRequest("new password must be different from old password")
+	}
+
+	db := config.GetDBConn()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return apperror.NewInternal("failed to begin transaction: %w", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Additional password strength validation
+	if err := s.validatePasswordStrength(request.NewPassword); err != nil {
+		return err
+	}
+
+	// Get user with current password
+	var user models.User
+	if err := tx.Where("uuid = ?", userId).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apperror.NewNotFound("user not found")
+		}
+		return apperror.NewUnprocessableEntity("failed to fetch user: ", err)
+	}
+
+	// Verify old password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword)); err != nil {
+		return apperror.NewBadRequest("current password is incorrect")
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return apperror.NewUnprocessableEntity("failed to hash new password: ", err)
+	}
+
+	// Update password
+	if err = tx.Model(&models.User{}).
+		Where("uuid = ?", userId).
+		Update("password", string(hashedPassword)).Error; err != nil {
+		tx.Rollback()
+		return apperror.NewUnprocessableEntity("failed to update password: ", err)
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
+}
+
+func (s *UserService) ResetPassword(userId string) (*models.ResetPasswordResponse, error) {
+
+	db := config.GetDBConn()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return nil, apperror.NewInternal("failed to begin transaction: %w", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Get user with current password
+	var user models.User
+	if err := tx.Where("uuid = ?", userId).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NewNotFound("user not found")
+		}
+		return nil, apperror.NewUnprocessableEntity("failed to fetch user: ", err)
+	}
+
+	decodePassword, err := util.DecodeBase64(models.GetConfig().DefaultPassword)
+	if err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to decode password: ", err)
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(decodePassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, apperror.NewUnprocessableEntity("failed to hash new password: ", err)
+	}
+
+	// Update password
+	if err = tx.Model(&models.User{}).
+		Where("uuid = ?", userId).
+		Update("password", string(hashedPassword)).Error; err != nil {
+		tx.Rollback()
+		return nil, apperror.NewUnprocessableEntity("failed to update password: ", err)
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		return nil, apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return &models.ResetPasswordResponse{
+		Password: models.GetConfig().DefaultPassword,
+	}, nil
+}
+
+// validatePasswordStrength validates password strength requirements
+func (s *UserService) validatePasswordStrength(password string) error {
+	if len(password) < 8 {
+		return apperror.NewBadRequest("password must be at least 8 characters long")
+	}
+
+	checks := map[string]*regexp.Regexp{
+		"uppercase letter":             regexp.MustCompile(`[A-Z]`),
+		"lowercase letter":             regexp.MustCompile(`[a-z]`),
+		"number":                       regexp.MustCompile(`\d`),
+		"special character (!@#$%^&*)": regexp.MustCompile(`[!@#$%^&*]`),
+	}
+
+	for name, re := range checks {
+		if !re.MatchString(password) {
+			return apperror.NewBadRequest("password must contain at least one " + name)
+		}
+	}
+
+	return nil
 }

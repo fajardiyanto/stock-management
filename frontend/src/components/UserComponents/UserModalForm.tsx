@@ -1,14 +1,16 @@
-import React from "react";
-import { X } from "lucide-react";
-import { CreateUserRequest, UpdateUserRequest } from "../../types/user";
+import React, { useEffect, useState } from "react";
+import { RefreshCw, X, Copy, Check } from "lucide-react";
+import { CreateUserRequest, UpdateUserRequest, User } from "../../types/user";
 import { formatInputNPWP } from "../../utils/FormatNPWP";
+import { useResetPassword } from "../../hooks/users/useResetPassword";
+import { useToast } from "../../contexts/ToastContext";
 
 type FormData = CreateUserRequest | UpdateUserRequest;
 
 interface UserModalFormProps {
     type: "ADD" | "EDIT";
     title: string;
-    initialData: FormData;
+    initialData: User | null;
     formData: FormData;
     setFormData: React.Dispatch<React.SetStateAction<any>>;
     onSubmit: () => void;
@@ -18,12 +20,16 @@ interface UserModalFormProps {
 const UserModalForm: React.FC<UserModalFormProps> = ({
     type,
     title,
+    initialData,
     formData,
     setFormData,
     onSubmit,
     onClose,
 }) => {
     const isAdd = type === "ADD";
+    const { showToast } = useToast();
+    const [resetedPassword, setResetedPassword] = useState<string>("");
+    const [copied, setCopied] = useState(false);
 
     const handleChange = (
         e: React.ChangeEvent<
@@ -46,6 +52,38 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
 
         setFormData((prev: FormData) => ({ ...prev, [name]: value }));
     };
+
+    const { loading, error, resetPassword } = useResetPassword();
+    const resetPasswordChangeButton = async () => {
+        if (initialData) {
+            const password = await resetPassword(initialData.uuid);
+            if (password && !loading) {
+                const decoded = atob(password);
+                setResetedPassword(decoded);
+                showToast(
+                    "Password reset successfully! Please copy the new password.",
+                    "success"
+                );
+            }
+        }
+    };
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(resetedPassword);
+            setCopied(true);
+            showToast("Password copied to clipboard!", "success");
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            showToast("Failed to copy password", "error");
+        }
+    };
+
+    useEffect(() => {
+        if (error) {
+            showToast(error, "error");
+        }
+    }, [showToast, error]);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -110,21 +148,67 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Password{" "}
-                                {isAdd ? "*" : "(leave empty to keep current)"}
+                                Password
                             </label>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                placeholder={
-                                    isAdd
-                                        ? "Enter password"
-                                        : "New password (optional)"
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            />
+                            {!resetedPassword ? (
+                                <button
+                                    type="button"
+                                    className="p-2 border text-white border-red-700 bg-red-500 rounded-lg hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition w-full justify-center"
+                                    onClick={resetPasswordChangeButton}
+                                    disabled={loading || !initialData}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <RefreshCw
+                                                size={16}
+                                                className="animate-spin"
+                                            />
+                                            <p className="pl-2">Resetting...</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw size={16} />
+                                            <p className="pl-2">
+                                                Reset Password
+                                            </p>
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={resetedPassword}
+                                        disabled
+                                        placeholder="New password"
+                                        className="w-full px-4 py-2 pr-10 border border-green-300 bg-green-50 rounded-lg text-green-800 font-mono text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={copyToClipboard}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-green-100 rounded transition"
+                                        title="Copy password"
+                                    >
+                                        {copied ? (
+                                            <Check
+                                                size={16}
+                                                className="text-green-600"
+                                            />
+                                        ) : (
+                                            <Copy
+                                                size={16}
+                                                className="text-green-600"
+                                            />
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                            {resetedPassword && (
+                                <p className="text-xs text-green-600 mt-1">
+                                    ✓ Password reset successfully. Please save
+                                    it securely.
+                                </p>
+                            )}
                         </div>
                     </div>
 
