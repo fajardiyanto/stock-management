@@ -109,14 +109,14 @@ func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse,
 		First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Use generic message to avoid user enumeration
-			return nil, apperror.NewBadRequest("invalid credentials")
+			return nil, apperror.NewUnauthorized("invalid credentials")
 		}
 		return nil, apperror.NewUnprocessableEntity("something went wrong: ", err)
 	}
 
 	// Verify password
 	if err := util.VerifyPassword(user.Password, req.Password); err != nil {
-		return nil, apperror.NewBadRequest("invalid credentials")
+		return nil, apperror.NewUnauthorized("invalid credentials")
 	}
 
 	// Generate token

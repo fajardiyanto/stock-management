@@ -66,10 +66,10 @@ func (h *BaseHandler) FormatValidationErrors(err error) error {
 // HandleError handles different error types
 func (h *BaseHandler) HandleError(c *gin.Context, err error, message string) {
 	if appErr, ok := apperror.AsAppError(err); ok {
-		config.GetLogger().Error("%s: %v", message, err)
+		config.GetLogger().Error("%v", err)
 		c.JSON(appErr.Code, models.HTTPResponseError{
 			StatusCode: appErr.Code,
-			Message:    appErr.Message,
+			Message:    fmt.Sprintf("%s", appErr.Error()),
 		})
 		return
 	}

@@ -81,7 +81,7 @@ func (p *PaymentService) GetAllPaymentFromUserId(userId string) (*models.CashFlo
 
 	var user models.User
 	if err := config.GetDBConn().Model(&models.User{}).
-		Where("uuid = ? AND status = ?", userId, false).
+		Where("uuid = ? AND status = ?", userId, true).
 		First(&user).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to fetch user: ", err)
 	}

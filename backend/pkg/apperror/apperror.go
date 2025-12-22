@@ -9,7 +9,7 @@ type AppError struct {
 }
 
 func (e *AppError) Error() string {
-	return e.Message
+	return e.Message + ": " + e.Err.Error()
 }
 func NewNotFound(msg string) *AppError {
 	return &AppError{Code: 404, Message: msg}
