@@ -39,8 +39,8 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
         const { name, value } = e.target;
 
         if (name === "tax_payer_identification_number_raw") {
-            const digits = value.replace(/\D/g, "").slice(0, 15); // raw digits
-            const formatted = formatInputNPWP(digits); // formatted for display
+            const digits = value.replace(/\D/g, "").slice(0, 15);
+            const formatted = formatInputNPWP(digits);
 
             setFormData({
                 ...formData,
@@ -84,6 +84,8 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
             showToast(error, "error");
         }
     }, [showToast, error]);
+
+    const showPasswordSection = (isAdd && formData.role === "ADMIN") || !isAdd;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -147,10 +149,22 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
-                            </label>
-                            {!resetedPassword ? (
+                            {showPasswordSection && (
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Password
+                                </label>
+                            )}
+
+                            {isAdd && formData.role === "ADMIN" ? (
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="Enter password"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            ) : !isAdd && !resetedPassword ? (
                                 <button
                                     type="button"
                                     className="p-2 border text-white border-red-700 bg-red-500 rounded-lg hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition w-full justify-center"
@@ -174,7 +188,7 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
                                         </>
                                     )}
                                 </button>
-                            ) : (
+                            ) : !isAdd && resetedPassword ? (
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -186,7 +200,7 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
                                     <button
                                         type="button"
                                         onClick={copyToClipboard}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-green-100 rounded transition"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-green-100 rounded transition"
                                         title="Copy password"
                                     >
                                         {copied ? (
@@ -202,7 +216,8 @@ const UserModalForm: React.FC<UserModalFormProps> = ({
                                         )}
                                     </button>
                                 </div>
-                            )}
+                            ) : null}
+
                             {resetedPassword && (
                                 <p className="text-xs text-green-600 mt-1">
                                     ✓ Password reset successfully. Please save

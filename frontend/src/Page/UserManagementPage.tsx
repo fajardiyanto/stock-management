@@ -151,7 +151,6 @@ const UserManagementPage: React.FC = () => {
         if (
             !addFormData.name ||
             !addFormData.phone ||
-            !addFormData.password ||
             !addFormData.role ||
             !addFormData.address
         ) {

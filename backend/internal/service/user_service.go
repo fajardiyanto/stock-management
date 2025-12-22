@@ -44,9 +44,13 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 	}
 
 	// Hash password
-	hashedPassword, err := util.HashPassword(req.Password)
-	if err != nil {
-		return nil, apperror.NewUnprocessableEntity("failed to hash password: ", err)
+	var password string
+	if req.Role == constants.AdminRole || req.Role == constants.SuperAdminRole {
+		hashedPassword, err := util.HashPassword(req.Password)
+		if err != nil {
+			return nil, apperror.NewUnprocessableEntity("failed to hash password: ", err)
+		}
+		password = hashedPassword
 	}
 
 	now := time.Now()
@@ -54,7 +58,7 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 		Uuid:                         uuid.New().String(),
 		Name:                         strings.TrimSpace(req.Name),
 		Phone:                        strings.TrimSpace(req.Phone),
-		Password:                     hashedPassword,
+		Password:                     password,
 		Role:                         strings.ToUpper(req.Role),
 		Status:                       true,
 		Address:                      strings.TrimSpace(req.Address),
@@ -63,7 +67,6 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 		CreatedAt:                    now,
 		UpdatedAt:                    now,
 	}
-
 	if err = config.GetDBConn().Create(&user).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to create user: ", err)
 	}
@@ -438,9 +441,6 @@ func (s *UserService) validateUserRequest(req models.UserRequest) error {
 	}
 	if strings.TrimSpace(req.Phone) == "" {
 		return apperror.NewBadRequest("phone is required")
-	}
-	if len(req.Password) < 6 {
-		return apperror.NewBadRequest("password must be at least 6 characters")
 	}
 	if strings.TrimSpace(req.Role) == "" {
 		return apperror.NewBadRequest("role is required")

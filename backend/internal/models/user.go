@@ -51,7 +51,7 @@ type UserResponse struct {
 type UserRequest struct {
 	Name                         string `json:"name" validate:"required,min=3"`
 	Phone                        string `json:"phone" validate:"required"`
-	Password                     string `json:"password" validate:"required,min=6"`
+	Password                     string `json:"password"`
 	Role                         string `json:"role" validate:"required,oneof=SUPER_ADMIN ADMIN BUYER SUPPLIER"`
 	Address                      string `json:"address" validate:"required"`
 	ShippingAddress              string `json:"shipping_address" validate:"omitempty"`

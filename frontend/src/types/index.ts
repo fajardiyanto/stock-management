@@ -1,3 +1,4 @@
+export type UserRole = "SUPER_ADMIN" | "ADMIN";
 export type MenuId =
     | "dashboard"
     | "sales"
@@ -16,6 +17,7 @@ export interface MenuItem {
     id: MenuId;
     label: string;
     icon: React.ComponentType<{ size?: number }>;
+    roles: UserRole[];
 }
 
 export interface ApiResponse<T> {
