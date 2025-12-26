@@ -47,7 +47,7 @@ func (h *User) Register(c *gin.Context) {
 	}
 
 	// Check if user already exists
-	if err := h.userRepo.CheckUser(req.Phone); err == nil {
+	if exist := h.userRepo.CheckUser(req.Phone); exist {
 		h.SendError(c, http.StatusConflict, "User with this phone number already exists", nil)
 		return
 	}
@@ -77,22 +77,15 @@ func (h *User) Register(c *gin.Context) {
 func (h *User) Login(c *gin.Context) {
 	var req models.LoginRequest
 
-	// Bind JSON
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, http.StatusBadRequest, "Invalid request body", err)
-		return
-	}
-
-	// Validate required fields
-	if req.Phone == "" || req.Password == "" {
-		h.SendError(c, http.StatusBadRequest, "Phone and password are required", nil)
-		return
+	// Bind and validate request
+	if err := h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
 	}
 
 	// Authenticate user
 	data, err := h.userRepo.LoginUser(req)
 	if err != nil {
-		h.SendError(c, http.StatusUnauthorized, "Invalid phone or password", nil)
+		h.HandleError(c, err, "Failed to login")
 		return
 	}
 

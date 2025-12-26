@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 const (
 	SuperAdminRole    = "SUPER_ADMIN"
 	AdminRole         = "ADMIN"
@@ -11,3 +13,5 @@ const (
 	Income            = "INCOME"
 	Expense           = "EXPENSE"
 )
+
+var JakartaTz = time.FixedZone("Asia/Jakarta", 7*60*60)

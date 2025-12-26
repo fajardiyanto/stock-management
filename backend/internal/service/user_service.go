@@ -29,20 +29,6 @@ func NewUserService(paymentRepository repository.PaymentRepository) repository.U
 }
 
 func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResponse, error) {
-	// Validate input
-	if err := s.validateUserRequest(req); err != nil {
-		return nil, apperror.NewBadRequest(fmt.Sprintf("validation error: %v", err))
-	}
-
-	// Check for duplicate phone
-	exists, err := s.phoneExists(req.Phone)
-	if err != nil {
-		return nil, apperror.NewBadRequest(fmt.Sprintf("failed to check phone: %v", err))
-	}
-	if exists {
-		return nil, apperror.NewConflict("phone number already exists")
-	}
-
 	// Hash password
 	var password string
 	if req.Role == constants.AdminRole || req.Role == constants.SuperAdminRole {
@@ -67,7 +53,7 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 		CreatedAt:                    now,
 		UpdatedAt:                    now,
 	}
-	if err = config.GetDBConn().Create(&user).Error; err != nil {
+	if err := config.GetDBConn().Create(&user).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to create user: ", err)
 	}
 
@@ -77,7 +63,7 @@ func (s *UserService) CreateUser(req models.UserRequest) (*models.CreateUserResp
 	return &models.CreateUserResponse{User: user}, nil
 }
 
-func (s *UserService) CheckUser(phone string) error {
+func (s *UserService) CheckUser(phone string) bool {
 	var exists bool
 	if err := config.GetDBConn().
 		Model(&models.User{}).
@@ -85,26 +71,14 @@ func (s *UserService) CheckUser(phone string) error {
 		Where("phone = ? AND status = true", phone).
 		Limit(1).
 		Find(&exists).Error; err != nil {
-		return apperror.NewUnprocessableEntity("failed to check user: ", err)
+		return false
 	}
 
 	if !exists {
-		return apperror.NewNotFound("user not found")
+		return false
 	}
 
-	return nil
-}
-
-// Helper method for phone existence check
-func (s *UserService) phoneExists(phone string) (bool, error) {
-	var count int64
-	if err := config.GetDBConn().
-		Model(&models.User{}).
-		Where("phone = ? AND status = true", phone).
-		Count(&count).Error; err != nil {
-		return false, err
-	}
-	return count > 0, nil
+	return true
 }
 
 func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse, error) {
@@ -113,15 +87,15 @@ func (s *UserService) LoginUser(req models.LoginRequest) (*models.LoginResponse,
 		Where("phone = ? AND status = true", req.Phone).
 		First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Use generic message to avoid user enumeration
-			return nil, apperror.NewUnauthorized("invalid credentials")
+			return nil, apperror.NewUnauthorized("invalid credentials", err)
 		}
+
 		return nil, apperror.NewUnprocessableEntity("something went wrong: ", err)
 	}
 
 	// Verify password
 	if err := util.VerifyPassword(user.Password, req.Password); err != nil {
-		return nil, apperror.NewUnauthorized("invalid credentials")
+		return nil, apperror.NewUnauthorized("invalid credentials", err)
 	}
 
 	// Generate token
@@ -329,11 +303,9 @@ func (s *UserService) UpdateUser(userId string, data models.UpdateUserRequest) e
 	// Check if phone is being changed and if it's already taken
 	if data.Phone != "" {
 		var existingUser models.User
-		err := config.GetDBConn().
+		if err := config.GetDBConn().
 			Where("phone = ? AND uuid != ? AND status = true", data.Phone, userId).
-			First(&existingUser).Error
-
-		if err == nil {
+			First(&existingUser).Error; err == nil {
 			return apperror.NewConflict("phone number already exists")
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return apperror.NewUnprocessableEntity("failed to check phone: ", err)
@@ -432,35 +404,6 @@ func (s *UserService) GetAllUserByRole(role string) ([]models.User, error) {
 	}
 
 	return users, nil
-}
-
-// Validate user request
-func (s *UserService) validateUserRequest(req models.UserRequest) error {
-	if strings.TrimSpace(req.Name) == "" {
-		return apperror.NewBadRequest("name is required")
-	}
-	if strings.TrimSpace(req.Phone) == "" {
-		return apperror.NewBadRequest("phone is required")
-	}
-	if strings.TrimSpace(req.Role) == "" {
-		return apperror.NewBadRequest("role is required")
-	}
-
-	// Validate role
-	validRoles := []string{constants.AdminRole, constants.BuyerRole, constants.SupplierRole}
-	role := strings.ToUpper(req.Role)
-	isValidRole := false
-	for _, validRole := range validRoles {
-		if role == validRole {
-			isValidRole = true
-			break
-		}
-	}
-	if !isValidRole {
-		return apperror.NewBadRequest(fmt.Sprintf("invalid role: %s", req.Role))
-	}
-
-	return nil
 }
 
 // GetUsersByIDs Batch get users by IDs (useful for other services)

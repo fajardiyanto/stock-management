@@ -6,13 +6,11 @@ import { Calendar } from "lucide-react";
 interface SummarySaleDayTableProps {
     stats: DailyDashboardStats | null;
     selectedDate: string;
-    setSelectedDate: (date: string) => void;
 }
 
 const SummarySaleDayTable: React.FC<SummarySaleDayTableProps> = ({
     stats,
     selectedDate,
-    setSelectedDate,
 }) => {
     return (
         <>
@@ -28,25 +26,6 @@ const SummarySaleDayTable: React.FC<SummarySaleDayTableProps> = ({
                                     Lihat ringkasan penjualan dan stok untuk
                                     tanggal tertentu
                                 </label>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={(e) =>
-                                            setSelectedDate(e.target.value)
-                                        }
-                                        max={
-                                            new Date()
-                                                .toISOString()
-                                                .split("T")[0]
-                                        }
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
-                                    />
-                                    <Calendar
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                                        size={18}
-                                    />
-                                </div>
                             </div>
                         </div>
 

@@ -1,8 +1,6 @@
 package base_handler
 
 import (
-	"context"
-	"dashboard-app/internal/config"
 	"dashboard-app/internal/models"
 	"dashboard-app/pkg/apperror"
 	"errors"
@@ -27,12 +25,14 @@ func NewBaseHandler(validator *validator.Validate) *BaseHandler {
 
 func (h *BaseHandler) BindAndValidate(c *gin.Context, req interface{}) error {
 	if err := c.ShouldBindJSON(req); err != nil {
+		_ = c.Error(err)
 		h.SendError(c, http.StatusBadRequest, "Invalid request body", err)
 		return err
 	}
 
 	if err := h.Validator.Struct(req); err != nil {
 		validationErr := h.FormatValidationErrors(err)
+		_ = c.Error(validationErr)
 		h.SendError(c, http.StatusBadRequest, "Validation failed", validationErr)
 		return err
 	}
@@ -43,6 +43,7 @@ func (h *BaseHandler) BindAndValidate(c *gin.Context, req interface{}) error {
 // BindQuery binds query parameters
 func (h *BaseHandler) BindQuery(c *gin.Context, req interface{}) error {
 	if err := c.ShouldBindQuery(req); err != nil {
+		_ = c.Error(err)
 		h.SendError(c, http.StatusBadRequest, "Invalid query parameters", err)
 		return err
 	}
@@ -65,16 +66,18 @@ func (h *BaseHandler) FormatValidationErrors(err error) error {
 
 // HandleError handles different error types
 func (h *BaseHandler) HandleError(c *gin.Context, err error, message string) {
-	if appErr, ok := apperror.AsAppError(err); ok {
-		config.GetLogger().Error("%v", err)
+	// Safe type assertion using errors.As
+	var appErr *apperror.AppError
+	if errors.As(err, &appErr) {
+		_ = c.Error(appErr)
 		c.JSON(appErr.Code, models.HTTPResponseError{
 			StatusCode: appErr.Code,
-			Message:    fmt.Sprintf("%s", appErr.Error()),
+			Message:    appErr.Message,
 		})
 		return
 	}
 
-	config.GetLogger().Error("%s: %v", message, err)
+	// Default error response
 	c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
 		StatusCode: http.StatusInternalServerError,
 		Message:    message,
@@ -98,13 +101,13 @@ func (h *BaseHandler) SendSuccess(c *gin.Context, statusCode int, message string
 // SendError sends error response
 func (h *BaseHandler) SendError(c *gin.Context, statusCode int, message string, err error) {
 	if err != nil {
-		config.GetLogger().Error("%s: %v", message, err)
+		_ = c.Error(err)
 		c.JSON(statusCode, models.HTTPResponseError{
 			StatusCode: statusCode,
 			Message:    fmt.Sprintf("%s: %v", message, err),
 		})
 	} else {
-		config.GetLogger().Error(message)
+		_ = c.Error(errors.New(message))
 		c.JSON(statusCode, models.HTTPResponseError{
 			StatusCode: statusCode,
 			Message:    message,
@@ -157,138 +160,6 @@ func FormatFieldError(e validator.FieldError) string {
 		return fmt.Sprintf("%s must contain only letters and numbers", field)
 	default:
 		return fmt.Sprintf("%s failed validation on '%s'", field, e.Tag())
-	}
-}
-
-// =====================================================
-// MIDDLEWARE
-// =====================================================
-
-// RequestLogger logs incoming requests
-func RequestLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		query := c.Request.URL.RawQuery
-
-		c.Next()
-
-		duration := time.Since(start)
-		statusCode := c.Writer.Status()
-
-		if query != "" {
-			path = path + "?" + query
-		}
-
-		config.GetLogger().Info("[%s] %s %s - %d (%v)",
-			c.Request.Method,
-			path,
-			c.ClientIP(),
-			statusCode,
-			duration,
-		)
-	}
-}
-
-// ErrorHandler middleware to catch panics
-func ErrorHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				config.GetLogger().Error("Panic recovered: %v", err)
-				c.JSON(http.StatusInternalServerError, models.HTTPResponseError{
-					StatusCode: http.StatusInternalServerError,
-					Message:    "Internal server error",
-				})
-				c.Abort()
-			}
-		}()
-		c.Next()
-	}
-}
-
-// RateLimiter creates a simple rate limiter middleware
-func RateLimiter(maxRequests int, duration time.Duration) gin.HandlerFunc {
-	type client struct {
-		count     int
-		resetTime time.Time
-	}
-
-	clients := make(map[string]*client)
-
-	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		now := time.Now()
-
-		// Get or create client
-		cl, exists := clients[ip]
-		if !exists || now.After(cl.resetTime) {
-			clients[ip] = &client{
-				count:     1,
-				resetTime: now.Add(duration),
-			}
-			c.Next()
-			return
-		}
-
-		// Check rate limit
-		if cl.count >= maxRequests {
-			c.JSON(http.StatusTooManyRequests, models.HTTPResponseError{
-				StatusCode: http.StatusTooManyRequests,
-				Message:    "Rate limit exceeded",
-			})
-			c.Abort()
-			return
-		}
-
-		cl.count++
-		c.Next()
-	}
-}
-
-// CORS middleware
-func CORS() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
-
-// ValidateContentType ensures correct content type
-func ValidateContentType(contentType string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if c.Request.Method != "GET" && c.Request.Method != "DELETE" {
-			ct := c.GetHeader("Content-Type")
-			if !strings.Contains(ct, contentType) {
-				c.JSON(http.StatusUnsupportedMediaType, models.HTTPResponseError{
-					StatusCode: http.StatusUnsupportedMediaType,
-					Message:    fmt.Sprintf("Content-Type must be %s", contentType),
-				})
-				c.Abort()
-				return
-			}
-		}
-		c.Next()
-	}
-}
-
-// Timeout middleware adds request timeout
-func Timeout(timeout time.Duration) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
-		defer cancel()
-
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
 	}
 }
 

@@ -49,7 +49,6 @@ func (h *AuditLog) GetAuditLogs(c *gin.Context) {
 
 	// Bind query parameters
 	if err := h.BindQuery(c, &filter); err != nil {
-		fmt.Println("AAAAAAAAAAAAAAAAAAA", err)
 		return // Error already sent
 	}
 

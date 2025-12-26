@@ -76,8 +76,6 @@ func AuditTrailLogger() gin.HandlerFunc {
 			Timestamp:    startTime,
 		}
 
-		//logToConsole(auditLog)
-
 		// Save to database (async to not block response)
 		go saveAuditLog(auditLog)
 	}
@@ -248,22 +246,6 @@ func formatAction(method, path string) string {
 
 	// ===== FALLBACK =====
 	return fmt.Sprintf("%s %s", method, path)
-}
-
-// logToConsole logs audit information to console
-func logToConsole(log models.AuditLog) {
-	config.GetLogger().Info(
-		"[AUDIT][%s][%s@%s][%s][%d][%dms][IP=%s][REQUEST=%s][RESPONSE=%s]",
-		log.Timestamp.Format("2006-01-02 15:04:05"),
-		log.Name,
-		log.UserRole,
-		log.Action,
-		log.StatusCode,
-		log.Duration,
-		log.IPAddress,
-		truncateString(log.RequestBody, 200),
-		truncateString(log.ResponseBody, 200),
-	)
 }
 
 // saveAuditLog saves audit log to database

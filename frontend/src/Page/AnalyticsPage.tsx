@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TopStatsAnalytics from "../components/AnalyticComponents/TopStatsAnalytics";
 import SummarySaleDayTable from "../components/AnalyticComponents/SummarySaleDayTable";
 import ChartAnalytics from "../components/AnalyticComponents/ChartAnalytics";
@@ -9,6 +9,7 @@ import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
 import { useStockDistributionData } from "../hooks/analytics/useStockDistributionData";
 import { usePerformanceData } from "../hooks/analytics/usePerformanceData";
 import { authService } from "../services/authService";
+import { Calendar } from "lucide-react";
 
 const AnalyticsPage: React.FC = () => {
     const userData = authService.getUser();
@@ -16,6 +17,8 @@ const AnalyticsPage: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<string>(
         getDefaultDateOnly()
     );
+
+    const dateNow = getDefaultDateOnly();
 
     const {
         stats,
@@ -70,7 +73,6 @@ const AnalyticsPage: React.FC = () => {
 
     if (
         dashboardStatsLoading ||
-        dailyDashboardStatsLoading ||
         salesTrendDataLoading ||
         stockDistributionDataLoading ||
         supplierPerformanceDataLoading ||
@@ -85,7 +87,6 @@ const AnalyticsPage: React.FC = () => {
 
     if (
         dashboardStatsError ||
-        dailyDashboardStatsError ||
         salesTrendDataError ||
         stockDistributionDataError ||
         supplierPerformanceDataError ||
@@ -107,21 +108,43 @@ const AnalyticsPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">
-                    Selamat datang, <b>{userData?.name || "User"}</b>! Berikut
-                    adalah ringkasan sistem StockFish Management.
-                </p>
+            <div className="space-y-6">
+                <header className="flex justify-between items-center mb-4 bg-white p-6 rounded-xl shadow-md">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Dashboard
+                        </h1>
+                        <p className="text-gray-600 mt-1">
+                            Selamat datang, <b>{userData?.name || "User"}</b>!
+                            Berikut adalah ringkasan sistem StockFish
+                            Management.
+                        </p>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            max={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            placeholder="dd/mm/yyyy"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
+                        />
+                        <Calendar
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                            size={18}
+                        />
+                    </div>
+                </header>
             </div>
 
-            <TopStatsAnalytics stats={stats} selectedDate={selectedDate} />
+            <TopStatsAnalytics stats={stats} selectedDate={dateNow} />
 
-            <SummarySaleDayTable
-                stats={dailyStats}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-            />
+            {selectedDate != "" && (
+                <SummarySaleDayTable
+                    stats={dailyStats}
+                    selectedDate={selectedDate}
+                />
+            )}
 
             <ChartAnalytics
                 salesTrendData={salesTrendData}

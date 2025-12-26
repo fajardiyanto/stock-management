@@ -4,7 +4,7 @@ import "dashboard-app/internal/models"
 
 type UserRepository interface {
 	CreateUser(models.UserRequest) (*models.CreateUserResponse, error)
-	CheckUser(string) error
+	CheckUser(string) bool
 	LoginUser(models.LoginRequest) (*models.LoginResponse, error)
 	GetUserById(string) (*models.User, error)
 	GetUserByIdFromToken(string) (*models.User, error)
