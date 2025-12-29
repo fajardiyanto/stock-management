@@ -110,7 +110,7 @@ const ItemSelectionSection: React.FC<ItemSelectionSectionProps> = ({
         }
 
         const newItem: SelectedSaleItem = {
-            tempId: currentItem.uuid,
+            tempId: Math.random().toString(16).slice(2),
             id: currentItem.id,
             stock_sort_id: currentItem.uuid,
             stock_code: currentItem.stock_code,
