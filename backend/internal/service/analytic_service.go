@@ -29,7 +29,7 @@ func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, err
 		WITH stock_totals AS (
 			SELECT COALESCE(SUM(current_weight), 0) AS total_stock
 			FROM stock_sorts
-			WHERE deleted = false
+			WHERE deleted = false AND is_shrinkage = false
 		),
 		fiber_totals AS (
 			SELECT COUNT(*) AS total_fiber
