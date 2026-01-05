@@ -361,7 +361,7 @@ func (h *Fiber) RegisterRoutes(router *gin.RouterGroup) {
 		// Status-specific endpoints
 		fibers.GET("/used", h.GetAllUsedFibers)
 		fibers.GET("/available", h.GetAvailableFibers)
-		fibers.PATCH("/:fiberId/mark", h.MarkFiberAvailable)
+		fibers.PUT("/:fiberId/mark", h.MarkFiberAvailable)
 
 		// Bulk operations
 		fibers.PATCH("/bulk/mark-available", h.BulkMarkAvailable)
