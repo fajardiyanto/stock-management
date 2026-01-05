@@ -92,7 +92,7 @@ export const stockService = {
         data: SubmitSortRequest
     ): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
-            `/stock-sort/${stockItemId}`,
+            `/stocks/sorts/${stockItemId}`,
             {
                 method: "PUT",
                 headers: {
