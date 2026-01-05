@@ -22,7 +22,7 @@ export const paymentService = {
         data: ManualEntryFormRequest[]
     ): Promise<ApiResponse<any>> => {
         const response = await apiCall<ApiResponse<any>>(
-            `/payment/user/${id}manual/`,
+            `/payment/user/${id}/manual`,
             {
                 method: "POST",
                 headers: {
