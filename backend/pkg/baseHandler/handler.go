@@ -1,4 +1,4 @@
-package base_handler
+package baseHandler
 
 import (
 	"dashboard-app/internal/models"

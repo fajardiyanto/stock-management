@@ -3,6 +3,7 @@ package service
 import (
 	"dashboard-app/pkg/apperror"
 	"fmt"
+	"strconv"
 	"time"
 
 	"dashboard-app/internal/config"
@@ -20,21 +21,31 @@ func NewAnalyticService() repository.AnalyticRepository {
 // GetAnalyticStats =====================================================
 // GET ANALYTIC STATS - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, error) {
+func (s *AnalyticService) GetAnalyticStats(year, month string) (*models.AnalyticStatsResponse, error) {
 	db := config.GetDBConn()
 
 	// Single optimized query using CTEs to fetch all stats at once
+	monthInt, err := strconv.Atoi(month)
+	if err != nil || monthInt < 1 || monthInt > 12 {
+		return nil, apperror.NewBadRequest("invalid month")
+	}
+
 	var result models.AnalyticStatsResponse
-	if err := db.Raw(`
+
+	if err = db.Raw(`
 		WITH stock_totals AS (
 			SELECT COALESCE(SUM(current_weight), 0) AS total_stock
 			FROM stock_sorts
-			WHERE deleted = false AND is_shrinkage = false
+			WHERE deleted = false
+			  AND is_shrinkage = false
+			  AND created_at >= make_date(?, ?, 1)
+			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 		),
 		fiber_totals AS (
 			SELECT COUNT(*) AS total_fiber
 			FROM fibers
-			WHERE status = 'FREE' AND deleted = false
+			WHERE status = 'FREE'
+			  AND deleted = false
 		),
 		purchase_totals AS (
 			SELECT
@@ -42,6 +53,8 @@ func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, err
 				COALESCE(SUM(weight), 0) AS total_purchase_weight
 			FROM stock_items
 			WHERE deleted = false
+			  AND created_at >= make_date(?, ?, 1)
+			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 		),
 		sales_totals AS (
 			SELECT
@@ -49,6 +62,8 @@ func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, err
 				COALESCE(SUM(weight), 0) AS total_sales_weight
 			FROM item_sales
 			WHERE deleted = false
+			  AND created_at >= make_date(?, ?, 1)
+			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 		)
 		SELECT
 			st.total_stock,
@@ -61,7 +76,14 @@ func (s *AnalyticService) GetAnalyticStats() (*models.AnalyticStatsResponse, err
 		CROSS JOIN fiber_totals ft
 		CROSS JOIN purchase_totals pt
 		CROSS JOIN sales_totals sa
-	`).Scan(&result).Error; err != nil {
+	`,
+		year, monthInt,
+		year, monthInt,
+		year, monthInt,
+		year, monthInt,
+		year, monthInt,
+		year, monthInt,
+	).Scan(&result).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to fetch analytics stats: ", err)
 	}
 
@@ -266,7 +288,7 @@ func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
 func (s *AnalyticService) GetAnalyticsWithCache(cacheKey string, ttl time.Duration) (*models.AnalyticStatsResponse, error) {
 	// Implement caching logic here if you have a cache library
 	// For now, just call the regular method
-	return s.GetAnalyticStats()
+	return s.GetAnalyticStats("", "")
 }
 
 // GetDateRangeStats - Get stats for a specific date range

@@ -3,7 +3,7 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -12,13 +12,13 @@ import (
 
 type Fiber struct {
 	fiberRepository repository.FiberRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewFiberHandler(fiberRepository repository.FiberRepository, validate *validator.Validate) *Fiber {
 	return &Fiber{
 		fiberRepository: fiberRepository,
-		BaseHandler:     base_handler.NewBaseHandler(validate),
+		BaseHandler:     baseHandler.NewBaseHandler(validate),
 	}
 }
 

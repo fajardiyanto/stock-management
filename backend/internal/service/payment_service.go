@@ -364,3 +364,191 @@ func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSale
 
 	return nil
 }
+
+func (p *PaymentService) CreatePaymentFromDepositByPurchaseId(request models.CreatePaymentPurchaseRequest) error {
+	db := config.GetDBConn()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return apperror.NewInternal("failed to begin transaction: ", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
+	var purchase models.Purchase
+	if err := tx.Model(&models.Purchase{}).
+		Where("uuid = ? AND deleted = ?", request.PurchaseId, false).
+		First(&purchase).Error; err != nil {
+		return apperror.NewNotFound(fmt.Sprintf("purchase not found: %v", err))
+	}
+
+	paidAmount := purchase.PaidAmount + request.Total
+	remainingAmount := purchase.TotalAmount - paidAmount
+
+	paymentStatus := constants.PartialPayment
+	if paidAmount >= purchase.TotalAmount {
+		paymentStatus = constants.PaymentInFull
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"purchase_date":    request.PurchaseDate,
+		"remaining_amount": remainingAmount,
+		"payment_status":   paymentStatus,
+		"paid_amount":      paidAmount,
+		"updated_at":       now,
+	}
+
+	if err := tx.Model(&models.Purchase{}).
+		Where("uuid = ?", purchase.Uuid).
+		Updates(updates).Error; err != nil {
+		return apperror.NewUnprocessableEntity("failed to update purchase: ", err)
+	}
+
+	payments := []models.Payment{
+		{
+			Uuid:        uuid.New().String(),
+			PurchaseId:  purchase.Uuid,
+			UserId:      purchase.SupplierID,
+			Description: fmt.Sprintf("Pembayaran Melalui Deposit %s", request.StockCode),
+			Total:       request.Total,
+			Type:        constants.Expense,
+			Deleted:     false,
+			CreatedAt:   now,
+		},
+		{
+			Uuid:        uuid.New().String(),
+			PurchaseId:  purchase.Uuid,
+			UserId:      purchase.SupplierID,
+			Description: fmt.Sprintf("Pembayaran Melalui Deposit %s", request.StockCode),
+			Total:       request.Total,
+			Type:        constants.Income,
+			Deleted:     false,
+			CreatedAt:   now,
+		},
+	}
+
+	if err := tx.Create(&payments).Error; err != nil {
+		return apperror.NewUnprocessableEntity("failed to create payment: ", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
+}
+
+func (p *PaymentService) CreatePaymentFromDepositBySalesId(request models.CreatePaymentSaleRequest) error {
+	db := config.GetDBConn()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return apperror.NewInternal("failed to begin transaction: ", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
+	var sale models.Sale
+	if err := tx.Model(&models.Sale{}).
+		Where("uuid = ? AND deleted = ?", request.SalesId, false).
+		First(&sale).Error; err != nil {
+		return apperror.NewNotFound(fmt.Sprintf("sale not found: %v", err))
+	}
+
+	paidAmount := sale.PaidAmount + request.Total
+	remainingAmount := sale.TotalAmount - paidAmount
+
+	paymentStatus := constants.PartialPayment
+	if paidAmount >= sale.TotalAmount {
+		paymentStatus = constants.PaymentInFull
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"purchase_date":    request.SalesDate,
+		"remaining_amount": remainingAmount,
+		"payment_status":   paymentStatus,
+		"paid_amount":      paidAmount,
+		"updated_at":       now,
+	}
+
+	if err := tx.Model(&models.Sale{}).
+		Where("uuid = ?", sale.Uuid).
+		Updates(updates).Error; err != nil {
+		return apperror.NewUnprocessableEntity("failed to update sale: ", err)
+	}
+
+	payments := []models.Payment{
+		{
+			Uuid:        uuid.New().String(),
+			SalesId:     sale.Uuid,
+			UserId:      sale.CustomerId,
+			Description: fmt.Sprintf("Pembayaran Melalui Deposit %s", request.SalesCode),
+			Total:       request.Total,
+			Type:        constants.Expense,
+			Deleted:     false,
+			CreatedAt:   now,
+		},
+		{
+			Uuid:        uuid.New().String(),
+			SalesId:     sale.Uuid,
+			UserId:      sale.CustomerId,
+			Description: fmt.Sprintf("Pembayaran Melalui Deposit %s", request.SalesCode),
+			Total:       request.Total,
+			Type:        constants.Income,
+			Deleted:     false,
+			CreatedAt:   now,
+		},
+	}
+
+	if err := tx.Create(&payments).Error; err != nil {
+		return apperror.NewUnprocessableEntity("failed to create payment: ", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return apperror.NewInternal("failed to commit transaction: ", err)
+	}
+
+	return nil
+}
+
+func (p *PaymentService) GetUserBalanceDeposit(userId string) (*models.UserBalanceDepositResponse, error) {
+	db := config.GetDBConn()
+
+	// Single query to get all balances
+	var balance models.UserBalance
+	err := db.
+		Model(&models.Payment{}).
+		Select(`
+			user_id,
+			COALESCE(SUM(
+				CASE
+					WHEN type = 'INCOME' THEN total
+					WHEN type = 'EXPENSE' THEN -total
+					ELSE 0
+				END
+			), 0) AS balance
+		`).
+		Where("user_id = ? AND deleted = false", userId).
+		Group("user_id").
+		Scan(&balance).Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.UserBalanceDepositResponse{
+		Balance: balance.Balance,
+		Deposit: balance.Balance < 0,
+	}
+
+	return &response, nil
+}

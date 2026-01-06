@@ -1,30 +1,77 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Calendar } from "lucide-react";
 import { Purchasing, UpdatePurchaseRequest } from "../../types/purchase";
 import { useToast } from "../../contexts/ToastContext";
 import { purchaseService } from "../../services/purchaseService";
 import { MaxDate } from "../../utils/MaxDate";
+import { formatRupiah, formatRupiahInput } from "../../utils/FormatRupiah";
+import { cleanNumber } from "../../utils/CleanNumber";
+import { paymentService } from "../../services/paymentService";
 
 interface PurchaseEditModalProps {
     purchase: Purchasing;
     onClose: () => void;
+    onRefresh: () => void;
 }
 
 const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
     purchase,
     onClose,
+    onRefresh,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<UpdatePurchaseRequest>({
         purchase_date: purchase.purchase_date.slice(0, 16),
+        purchase_id: "",
+        stock_code: "",
+        total: 0,
     });
+    const [isDateChanged, setIsDateChanged] = useState(false);
+    const [isPaymentAmountChanged, setIsPaymentAmountChanged] = useState(false);
+    const [paymentAmountDisplay, setPaymentAmountDisplay] =
+        useState<string>("");
 
     const { showToast } = useToast();
 
     const handleDateChange = (date: string) => {
         setFormData((prev) => ({ ...prev, purchase_date: date }));
     };
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        const cleanedValue = cleanNumber(rawValue);
+
+        setIsPaymentAmountChanged(true);
+        setPaymentAmountDisplay(String(cleanedValue));
+        setFormData({
+            ...formData,
+            total: cleanedValue,
+            purchase_id: purchase.purchase_id,
+            stock_code: purchase.stock_code,
+        });
+    };
+
+    const handleAmountBlur = () => {
+        if (formData.total > 0) {
+            setPaymentAmountDisplay(formatRupiahInput(formData.total));
+        }
+
+        if (formData.total > purchase.remaining_amount) {
+            setPaymentAmountDisplay(
+                formatRupiahInput(purchase.remaining_amount)
+            );
+        }
+    };
+
+    const handlePaymentAmountInput = (paymentAmount: number) => {
+        setFormData({ ...formData, total: paymentAmount });
+        setPaymentAmountDisplay(formatRupiahInput(paymentAmount));
+    };
+
+    useEffect(() => {
+        setPaymentAmountDisplay(formatRupiahInput(formData.total));
+    }, [formData.total]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,19 +89,47 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
         try {
             const finalPayload: UpdatePurchaseRequest = {
                 purchase_date: formData.purchase_date + ":00Z",
+                purchase_id: formData.purchase_id,
+                stock_code: formData.stock_code,
+                total: formData.total,
             };
 
-            const response = await purchaseService.updatePurchase(
-                purchase.purchase_id,
-                finalPayload
-            );
+            const isSuccess = (code?: number) => code === 200 || code === 201;
+            if (isDateChanged) {
+                const response = await purchaseService.updatePurchase(
+                    purchase.purchase_id,
+                    finalPayload
+                );
 
-            if (response.status_code === 201 || response.status_code === 200) {
-                showToast("Berhasil melakukan update pembelian!", "success");
-            } else {
-                const errorMessage =
-                    response.message || "Gagal update pembelian. Coba lagi.";
-                showToast(errorMessage, "error");
+                if (isSuccess(response.status_code)) {
+                    showToast(
+                        "Berhasil melakukan update pembelian!",
+                        "success"
+                    );
+                } else {
+                    showToast(
+                        response.message ||
+                            "Gagal update pembelian. Coba lagi.",
+                        "error"
+                    );
+                }
+            }
+
+            if (isPaymentAmountChanged) {
+                const response =
+                    await paymentService.createPaymentByPurchaseIdFromDeposit(
+                        finalPayload
+                    );
+
+                if (isSuccess(response.status_code)) {
+                    showToast("Berhasil melakukan pembayaran!", "success");
+                } else {
+                    showToast(
+                        response.message ||
+                            "Gagal melakukan pembayaran. Coba lagi.",
+                        "error"
+                    );
+                }
             }
         } catch (error) {
             showToast("Failed to update purchasing", "error");
@@ -62,20 +137,21 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
             setIsSubmitting(false);
             setLoading(false);
             onClose();
+            onRefresh();
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-100">
-                <div className="flex items-center justify-between border-b border-gray-100 p-5">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl max-h-[90vh]">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900">
                             Edit Pembelian
                         </h3>
                         <p className="text-sm text-gray-500">
                             Perbarui informasi pembelian{" "}
-                            <b>${purchase.stock_code}</b>
+                            <b>{purchase.stock_code}</b>
                         </p>
                     </div>
                     <button
@@ -96,12 +172,10 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
                             <div className="relative">
                                 <select
                                     value={purchase.supplier.uuid}
+                                    disabled
                                     className="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white pr-8 cursor-pointer"
                                 >
-                                    <option
-                                        key={purchase.supplier.uuid || "all"}
-                                        value={purchase.supplier.uuid}
-                                    >
+                                    <option value={purchase.supplier.uuid}>
                                         {purchase.supplier.name}
                                     </option>
                                 </select>
@@ -116,9 +190,10 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
                                     type="datetime-local"
                                     value={formData.purchase_date}
                                     max={MaxDate()}
-                                    onChange={(e) =>
-                                        handleDateChange(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        handleDateChange(e.target.value);
+                                        setIsDateChanged(true);
+                                    }}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none pr-8 shadow-sm"
                                     disabled={isSubmitting || loading}
                                 />
@@ -126,6 +201,59 @@ const PurchaseEditModal: React.FC<PurchaseEditModalProps> = ({
                                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
                                     size={18}
                                 />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Di Bayaran
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">
+                                    Rp
+                                </span>
+                                <input
+                                    type="text"
+                                    value={formatRupiah(purchase.paid_amount)
+                                        .replace("Rp", "")
+                                        .trim()}
+                                    className="w-full px-10 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-right"
+                                    disabled
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Jumlah Pembayaran
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">
+                                    Rp
+                                </span>
+                                <input
+                                    type="text"
+                                    value={paymentAmountDisplay}
+                                    onChange={handleAmountChange}
+                                    onBlur={handleAmountBlur}
+                                    placeholder={formatRupiah(
+                                        purchase.remaining_amount
+                                    )
+                                        .replace("Rp", "")
+                                        .trim()}
+                                    className="w-full px-10 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-right"
+                                    disabled={isSubmitting}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handlePaymentAmountInput(
+                                            purchase.remaining_amount
+                                        )
+                                    }
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    title="Use Remaining Amount"
+                                >
+                                    <X size={16} />
+                                </button>
                             </div>
                         </div>
                         <div>

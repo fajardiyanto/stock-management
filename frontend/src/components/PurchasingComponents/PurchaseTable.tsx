@@ -4,7 +4,7 @@ import PurchaseStatusBadge from "./PurchaseStatusBadge";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { Purchasing } from "../../types/purchase";
 import { PaymentResponse, PaymentStatusLabel } from "../../types/payment";
-import { formatDate } from "../../utils/FormatDate";
+import { formatDate, formatDateRawUTC } from "../../utils/FormatDate";
 import Pagination from "../Pagination";
 import RecordPaymentModal from "./RecordPaymentModal";
 import { paymentService } from "../../services/paymentService";
@@ -71,6 +71,28 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
     const handleEditPurchase = async (data: Purchasing) => {
         setModalType("EDIT");
         setPurchase(data);
+
+        // try {
+        //     const response = await paymentService.getUserBalanceDeposit(
+        //         data.supplier.uuid
+        //     );
+
+        //     if (response.status_code === 200) {
+        //         console.log(response.data);
+        //     } else {
+        //         setError(response.message || "Failed to fetch user deposit");
+        //         showToast(
+        //             response.message || "Failed to fetch user deposit",
+        //             "error"
+        //         );
+        //     }
+        // } catch (err) {
+        //     setError("Failed to fetch user deposit. Please try again.");
+        //     showToast(
+        //         "Failed to fetch user deposit. Please try again.",
+        //         "error"
+        //     );
+        // }
     };
 
     const handleCloseModal = () => {
@@ -131,7 +153,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatDate(item.purchase_date)}
+                                        {formatDateRawUTC(item.purchase_date)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                                         {formatRupiah(item.total_amount)}
@@ -198,6 +220,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 <PurchaseEditModal
                     purchase={purchase}
                     onClose={handleCloseModal}
+                    onRefresh={onRefresh}
                 />
             )}
 

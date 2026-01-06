@@ -3,7 +3,7 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"net/http"
@@ -11,13 +11,13 @@ import (
 
 type Purchase struct {
 	purchaseRepository repository.PurchaseRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewPurchaseHandler(purchaseRepository repository.PurchaseRepository, validate *validator.Validate) *Purchase {
 	return &Purchase{
 		purchaseRepository: purchaseRepository,
-		BaseHandler:        base_handler.NewBaseHandler(validate),
+		BaseHandler:        baseHandler.NewBaseHandler(validate),
 	}
 }
 

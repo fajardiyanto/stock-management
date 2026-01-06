@@ -263,6 +263,12 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 Item Allocated
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Weight Allocated
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Price Allocated
+                            </th>
                             <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 Aksi
                             </th>
@@ -295,6 +301,23 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                                                     i.tempId === alloc.item_id
                                             )?.item_name
                                         }
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {
+                                            selectedItems.find(
+                                                (i) =>
+                                                    i.tempId === alloc.item_id
+                                            )?.weight
+                                        }{" "}
+                                        Kg
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {formatRupiah(
+                                            selectedItems.find(
+                                                (i) =>
+                                                    i.tempId === alloc.item_id
+                                            )?.price_per_kilogram ?? 0
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <button

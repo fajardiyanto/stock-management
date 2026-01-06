@@ -85,7 +85,7 @@ type ItemAddOnnList struct {
 }
 
 type SaleRequest struct {
-	CustomerId  string                   `json:"customer_id" validate:"required"`
+	CustomerId  string                   `json:"customer_id"`
 	SalesDate   time.Time                `json:"sales_date" validate:"required"`
 	ExportSale  bool                     `json:"export_sale"`
 	ItemSales   []ItemSalesRequest       `json:"sale_items"`

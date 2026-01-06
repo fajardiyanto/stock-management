@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { CreateStockItem } from "../../types/stock";
-import { formatRupiah } from "../../utils/FormatRupiah";
+import { formatRupiah, formatRupiahInput } from "../../utils/FormatRupiah";
 import { cleanNumber } from "../../utils/CleanNumber";
 
 interface StockItemInputProps {
@@ -24,7 +24,7 @@ const StockItemInput: React.FC<StockItemInputProps> = ({
     canRemove,
 }) => {
     const [formattedPrice, setFormattedPrice] = useState<string>(
-        formatRupiah(item.price_per_kilogram)
+        formatRupiahInput(item.price_per_kilogram)
     );
 
     const handleValueChange = (field: keyof CreateStockItem, value: string) => {
@@ -50,14 +50,20 @@ const StockItemInput: React.FC<StockItemInputProps> = ({
     };
 
     const handlePriceBlur = () => {
-        setFormattedPrice(formatRupiah(item.price_per_kilogram));
+        const currentCleanPrice = cleanNumber(String(item.price_per_kilogram));
+        setFormattedPrice(formatRupiahInput(currentCleanPrice));
     };
 
     const handlePriceFocus = () => {
+        const currentCleanPrice = cleanNumber(String(item.price_per_kilogram));
         if (item.price_per_kilogram !== 0) {
-            setFormattedPrice(String(item.price_per_kilogram));
+            setFormattedPrice(String(currentCleanPrice));
         }
     };
+
+    useEffect(() => {
+        setFormattedPrice(formatRupiahInput(item.price_per_kilogram));
+    }, [item.price_per_kilogram]);
 
     return (
         <div className="border border-gray-200 p-4 rounded-xl space-y-4 shadow-sm">
@@ -123,6 +129,9 @@ const StockItemInput: React.FC<StockItemInputProps> = ({
                         Harga per kg
                     </label>
                     <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
+                            Rp
+                        </span>
                         <input
                             type="text"
                             value={formattedPrice}
@@ -130,7 +139,7 @@ const StockItemInput: React.FC<StockItemInputProps> = ({
                             onFocus={handlePriceFocus}
                             onBlur={handlePriceBlur}
                             placeholder="0"
-                            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         />
                         <button
                             type="button"

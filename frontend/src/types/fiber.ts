@@ -1,16 +1,16 @@
 export const STATUS_OPTIONS_LIST = [
-    { key: '', label: 'Semua Status' },
-    { key: 'FREE', label: 'Tersedia' },
-    { key: 'USED', label: 'Digunakan' },
+    { key: "", label: "Semua Status" },
+    { key: "FREE", label: "Tersedia" },
+    { key: "USED", label: "Digunakan" },
 ];
 
 export const STATUS_MAP = {
-    '': 'Semua Status',
-    FREE: 'Tersedia',
-    USED: 'Digunakan'
+    "": "Semua Status",
+    FREE: "Tersedia",
+    USED: "Digunakan",
 } as const;
 
-type FiberStatus = 'FREE' | 'USED';
+type FiberStatus = "FREE" | "USED";
 
 export interface FiberRequest {
     name: string;
@@ -24,6 +24,7 @@ export interface FiberResponse {
     stock_sort_id: string;
     sale_code: string;
     deleted: boolean;
+    sale_id: string;
     created_at: string;
 }
 

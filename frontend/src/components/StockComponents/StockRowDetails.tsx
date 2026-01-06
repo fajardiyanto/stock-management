@@ -2,7 +2,7 @@ import React from "react";
 import { ChevronRight, Edit2, Trash2 } from "lucide-react";
 import StockRowShrinkage from "./StockRowShrinkage";
 import { formatRupiah } from "../../utils/FormatRupiah";
-import { StockEntry, StockItem } from "../../types/stock";
+import { StockEntry, StockItem, StockSortResponse } from "../../types/stock";
 import { formatDate } from "../../utils/FormatDate";
 
 interface StockRowDetailsProps {
@@ -129,7 +129,8 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
 
     const renderSortActionColumn = (
         actionText: string,
-        rowSpan: number | null = null
+        rowSpan: number | null = null,
+        sortItem: StockSortResponse | null = null
     ) => (
         <td
             rowSpan={rowSpan || 1}
@@ -141,7 +142,12 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                     actionText === "Sortir"
                         ? "text-blue-600 hover:text-blue-800 border-blue-300 hover:bg-blue-50"
                         : "text-gray-700 hover:text-gray-900 border-gray-300 hover:bg-gray-50"
+                } ${
+                    sortItem?.weight !== sortItem?.current_weight
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                 }`}
+                disabled={sortItem?.weight !== sortItem?.current_weight}
             >
                 <ChevronRight size={16} />
                 {actionText}
@@ -281,7 +287,13 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                         <td className="px-2 py-4 text-sm font-semibold text-gray-700 text-center">
                             {sortItem.weight}
                         </td>
-                        <td className="px-2 py-4 text-sm font-bold text-green-600 text-center">
+                        <td
+                            className={`px-2 py-4 text-sm font-bold text-center ${
+                                sortItem.current_weight === 0
+                                    ? "text-yellow-400"
+                                    : "text-green-600"
+                            }`}
+                        >
                             {sortItem.current_weight}
                         </td>
                         <td className="px-2 py-4 text-sm font-semibold text-gray-900 text-center border-r border-gray-200">
@@ -299,7 +311,8 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                         {isFirstItemRow &&
                             renderSortActionColumn(
                                 "Edit Sortir",
-                                totalItemRows
+                                totalItemRows,
+                                sortItem
                             )}
 
                         {isFirstRow &&

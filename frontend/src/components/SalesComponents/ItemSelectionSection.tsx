@@ -81,6 +81,7 @@ const ItemSelectionSection: React.FC<ItemSelectionSectionProps> = ({
     );
 
     useEffect(() => {
+        setPriceInputDisplay(formatRupiahInput(currentPrice));
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 dropdownRef.current &&
@@ -92,7 +93,7 @@ const ItemSelectionSection: React.FC<ItemSelectionSectionProps> = ({
         document.addEventListener("mousedown", handleClickOutside);
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [currentPrice]);
 
     const handleSelectItem = (item: StockSortResponse) => {
         setSelectedSortirId(item.uuid);
@@ -125,6 +126,48 @@ const ItemSelectionSection: React.FC<ItemSelectionSectionProps> = ({
         setSortirSearchTerm("");
         setWeight("");
         setPriceInputDisplay("");
+    };
+
+    const FiberAllocations: React.FC = () => {
+        return (
+            <>
+                {filteredSortirItems
+                    .map((item) => {
+                        const usedWeight = selectedItems
+                            .filter((si) => si.stock_sort_id === item.uuid)
+                            .reduce((sum, si) => sum + si.weight, 0);
+
+                        const remainingWeight =
+                            item.current_weight - usedWeight;
+
+                        return {
+                            item,
+                            remainingWeight,
+                        };
+                    })
+                    .filter(({ remainingWeight }) => remainingWeight > 0)
+                    .map(({ item, remainingWeight }) => (
+                        <li
+                            key={item.uuid}
+                            onClick={() => handleSelectItem(item)}
+                            className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition ${
+                                item.uuid === selectedSortirId
+                                    ? "bg-blue-100"
+                                    : ""
+                            }`}
+                        >
+                            <p className="text-sm font-medium text-gray-900">
+                                {item.stock_code} - {item.sorted_item_name}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                                Tersedia {remainingWeight} kg @{" "}
+                                {formatRupiah(item.price_per_kilogram)}
+                                /kg
+                            </p>
+                        </li>
+                    ))}
+            </>
+        );
     };
 
     return (
@@ -176,32 +219,7 @@ const ItemSelectionSection: React.FC<ItemSelectionSectionProps> = ({
                                         Tidak ditemukan.
                                     </li>
                                 ) : (
-                                    filteredSortirItems.map((item) => (
-                                        <li
-                                            key={item.uuid}
-                                            onClick={() =>
-                                                handleSelectItem(item)
-                                            }
-                                            className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition ${
-                                                item.uuid === selectedSortirId
-                                                    ? "bg-blue-100"
-                                                    : ""
-                                            }`}
-                                        >
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {item.stock_code} -{" "}
-                                                {item.sorted_item_name}
-                                            </p>
-                                            <p className="text-xs text-gray-600">
-                                                Tersedia {item.current_weight}{" "}
-                                                kg @{" "}
-                                                {formatRupiah(
-                                                    item.price_per_kilogram
-                                                )}
-                                                /kg
-                                            </p>
-                                        </li>
-                                    ))
+                                    <FiberAllocations />
                                 )}
                             </ul>
                         )}

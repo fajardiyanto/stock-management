@@ -2,7 +2,7 @@ package handler
 
 import (
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -11,13 +11,13 @@ import (
 
 type Analytic struct {
 	analyticRepository repository.AnalyticRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository, validate *validator.Validate) *Analytic {
 	return &Analytic{
 		analyticRepository: analyticRepository,
-		BaseHandler:        base_handler.NewBaseHandler(validate),
+		BaseHandler:        baseHandler.NewBaseHandler(validate),
 	}
 }
 
@@ -31,8 +31,10 @@ func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository, valid
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/stats [get]
 func (h *Analytic) GetOverallStats(c *gin.Context) {
+	month := c.Param("month")
+	year := c.Param("year")
 	// Fetch overall statistics
-	data, err := h.analyticRepository.GetAnalyticStats()
+	data, err := h.analyticRepository.GetAnalyticStats(year, month)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch analytics statistics")
 		return
@@ -166,7 +168,7 @@ func (h *Analytic) RegisterRoutes(router *gin.RouterGroup) {
 	analytics := router.Group("/analytics")
 	{
 		// Core analytics
-		analytics.GET("/stats", h.GetOverallStats)
+		analytics.GET("/stats/:month/:year", h.GetOverallStats)
 		analytics.GET("/daily/:date/stats", h.GetDailyStats)
 
 		// Trends and distribution

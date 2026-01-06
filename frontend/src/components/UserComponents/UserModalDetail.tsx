@@ -140,7 +140,7 @@ const UserModalDetail: React.FC<UserModalDetailProps> = ({
                 user.uuid,
                 validEntries
             );
-            if (response.status_code === 200) {
+            if (response.status_code === 200 || response.status_code === 201) {
                 await onRefresh();
             } else {
                 setManualError(

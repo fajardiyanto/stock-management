@@ -175,9 +175,7 @@ const SaleUpdatePage: React.FC = () => {
             const response = await salesService.getSaleById(saleId);
 
             if (response.status_code === 200 && response.data) {
-                const saleEntry = Array.isArray(response.data)
-                    ? response.data[0]
-                    : response.data;
+                const saleEntry = response.data;
 
                 if (!saleEntry) {
                     setError("Sale entry data is empty.");
@@ -287,11 +285,6 @@ const SaleUpdatePage: React.FC = () => {
             return;
         }
 
-        if (!formData.customer_id) {
-            setError("Harap pilih Pembeli.");
-            showToast("Harap pilih Pembeli.", "warning");
-            return;
-        }
         if (selectedItems.length === 0) {
             setError("Harap tambahkan minimal satu Item Penjualan.");
             showToast(

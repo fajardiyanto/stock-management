@@ -57,3 +57,8 @@ type CreatePaymentSaleRequest struct {
 	SalesCode string    `json:"sales_code" validate:"required"`
 	Total     int       `json:"total" validate:"required"`
 }
+
+type UserBalanceDepositResponse struct {
+	Balance int  `json:"balance"`
+	Deposit bool `json:"deposit"`
+}

@@ -3,7 +3,7 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -12,13 +12,13 @@ import (
 
 type Stock struct {
 	stockRepository repository.StockRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewStockHandler(stockRepository repository.StockRepository, validate *validator.Validate) *Stock {
 	return &Stock{
 		stockRepository: stockRepository,
-		BaseHandler:     base_handler.NewBaseHandler(validate),
+		BaseHandler:     baseHandler.NewBaseHandler(validate),
 	}
 }
 

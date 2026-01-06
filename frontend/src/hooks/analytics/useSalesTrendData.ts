@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { analyticService } from '../../services/analyticService';
-import { useToast } from '../../contexts/ToastContext';
+import { useState, useEffect, useCallback } from "react";
+import { analyticService } from "../../services/analyticService";
+import { useToast } from "../../contexts/ToastContext";
 import { SalesTrendData } from "../../types/analytic";
 
 interface UseSalesTrendDataResult {
@@ -10,7 +10,7 @@ interface UseSalesTrendDataResult {
     refetch: () => Promise<void>;
 }
 
-export const useSalesTrendData = (): UseSalesTrendDataResult => {
+export const useSalesTrendData = (date: string): UseSalesTrendDataResult => {
     const [salesTrendData, setSalesTrendData] = useState<SalesTrendData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export const useSalesTrendData = (): UseSalesTrendDataResult => {
         setError("");
 
         try {
-            const response = await analyticService.getSalesTrendData("2025");
+            const response = await analyticService.getSalesTrendData(date);
 
             if (response.status_code === 200) {
                 setSalesTrendData(response.data);
@@ -43,11 +43,12 @@ export const useSalesTrendData = (): UseSalesTrendDataResult => {
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [date, showToast]);
 
     useEffect(() => {
+        if (!date) return;
         fetchSalesTrendData();
-    }, [fetchSalesTrendData]);
+    }, [date, fetchSalesTrendData]);
 
     return {
         salesTrendData,
@@ -55,4 +56,4 @@ export const useSalesTrendData = (): UseSalesTrendDataResult => {
         error,
         refetch: fetchSalesTrendData,
     };
-}
+};

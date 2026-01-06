@@ -1,7 +1,7 @@
 import { FiberList } from "./fiber";
 import { PaymentStatus } from "./payment";
 
-export type SaleStatus = 'MENUNGGU' | 'DIKIRIM' | 'SELESAI' | 'BATAL';
+export type SaleStatus = "MENUNGGU" | "DIKIRIM" | "SELESAI" | "BATAL";
 
 export interface SoldItem {
     id: string;
@@ -69,7 +69,7 @@ export interface CreateAddOnRequest {
 }
 
 export interface SubmitSaleRequest {
-    customer_id: string;
+    customer_id?: string;
     sales_date: string;
     export_sale: boolean;
     sale_items: CreateSaleItemRequest[];

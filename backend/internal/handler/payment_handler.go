@@ -3,7 +3,7 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -13,13 +13,13 @@ import (
 
 type Payment struct {
 	paymentRepository repository.PaymentRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewPaymentHandler(paymentRepository repository.PaymentRepository, validate *validator.Validate) *Payment {
 	return &Payment{
 		paymentRepository: paymentRepository,
-		BaseHandler:       base_handler.NewBaseHandler(validate),
+		BaseHandler:       baseHandler.NewBaseHandler(validate),
 	}
 }
 
@@ -220,6 +220,85 @@ func (h *Payment) CreatePaymentBySaleID(c *gin.Context) {
 	h.SendSuccess(c, http.StatusCreated, fmt.Sprintf("Payment created for sale %s", req.SalesId), nil)
 }
 
+// CreatePaymentFromDepositByPurchaseId godoc
+// @Summary Create payment for purchase
+// @Description Create a payment record for a purchase transaction
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param payment body models.CreatePaymentPurchaseRequest true "Payment data"
+// @Success 201 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /payment/purchase/deposit [post]
+func (h *Payment) CreatePaymentFromDepositByPurchaseId(c *gin.Context) {
+	var req models.CreatePaymentPurchaseRequest
+
+	// Bind and validate request
+	if err := h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
+	}
+
+	// Create payment
+	if err := h.paymentRepository.CreatePaymentFromDepositByPurchaseId(req); err != nil {
+		h.HandleError(c, err, "Failed to create purchase payment")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusCreated, fmt.Sprintf("Payment created for purchase %s", req.PurchaseId), nil)
+}
+
+// GetUserBalanceDeposit godoc
+// @Summary Create payment for purchase
+// @Description Create a payment record for a purchase transaction
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Success 201 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /payment/user/deposit/{userId} [get]
+func (h *Payment) GetUserBalanceDeposit(c *gin.Context) {
+	userId := c.Param("userId")
+
+	// Create payment
+	data, err := h.paymentRepository.GetUserBalanceDeposit(userId)
+	if err != nil {
+		h.HandleError(c, err, "Failed to get user balance deposit")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, fmt.Sprintf("Get user balance deposit %s", userId), data)
+}
+
+// CreatePaymentFromDepositBySalesId godoc
+// @Summary Create payment for purchase
+// @Description Create a payment record for a purchase transaction
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param payment body models.CreatePaymentSaleRequest true "Payment data"
+// @Success 201 {object} models.HTTPResponseSuccess
+// @Failure 400 {object} models.HTTPResponseError
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /payment/sale/deposit [post]
+func (h *Payment) CreatePaymentFromDepositBySalesId(c *gin.Context) {
+	var req models.CreatePaymentSaleRequest
+
+	// Bind and validate request
+	if err := h.BindAndValidate(c, &req); err != nil {
+		return // Error already sent
+	}
+
+	// Create payment
+	if err := h.paymentRepository.CreatePaymentFromDepositBySalesId(req); err != nil {
+		h.HandleError(c, err, "Failed to create purchase payment")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusCreated, fmt.Sprintf("Payment created for purchase %s", req.SalesId), nil)
+}
+
 // =====================================================
 // HELPER METHODS
 // =====================================================
@@ -234,7 +313,7 @@ func (h *Payment) validatePaymentArray(payments []models.CreateManualPaymentRequ
 			if errors.As(err, &validationErrs) {
 				for _, e := range validationErrs {
 					errorMessages = append(errorMessages,
-						fmt.Sprintf("Payment[%d].%s: %s", i, e.Field(), base_handler.FormatFieldError(e)))
+						fmt.Sprintf("Payment[%d].%s: %s", i, e.Field(), baseHandler.FormatFieldError(e)))
 				}
 			}
 		}
@@ -265,5 +344,8 @@ func (h *Payment) RegisterRoutes(router *gin.RouterGroup) {
 		payment.GET("/purchase/:id/:field", h.GetPaymentsByFieldID)
 		payment.POST("/purchase", h.CreatePaymentByPurchaseID)
 		payment.POST("/sale", h.CreatePaymentBySaleID)
+		payment.POST("/purchase/deposit", h.CreatePaymentFromDepositByPurchaseId)
+		payment.GET("/user/deposit/:userId", h.GetUserBalanceDeposit)
+		payment.POST("/sale/deposit", h.CreatePaymentFromDepositBySalesId)
 	}
 }

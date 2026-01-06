@@ -17,6 +17,7 @@ interface FiberTableProps {
     onEdit: (unit: FiberResponse) => void;
     onDelete: (unit: FiberResponse) => void;
     onStatusChange: (unit: FiberResponse) => void;
+    onDetail: (unit: FiberResponse) => void;
 }
 
 const getStatusBadge = (status: "FREE" | "USED") => {
@@ -43,6 +44,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
     onEdit,
     onDelete,
     onStatusChange,
+    onDetail,
 }) => {
     const startIdx = (currentPage - 1) * (data?.size ?? 0) + 1;
 
@@ -126,7 +128,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                             {unit.status === "USED" && (
                                                 <button
                                                     onClick={() =>
-                                                        onStatusChange(unit)
+                                                        onDetail(unit)
                                                     }
                                                     title="Lihat Detail Fiber"
                                                     className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition"

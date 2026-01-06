@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import TopStatsAnalytics from "../components/AnalyticComponents/TopStatsAnalytics";
 import SummarySaleDayTable from "../components/AnalyticComponents/SummarySaleDayTable";
 import ChartAnalytics from "../components/AnalyticComponents/ChartAnalytics";
-import { getDefaultDateOnly } from "../utils/DefaultDate";
+import {
+    getDefaultDateOnly,
+    getYearFromDate,
+    getMonthFromDate,
+} from "../utils/DefaultDate";
 import { useDashboardStats } from "../hooks/analytics/useDashboardStats";
 import { useDailyDashboardStats } from "../hooks/analytics/useDailyDashboardStats";
 import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
@@ -19,27 +23,31 @@ const AnalyticsPage: React.FC = () => {
     );
 
     const dateNow = getDefaultDateOnly();
+    const dateYear = useMemo(
+        () => getYearFromDate(selectedDate),
+        [selectedDate]
+    );
+    const dateMonth = useMemo(
+        () => getMonthFromDate(selectedDate),
+        [selectedDate]
+    );
 
     const {
         stats,
         loading: dashboardStatsLoading,
         error: dashboardStatsError,
         refetch: refetchDashboardStats,
-    } = useDashboardStats();
+    } = useDashboardStats(dateYear, dateMonth);
 
-    const {
-        dailyStats,
-        loading: dailyDashboardStatsLoading,
-        error: dailyDashboardStatsError,
-        refetch: refetchDailyDashboardStats,
-    } = useDailyDashboardStats(selectedDate);
+    const { dailyStats, refetch: refetchDailyDashboardStats } =
+        useDailyDashboardStats(selectedDate);
 
     const {
         salesTrendData,
         loading: salesTrendDataLoading,
         error: salesTrendDataError,
         refetch: refetchSalesTrendData,
-    } = useSalesTrendData();
+    } = useSalesTrendData(dateYear);
 
     const {
         stockDistributionData,
@@ -139,7 +147,7 @@ const AnalyticsPage: React.FC = () => {
 
             <TopStatsAnalytics stats={stats} selectedDate={dateNow} />
 
-            {selectedDate != "" && (
+            {selectedDate !== "" && (
                 <SummarySaleDayTable
                     stats={dailyStats}
                     selectedDate={selectedDate}

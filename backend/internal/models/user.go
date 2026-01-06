@@ -110,3 +110,8 @@ type ChangePasswordRequest struct {
 type ResetPasswordResponse struct {
 	Password string `json:"password"`
 }
+
+type UserBalance struct {
+	UserID  string `gorm:"column:user_id"`
+	Balance int    `gorm:"column:balance"`
+}

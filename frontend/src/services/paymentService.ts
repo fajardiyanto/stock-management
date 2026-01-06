@@ -3,6 +3,7 @@ import {
     CreatePaymentReqeust,
     CreatePaymentSalesRequest,
     ManualEntryFormRequest,
+    UserBalanceDepositResponse,
 } from "../types/payment";
 import { ApiResponse } from "../types";
 import { apiCall } from "./";
@@ -80,6 +81,47 @@ export const paymentService = {
             },
             body: JSON.stringify(data),
         });
+        return response;
+    },
+
+    createPaymentByPurchaseIdFromDeposit: async (
+        data: CreatePaymentReqeust
+    ): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(
+            `/payment/purchase/deposit`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    },
+
+    createPaymentBySaleIdFromDeposit: async (
+        data: CreatePaymentSalesRequest
+    ): Promise<ApiResponse<any>> => {
+        const response = await apiCall<ApiResponse<any>>(
+            `/payment/sale/deposit`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            }
+        );
+        return response;
+    },
+
+    getUserBalanceDeposit: async (
+        id: string
+    ): Promise<ApiResponse<UserBalanceDepositResponse>> => {
+        const response = await apiCall<ApiResponse<UserBalanceDepositResponse>>(
+            `/payment/user/deposit/${id}`
+        );
         return response;
     },
 };

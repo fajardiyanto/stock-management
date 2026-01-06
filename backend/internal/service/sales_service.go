@@ -975,7 +975,7 @@ func (s *SalesService) buildResponses(rawSales []models.RawSalesData, data model
 			PaidAmount:      val.PaidAmount,
 			RemainingAmount: val.TotalAmount - val.PaidAmount,
 			PaymentStatus:   val.PaymentStatus,
-			SalesDate:       val.PurchaseDate,
+			SalesDate:       val.PurchaseDate.UTC(),
 			FiberUsed:       fiberList,
 			LastPaymentDate: lastPay,
 			SoldItem:        itemList,

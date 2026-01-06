@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { analyticService } from '../../services/analyticService';
-import { useToast } from '../../contexts/ToastContext';
+import { useState, useEffect, useCallback } from "react";
+import { analyticService } from "../../services/analyticService";
+import { useToast } from "../../contexts/ToastContext";
 import { DashboardStats } from "../../types/analytic";
 
 interface UseDashboardStatsResult {
@@ -10,7 +10,10 @@ interface UseDashboardStatsResult {
     refetch: () => Promise<void>;
 }
 
-export const useDashboardStats = (): UseDashboardStatsResult => {
+export const useDashboardStats = (
+    year: string,
+    month: string
+): UseDashboardStatsResult => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -21,7 +24,10 @@ export const useDashboardStats = (): UseDashboardStatsResult => {
         setError("");
 
         try {
-            const response = await analyticService.getDashboardStats();
+            const response = await analyticService.getDashboardStats(
+                year,
+                month
+            );
 
             if (response.status_code === 200) {
                 setStats(response.data);
@@ -41,11 +47,12 @@ export const useDashboardStats = (): UseDashboardStatsResult => {
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [year, month, showToast]);
 
     useEffect(() => {
+        if (!month || !year) return;
         fetchDashboardStats();
-    }, [fetchDashboardStats]);
+    }, [year, month, fetchDashboardStats]);
 
     return {
         stats,
@@ -54,4 +61,3 @@ export const useDashboardStats = (): UseDashboardStatsResult => {
         refetch: fetchDashboardStats,
     };
 };
-

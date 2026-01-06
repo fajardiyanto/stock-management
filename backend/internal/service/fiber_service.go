@@ -42,6 +42,7 @@ func (s *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 			f.stock_sort_id,
 			f.deleted,
 			f.created_at,
+			f.sale_id,
 			CASE 
 				WHEN s.id IS NOT NULL THEN CONCAT('SELL', s.id)
 				ELSE NULL
@@ -84,6 +85,7 @@ func (s *FiberService) GetAllFibers(filter models.FiberFilter) (*models.FiberPag
 			Name:        result.Name,
 			Status:      result.Status,
 			StockSortId: result.StockSortId,
+			SaleId:      result.SaleId,
 			Deleted:     result.Deleted,
 			CreatedAt:   result.CreatedAt,
 		}
@@ -118,6 +120,7 @@ func (s *FiberService) GetFiberById(id string) (*models.FiberResponse, error) {
 			f.stock_sort_id,
 			f.deleted,
 			f.created_at,
+			f.sale_id,
 			CASE 
 				WHEN s.id IS NOT NULL THEN CONCAT('SELL', s.id)
 				ELSE NULL

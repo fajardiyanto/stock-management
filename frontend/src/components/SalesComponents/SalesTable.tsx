@@ -7,6 +7,7 @@ import { paymentService } from "../../services/paymentService";
 import { PaymentResponse } from "../../types/payment";
 import RecordSalesPaymentModal from "./RecordSalesPaymentModal";
 import { useNavigate } from "react-router-dom";
+import SalesPaymentModal from "./SalesPaymentModal";
 
 interface SalesTableProps {
     data: SaleEntry[];
@@ -68,6 +69,11 @@ const SalesTable: React.FC<SalesTableProps> = ({
 
     const handleEditSale = async (data: SaleEntry) => {
         navigate(`/dashboard/sales/update/${data.uuid}`);
+    };
+
+    const handleOpenPaymentDeposit = async (data: SaleEntry) => {
+        setModalType("EDIT");
+        setSales(data);
     };
 
     const handleCloseModal = () => {
@@ -203,6 +209,9 @@ const SalesTable: React.FC<SalesTableProps> = ({
                                     onDelete={onDelete}
                                     handleOpenPayment={handleOpenPayment}
                                     handleEditSale={handleEditSale}
+                                    handleOpenPaymentDeposit={
+                                        handleOpenPaymentDeposit
+                                    }
                                 />
                             ))
                         )}
@@ -215,6 +224,14 @@ const SalesTable: React.FC<SalesTableProps> = ({
                     sale={sales}
                     payments={payments}
                     error={error}
+                    onClose={handleCloseModal}
+                    onRefresh={onRefresh}
+                />
+            )}
+
+            {modalType === "EDIT" && (
+                <SalesPaymentModal
+                    sale={sales}
                     onClose={handleCloseModal}
                     onRefresh={onRefresh}
                 />

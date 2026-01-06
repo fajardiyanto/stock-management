@@ -252,12 +252,7 @@ func (s *UserService) getBatchBalances(userIDs []string) (map[string]int, error)
 	db := config.GetDBConn()
 
 	// Single query to get all balances
-	type UserBalance struct {
-		UserID  string `gorm:"column:user_id"`
-		Balance int    `gorm:"column:balance"`
-	}
-
-	var balances []UserBalance
+	var balances []models.UserBalance
 	err := db.
 		Model(&models.Payment{}).
 		Select(`

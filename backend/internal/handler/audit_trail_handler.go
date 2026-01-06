@@ -3,7 +3,7 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -14,13 +14,13 @@ import (
 
 type AuditLog struct {
 	auditTrailRepository repository.AuditTrailRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewAuditLogHandler(auditTrailRepository repository.AuditTrailRepository, validate *validator.Validate) *AuditLog {
 	return &AuditLog{
 		auditTrailRepository: auditTrailRepository,
-		BaseHandler:          base_handler.NewBaseHandler(validate),
+		BaseHandler:          baseHandler.NewBaseHandler(validate),
 	}
 }
 

@@ -9,9 +9,12 @@ import {
 } from "../types/analytic";
 
 export const analyticService = {
-    getDashboardStats: async (): Promise<ApiResponse<DashboardStats>> => {
+    getDashboardStats: async (
+        year: string,
+        month: string
+    ): Promise<ApiResponse<DashboardStats>> => {
         const response = await apiCall<ApiResponse<DashboardStats>>(
-            `/analytics/stats`
+            `/analytics/stats/${month}/${year}`
         );
         return response;
     },

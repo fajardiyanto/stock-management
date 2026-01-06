@@ -1,7 +1,6 @@
 import React from "react";
 import { DailyDashboardStats } from "../../types/analytic";
 import { formatNumber } from "../../utils/CleanNumber";
-import { Calendar } from "lucide-react";
 
 interface SummarySaleDayTableProps {
     stats: DailyDashboardStats | null;

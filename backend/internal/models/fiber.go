@@ -32,6 +32,7 @@ type FiberResponse struct {
 	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
 	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
 	SaleCode    *string   `json:"sale_code" gorm:"column:sale_code"`
+	SaleId      string    `json:"sale_id" gorm:"column:sale_id"`
 }
 
 type FiberPaginationResponse struct {

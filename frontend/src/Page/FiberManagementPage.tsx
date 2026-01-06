@@ -11,6 +11,9 @@ import { useStatusChange } from "../hooks/fiber/useStatusChange";
 import { useDeleteFiber } from "../hooks/fiber/useDeleteFiber";
 import { useEditFiber } from "../hooks/fiber/useEditFiber";
 import { useToast } from "../contexts/ToastContext";
+import FiberDetailModal from "../components/FiberComponents/FiberDetailModal";
+import { salesService } from "../services/salesService";
+import { SaleEntry } from "../types/sales";
 
 const FiberManagementPage: React.FC = () => {
     const [searchName, setSearchName] = useState("");
@@ -22,6 +25,9 @@ const FiberManagementPage: React.FC = () => {
     const [pageSize, setPageSize] = useState(10);
     const [selectedFiber, setSelectedFiber] = useState<FiberResponse>(
         {} as FiberResponse
+    );
+    const [detailSaleFiber, setDetailSaleFiber] = useState<SaleEntry | null>(
+        null
     );
 
     const initialAddFiberFormData: FiberRequest = {
@@ -142,6 +148,13 @@ const FiberManagementPage: React.FC = () => {
         refetchFiber();
     };
 
+    const handleOpenDetail = async (fiber: FiberResponse) => {
+        setSelectedFiber(fiber);
+        setModalType("DETAIL");
+        const response = await salesService.getSaleById(fiber.sale_id);
+        setDetailSaleFiber(response.data);
+    };
+
     if (fiberLoading) {
         return (
             <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
@@ -204,6 +217,7 @@ const FiberManagementPage: React.FC = () => {
                     onEdit={handleOpenEdit}
                     onDelete={handleOpenDelete}
                     onStatusChange={handleStatusChange}
+                    onDetail={handleOpenDetail}
                 />
             </div>
 
@@ -236,6 +250,14 @@ const FiberManagementPage: React.FC = () => {
                     name={selectedFiber.name}
                     onConfirm={handleDelete}
                     onClose={handleCloseModal}
+                />
+            )}
+
+            {modalType === "DETAIL" && (
+                <FiberDetailModal
+                    onClose={handleCloseModal}
+                    fiber={selectedFiber}
+                    sale={detailSaleFiber}
                 />
             )}
         </div>

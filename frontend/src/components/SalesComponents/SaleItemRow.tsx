@@ -1,9 +1,15 @@
 import React from "react";
 import { SoldItem, SaleEntry } from "../../types/sales";
-import { Calendar, PencilIcon, Printer, Trash2 } from "lucide-react";
+import {
+    Calendar,
+    DollarSign,
+    PencilIcon,
+    Printer,
+    Trash2,
+} from "lucide-react";
 import { formatRupiah } from "../../utils/FormatRupiah";
-import { formatDate } from "../../utils/FormatDate";
-import { PaymentStatusLabel } from "../../types/payment";
+import { formatDate, formatDateRawUTC } from "../../utils/FormatDate";
+import { PaymentStatusLabel, PAYMENT_STATUS } from "../../types/payment";
 
 interface SaleItemRowProps {
     sale: SaleEntry;
@@ -13,6 +19,7 @@ interface SaleItemRowProps {
     onDelete: (sale_id: string, sale_code: string) => void;
     handleOpenPayment: (data: SaleEntry) => void;
     handleEditSale: (data: SaleEntry) => void;
+    handleOpenPaymentDeposit: (data: SaleEntry) => void;
 }
 
 const SaleItemRow: React.FC<SaleItemRowProps> = ({
@@ -23,6 +30,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
     onDelete,
     handleOpenPayment,
     handleEditSale,
+    handleOpenPaymentDeposit,
 }) => {
     const isFirstRow = itemIndex === 0;
 
@@ -72,7 +80,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                             rowSpan={totalItems}
                             className="px-6 py-4 text-sm text-gray-500 align-middle"
                         >
-                            {formatDate(sale.sales_date)}
+                            {formatDateRawUTC(sale.sales_date)}
                         </td>
                         <td
                             rowSpan={totalItems}
@@ -189,13 +197,32 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 >
                                     <PencilIcon size={18} />
                                 </button>
-                                <button
-                                    onClick={() => handleOpenPayment(sale)}
-                                    title="Tambah Pembayaran"
-                                    className="p-2 text-green-500 hover:text-green-800"
-                                >
-                                    <Calendar size={18} />
-                                </button>
+                                {sale.customer.name !== "" &&
+                                    sale.payment_status !==
+                                        PAYMENT_STATUS.FULL && (
+                                        <button
+                                            onClick={() =>
+                                                handleOpenPaymentDeposit(sale)
+                                            }
+                                            title="Tambah Pembayaran"
+                                            className="p-2 text-yellow-400 hover:text-yellow-700"
+                                        >
+                                            <DollarSign size={18} />
+                                        </button>
+                                    )}
+                                {sale.customer.name !== "" &&
+                                    sale.payment_status !==
+                                        PAYMENT_STATUS.FULL && (
+                                        <button
+                                            onClick={() =>
+                                                handleOpenPayment(sale)
+                                            }
+                                            title="Tambah Pembayaran"
+                                            className="p-2 text-green-500 hover:text-green-800"
+                                        >
+                                            <Calendar size={18} />
+                                        </button>
+                                    )}
                                 <button
                                     onClick={handlePrintNota}
                                     title="Cetak Nota"

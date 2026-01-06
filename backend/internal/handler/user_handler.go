@@ -4,7 +4,7 @@ import (
 	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/base_handler"
+	"dashboard-app/pkg/baseHandler"
 	"dashboard-app/pkg/jwt"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -16,13 +16,13 @@ import (
 
 type User struct {
 	userRepo repository.UserRepository
-	*base_handler.BaseHandler
+	*baseHandler.BaseHandler
 }
 
 func NewUserHandler(userRepo repository.UserRepository, validate *validator.Validate) *User {
 	return &User{
 		userRepo:    userRepo,
-		BaseHandler: base_handler.NewBaseHandler(validate),
+		BaseHandler: baseHandler.NewBaseHandler(validate),
 	}
 }
 

@@ -9,4 +9,15 @@ export const getDefaultDateOnly = (): string => {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().split("T")[0];
-}
+};
+
+export const getYearFromDate = (date: string): string => {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "";
+
+    return String(d.getFullYear());
+};
+
+export const getMonthFromDate = (date: string): string => {
+    return date.split("-")[1];
+};

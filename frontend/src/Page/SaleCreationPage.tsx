@@ -118,11 +118,6 @@ const SaleCreationPage: React.FC = () => {
         e.preventDefault();
         setError("");
 
-        if (!formData.customer_id) {
-            setError("Harap pilih Pembeli.");
-            showToast("Harap pilih Pembeli.", "warning");
-            return;
-        }
         if (selectedItems.length === 0) {
             setError("Harap tambahkan minimal satu Item Penjualan.");
             showToast(
@@ -325,7 +320,6 @@ const SaleCreationPage: React.FC = () => {
                                 className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
                                 disabled={
                                     isSubmitting ||
-                                    !formData.customer_id ||
                                     selectedItems.length === 0 ||
                                     loading
                                 }

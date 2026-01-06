@@ -79,7 +79,7 @@ func (p *PurchaseService) CreatePurchase(request models.CreatePurchaseRequest) (
 			TotalPayment:     totalPayment,
 			IsSorted:         false,
 			Deleted:          false,
-			CreatedAt:        now,
+			CreatedAt:        request.PurchaseDate,
 			UpdatedAt:        now,
 		})
 		totalAmount += totalPayment
@@ -287,11 +287,10 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 
 		// Get total from batch results
 		totalAmount := stockItemTotals[pur.StockId]
-
 		responses = append(responses, models.PurchaseDataResponse{
 			PurchaseId:      pur.Uuid,
 			Supplier:        userDetail,
-			PurchaseDate:    pur.PurchaseDate.Format(time.RFC3339),
+			PurchaseDate:    pur.PurchaseDate.UTC().Format(time.RFC3339),
 			StockId:         pur.StockId,
 			StockCode:       fmt.Sprintf("STOCK%d", pur.StockEntryID),
 			TotalAmount:     totalAmount,
