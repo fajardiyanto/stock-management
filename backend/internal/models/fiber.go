@@ -18,6 +18,21 @@ func (*Fiber) TableName() string {
 	return "fibers"
 }
 
+type FiberAllocation struct {
+	ID          int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
+	Uuid        string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
+	FiberId     string    `json:"fiber_id" gorm:"column:fiber_id"`
+	Weight      int       `json:"weight" gorm:"column:weight"`
+	StockSortId string    `json:"stock_sort_id" gorm:"column:stock_sort_id"`
+	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
+}
+
+func (*FiberAllocation) TableName() string {
+	return "fiber_allocations"
+}
+
 type FiberRequest struct {
 	Name        string `json:"name" validate:"required"`
 	Status      string `json:"status" validate:"required"`
@@ -54,14 +69,18 @@ type FiberFilter struct {
 }
 
 type FiberAllocationRequest struct {
-	ItemId    string `json:"item_id"`
-	FiberId   string `json:"fiber_id"`
-	FiberName string `json:"fiber_name"`
+	ItemId      string `json:"item_id"`
+	FiberId     string `json:"fiber_id"`
+	FiberName   string `json:"fiber_name"`
+	Weight      int    `json:"weight"`
+	StockSortId string `json:"stock_sort_id"`
 }
 
 type FiberUsedList struct {
-	FiberId   string `json:"uuid"`
-	FiberName string `json:"name"`
+	FiberId     string `json:"uuid"`
+	FiberName   string `json:"name"`
+	StockSortId string `json:"stock_sort_id"`
+	SaleId      string `json:"sale_id"`
 }
 
 type FiberStatistics struct {
@@ -75,4 +94,10 @@ type FiberStats struct {
 	Total int64 `gorm:"column:total"`
 	Free  int64 `gorm:"column:free"`
 	Used  int64 `gorm:"column:used"`
+}
+
+type FiberGroupResponse struct {
+	FiberId   string         `json:"fiber_id"`
+	FiberName string         `json:"fiber_name"`
+	Items     []ItemSaleList `json:"items"`
 }

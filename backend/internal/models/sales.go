@@ -95,22 +95,23 @@ type SaleRequest struct {
 }
 
 type SaleResponse struct {
-	ID              int              `json:"id"`
-	Uuid            string           `json:"uuid"`
-	SaleCode        string           `json:"sale_code"`
-	Customer        GetUserDetail    `json:"customer"`
-	CreateAt        time.Time        `json:"create_at"`
-	PaymentLateDay  int              `json:"payment_late_day"`
-	ExportSale      bool             `json:"export_sale"`
-	TotalAmount     int              `json:"total_amount"`
-	PaidAmount      int              `json:"paid_amount"`
-	RemainingAmount int              `json:"remaining_amount"`
-	PaymentStatus   string           `json:"payment_status"`
-	SalesDate       time.Time        `json:"sales_date"`
-	FiberUsed       []FiberUsedList  `json:"fiber_used"`
-	SoldItem        []ItemSaleList   `json:"sold_items"`
-	AddOn           []ItemAddOnnList `json:"add_ons"`
-	LastPaymentDate string           `json:"last_payment_date"`
+	ID                 int                  `json:"id"`
+	Uuid               string               `json:"uuid"`
+	SaleCode           string               `json:"sale_code"`
+	Customer           GetUserDetail        `json:"customer"`
+	CreateAt           time.Time            `json:"create_at"`
+	PaymentLateDay     int                  `json:"payment_late_day"`
+	ExportSale         bool                 `json:"export_sale"`
+	TotalAmount        int                  `json:"total_amount"`
+	PaidAmount         int                  `json:"paid_amount"`
+	RemainingAmount    int                  `json:"remaining_amount"`
+	PaymentStatus      string               `json:"payment_status"`
+	SalesDate          time.Time            `json:"sales_date"`
+	FiberUsed          []FiberUsedList      `json:"fiber_used"`
+	SoldItem           []ItemSaleList       `json:"sold_items"`
+	AddOn              []ItemAddOnnList     `json:"add_ons"`
+	FiberGroupResponse []FiberGroupResponse `json:"fiber_groups"`
+	LastPaymentDate    string               `json:"last_payment_date"`
 }
 
 type SalesFilter struct {
@@ -132,10 +133,11 @@ type SalePaginationResponse struct {
 }
 
 type RelatedDataSales struct {
-	ItemSales  []ItemSales
-	StockSorts []StockSort
-	AddOns     []ItemAddOnn
-	Fibers     []Fiber
+	ItemSales        []ItemSales
+	StockSorts       []StockSort
+	AddOns           []ItemAddOnn
+	Fibers           []Fiber
+	FiberAllocations []FiberAllocation
 }
 
 type RawSalesData struct {

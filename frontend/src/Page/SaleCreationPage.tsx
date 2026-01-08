@@ -226,6 +226,7 @@ const SaleCreationPage: React.FC = () => {
                     const fiberOptions = response.data.map((fiber) => ({
                         uuid: fiber.uuid,
                         name: fiber.name,
+                        stock_sort_id: fiber.stock_sort_id,
                     }));
                     setFibers(fiberOptions);
                 }

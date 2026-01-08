@@ -49,4 +49,5 @@ export interface FiberFilter {
 export interface FiberList {
     uuid: string;
     name: string;
+    stock_sort_id: string;
 }

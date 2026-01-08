@@ -40,22 +40,33 @@ func (s *SalesService) CreateSales(ctx context.Context, request models.SaleReque
 	var fiberList string
 	if !request.ExportSale && len(request.FiberList) > 0 {
 		fiberIDs := make([]string, 0, len(request.FiberList))
-		fiberUpdates := make([]string, 0, len(request.FiberList))
 
 		for _, v := range request.FiberList {
 			fiberIDs = append(fiberIDs, v.FiberId)
-			fiberUpdates = append(fiberUpdates, fmt.Sprintf("'%s'", v.FiberId))
-		}
 
-		if err := tx.Model(&models.Fiber{}).
-			Where("uuid IN ? AND deleted = false", fiberIDs).
-			Updates(map[string]interface{}{
-				"status":     "USED",
-				"sale_id":    saleId,
-				"updated_at": time.Now(),
-			}).Error; err != nil {
-			tx.Rollback()
-			return apperror.NewUnprocessableEntity("failed to update fibers: ", err)
+			if err := tx.Model(&models.Fiber{}).
+				Where("uuid = ? AND deleted = false", v.FiberId).
+				Updates(map[string]interface{}{
+					"status":        "USED",
+					"sale_id":       saleId,
+					"stock_sort_id": v.StockSortId,
+					"updated_at":    time.Now(),
+				}).Error; err != nil {
+				tx.Rollback()
+				return apperror.NewUnprocessableEntity("failed to update fibers: ", err)
+			}
+
+			fiberAllocation := models.FiberAllocation{
+				Uuid:        uuid.New().String(),
+				FiberId:     v.FiberId,
+				StockSortId: v.StockSortId,
+				Weight:      v.Weight,
+			}
+
+			if err := tx.Create(&fiberAllocation).Error; err != nil {
+				tx.Rollback()
+				return apperror.NewUnprocessableEntity("failed to create allocated fiber: ", err)
+			}
 		}
 
 		fiberList = strings.Join(fiberIDs, ",")
@@ -267,9 +278,21 @@ func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request mode
 	if sale.FiberList != "" {
 		oldFiberIDs := strings.Split(sale.FiberList, ",")
 		if len(oldFiberIDs) > 0 {
+			fiberUpdates := map[string]interface{}{
+				"status":        "FREE",
+				"sale_id":       "",
+				"updated_at":    time.Now(),
+				"stock_sort_id": "",
+			}
 			if err := tx.Model(&models.Fiber{}).
 				Where("uuid IN ?", oldFiberIDs).
-				Update("status", "FREE").Error; err != nil {
+				Updates(fiberUpdates).Error; err != nil {
+				return apperror.NewUnprocessableEntity("failed to free old fibers: ", err)
+			}
+
+			if err := tx.Model(&models.Fiber{}).
+				Where("uuid IN ?", oldFiberIDs).
+				Update("deleted", false).Error; err != nil {
 				return apperror.NewUnprocessableEntity("failed to free old fibers: ", err)
 			}
 		}
@@ -279,16 +302,28 @@ func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request mode
 		newFiberIDs := make([]string, 0, len(request.FiberList))
 		for _, v := range request.FiberList {
 			newFiberIDs = append(newFiberIDs, v.FiberId)
-		}
+			if err := tx.Model(&models.Fiber{}).
+				Where("uuid = ? AND deleted = false", v.FiberId).
+				Updates(map[string]interface{}{
+					"status":        "USED",
+					"sale_id":       sale.Uuid,
+					"updated_at":    time.Now(),
+					"stock_sort_id": v.StockSortId,
+				}).Error; err != nil {
+				return apperror.NewUnprocessableEntity("failed to allocate new fibers: ", err)
+			}
 
-		if err := tx.Model(&models.Fiber{}).
-			Where("uuid IN ? AND deleted = false", newFiberIDs).
-			Updates(map[string]interface{}{
-				"status":     "USED",
-				"sale_id":    sale.Uuid,
-				"updated_at": time.Now(),
-			}).Error; err != nil {
-			return apperror.NewUnprocessableEntity("failed to allocate new fibers: ", err)
+			fiberAllocation := models.FiberAllocation{
+				Uuid:        uuid.New().String(),
+				FiberId:     v.FiberId,
+				StockSortId: v.StockSortId,
+				Weight:      v.Weight,
+			}
+
+			if err := tx.Create(&fiberAllocation).Error; err != nil {
+				tx.Rollback()
+				return apperror.NewUnprocessableEntity("failed to create allocated fiber: ", err)
+			}
 		}
 
 		sale.FiberList = strings.Join(newFiberIDs, ",")
@@ -469,6 +504,13 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 				if err := tx.Model(&models.Fiber{}).
 					Where("uuid IN ? AND deleted = false", cleanIDs).
 					Update("status", "FREE").Error; err != nil {
+					tx.Rollback()
+					return apperror.NewUnprocessableEntity("failed to free fibers: ", err)
+				}
+
+				if err := tx.Model(&models.FiberAllocation{}).
+					Where("fiber_id IN ? AND deleted = false", cleanIDs).
+					Update("deleted", true).Error; err != nil {
 					tx.Rollback()
 					return apperror.NewUnprocessableEntity("failed to free fibers: ", err)
 				}
@@ -893,6 +935,11 @@ func (s *SalesService) fetchRelatedData(db *gorm.DB, saleIDs []string) (models.R
 		return data, apperror.NewNotFound(fmt.Sprintf("fibers not found: %v", err))
 	}
 
+	if err := db.Where("stock_sort_id IN ? AND deleted = false", stockSortIDs).
+		Find(&data.FiberAllocations).Error; err != nil {
+		return data, apperror.NewNotFound(fmt.Sprintf("fiber allocations not found: %v", err))
+	}
+
 	return data, nil
 }
 
@@ -915,8 +962,10 @@ func (s *SalesService) buildResponses(rawSales []models.RawSalesData, data model
 	fiberMap := make(map[string][]models.FiberUsedList)
 	for _, f := range data.Fibers {
 		fiberMap[f.SaleId] = append(fiberMap[f.SaleId], models.FiberUsedList{
-			FiberId:   f.Uuid,
-			FiberName: f.Name,
+			FiberId:     f.Uuid,
+			FiberName:   f.Name,
+			StockSortId: f.StockSortId,
+			SaleId:      f.SaleId,
 		})
 	}
 
@@ -963,23 +1012,78 @@ func (s *SalesService) buildResponses(rawSales []models.RawSalesData, data model
 			fiberList = []models.FiberUsedList{}
 		}
 
+		fiberAllocMap := make(map[string][]models.FiberAllocation)
+		for _, fa := range data.FiberAllocations {
+			fiberAllocMap[fa.StockSortId] = append(
+				fiberAllocMap[fa.StockSortId],
+				fa,
+			)
+		}
+
+		fiberNameMap := make(map[string]string)
+		for _, f := range data.Fibers {
+			fiberNameMap[f.Uuid] = f.Name
+		}
+
+		fiberGroupMap := make(map[string]*models.FiberGroupResponse)
+		for _, it := range itemMap[val.Uuid] {
+			ss := stockMap[it.StockSortId]
+
+			allocations := fiberAllocMap[it.StockSortId]
+			if len(allocations) == 0 {
+				continue
+			}
+
+			for _, fa := range allocations {
+				fiberID := fa.FiberId
+				fiberName := fiberNameMap[fiberID]
+
+				if _, exists := fiberGroupMap[fiberID]; !exists {
+					fiberGroupMap[fiberID] = &models.FiberGroupResponse{
+						FiberId:   fiberID,
+						FiberName: fiberName,
+						Items:     []models.ItemSaleList{},
+					}
+				}
+
+				fiberGroupMap[fiberID].Items = append(
+					fiberGroupMap[fiberID].Items,
+					models.ItemSaleList{
+						Uuid:             it.Uuid,
+						StockCode:        it.StockCode,
+						StockSortId:      ss.Uuid,
+						StockSortName:    ss.ItemName,
+						PricePerKilogram: it.PricePerKilogram,
+						Weight:           fa.Weight,
+						TotalAmount:      it.TotalAmount,
+					},
+				)
+			}
+		}
+
+		fiberGroups := make([]models.FiberGroupResponse, 0, len(fiberGroupMap))
+		for _, fg := range fiberGroupMap {
+			fiberGroups = append(fiberGroups, *fg)
+		}
+
 		response := models.SaleResponse{
-			ID:              val.ID,
-			Uuid:            val.Uuid,
-			SaleCode:        fmt.Sprintf("SELL%d", val.ID),
-			Customer:        customer,
-			CreateAt:        val.CreatedAt,
-			PaymentLateDay:  int(time.Since(val.CreatedAt).Hours() / 24),
-			ExportSale:      val.ExportSale,
-			TotalAmount:     val.TotalAmount,
-			PaidAmount:      val.PaidAmount,
-			RemainingAmount: val.TotalAmount - val.PaidAmount,
-			PaymentStatus:   val.PaymentStatus,
-			SalesDate:       val.PurchaseDate.UTC(),
-			FiberUsed:       fiberList,
-			LastPaymentDate: lastPay,
-			SoldItem:        itemList,
-			AddOn:           addList,
+			ID:                 val.ID,
+			Uuid:               val.Uuid,
+			SaleCode:           fmt.Sprintf("SELL%d", val.ID),
+			Customer:           customer,
+			CreateAt:           val.CreatedAt,
+			PaymentLateDay:     int(time.Since(val.CreatedAt).Hours() / 24),
+			ExportSale:         val.ExportSale,
+			TotalAmount:        val.TotalAmount,
+			PaidAmount:         val.PaidAmount,
+			RemainingAmount:    val.TotalAmount - val.PaidAmount,
+			PaymentStatus:      val.PaymentStatus,
+			SalesDate:          val.PurchaseDate.UTC(),
+			FiberUsed:          fiberList,
+			LastPaymentDate:    lastPay,
+			SoldItem:           itemList,
+			AddOn:              addList,
+			FiberGroupResponse: fiberGroups,
 		}
 
 		responses = append(responses, response)

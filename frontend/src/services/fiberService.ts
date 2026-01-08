@@ -13,7 +13,7 @@ export const fiberService = {
     ): Promise<ApiResponse<FiberPaginationResponse>> => {
         const queryParams = new URLSearchParams();
 
-        queryParams.append("page", String(filters.page_no || 1));
+        queryParams.append("page_no", String(filters.page_no || 1));
         queryParams.append("size", String(filters.size || 10));
 
         if (filters.status) {

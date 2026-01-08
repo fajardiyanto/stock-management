@@ -19,24 +19,6 @@ export interface SoldAddon {
     addon_price: number;
 }
 
-export interface SaleEntry {
-    id: number;
-    uuid: string;
-    sale_code: string;
-    customer: Customer;
-    created_at: string;
-    payment_late_day: number;
-    export_sale: boolean;
-    total_amount: number;
-    paid_amount: number;
-    payment_status: PaymentStatus;
-    sales_date: string;
-    sold_items: SoldItem[];
-    add_ons: SoldAddon[];
-    fiber_used: FiberList[];
-    last_payment_date: string;
-}
-
 export interface SaleFilter {
     page?: number;
     size?: number;
@@ -96,6 +78,7 @@ export interface FiberAllocation {
     fiber_id: string;
     fiber_name: string;
     weight: number;
+    stock_sort_id: string;
 }
 
 export interface SelectedAddOn extends CreateAddOnRequest {
@@ -139,4 +122,11 @@ export interface SaleEntry {
     add_ons: SoldAddon[];
     fiber_used: FiberList[];
     last_payment_date: string;
+    fiber_groups: FiberGroup[];
+}
+
+export interface FiberGroup {
+    fiber_id: string;
+    fiber_name: string;
+    items: SoldItem[];
 }
