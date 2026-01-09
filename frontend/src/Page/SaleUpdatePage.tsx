@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import SaleInfoSection from "../components/SalesComponents/SaleInfoSection";
 import ItemSelectionSection from "../components/SalesComponents/ItemSelectionSection";
-import FiberAllocationSection from "../components/SalesComponents/FiberAllocationSection";
+import FiberAllocationSectionUpdate from "../components/SalesComponents/FiberAllocationSectionUpdate";
 import AddOnSection from "../components/SalesComponents/AddOnSection";
 import SaleSummaryCard from "../components/SalesComponents/SaleSummaryCard";
 import {
@@ -11,7 +11,9 @@ import {
     FiberAllocation,
     SelectedAddOn,
     BuyerOption,
-    SaleEntry, // Use SaleEntry for fetched data
+    SaleEntry,
+    SaleEntryById,
+    FiberItemAllocationResponse, // Use SaleEntry for fetched data
 } from "../types/sales";
 import { FiberList } from "../types/fiber";
 import { getDefaultDate } from "../utils/DefaultDate";
@@ -24,11 +26,12 @@ import { StockSortResponse } from "../types/stock";
 import { useNavigate, useParams } from "react-router-dom";
 
 const mapApiToFormState = (
-    saleEntry: SaleEntry
+    saleEntry: SaleEntryById
 ): {
     formData: SubmitSaleRequest;
     selectedItems: SelectedSaleItem[];
     selectedAddOns: SelectedAddOn[];
+    fiberItemAllocations: FiberItemAllocationResponse[];
 } => {
     const selectedItems: SelectedSaleItem[] = saleEntry.sold_items.map(
         (item, index) => ({
@@ -62,6 +65,20 @@ const mapApiToFormState = (
         })
     );
 
+    const fiberItemAllocations: FiberItemAllocationResponse[] =
+        saleEntry.fiber_groups.map((fiber) => ({
+            uuid: fiber.uuid,
+            id: fiber.id,
+            stock_code: fiber.stock_code,
+            fiber_id: fiber.fiber_id,
+            fiber_name: fiber.fiber_name,
+            weight: fiber.weight,
+            stock_sort_id: fiber.stock_sort_id,
+            stock_sort_name: fiber.stock_sort_name,
+            price_per_kilogram: fiber.price_per_kilogram,
+            total_amount: fiber.total_amount,
+        }));
+
     const formData: SubmitSaleRequest = {
         customer_id: saleEntry.customer.uuid,
         sales_date: saleEntry.sales_date.slice(0, 16),
@@ -73,12 +90,14 @@ const mapApiToFormState = (
         fiber_allocations: fiberAllocations,
     };
 
-    return { formData, selectedItems, selectedAddOns };
+    return { formData, selectedItems, selectedAddOns, fiberItemAllocations };
 };
 
 const SaleUpdatePage: React.FC = () => {
     const { saleId } = useParams<{ saleId: string }>();
-    const [originalSale, setOriginalSale] = useState<SaleEntry | null>(null);
+    const [originalSale, setOriginalSale] = useState<SaleEntryById | null>(
+        null
+    );
 
     const [formData, setFormData] = useState<SubmitSaleRequest>({
         customer_id: "",
@@ -98,6 +117,8 @@ const SaleUpdatePage: React.FC = () => {
     const [buyerList, setBuyerList] = useState<BuyerOption[]>([]);
     const [stockSorts, setStockSorts] = useState<StockSortResponse[]>([]);
     const [fibers, setFibers] = useState<FiberList[]>([]);
+    const [fiberItemAllocationsGroups, setFiberItemAllocationsGroups] =
+        useState<FiberItemAllocationResponse[]>([]);
 
     const { showToast } = useToast();
     const navigate = useNavigate();
@@ -189,11 +210,13 @@ const SaleUpdatePage: React.FC = () => {
                     formData: newFormData,
                     selectedItems: newSelectedItems,
                     selectedAddOns: newSelectedAddOns,
+                    fiberItemAllocations: newFiberItemAllocations,
                 } = mapApiToFormState(saleEntry);
 
                 setFormData(newFormData);
                 setSelectedItems(newSelectedItems);
                 setSelectedAddOns(newSelectedAddOns);
+                setFiberItemAllocationsGroups(newFiberItemAllocations);
             } else {
                 setError(response.message || "Failed to fetch sale data");
                 showToast(
@@ -390,13 +413,14 @@ const SaleUpdatePage: React.FC = () => {
                             onRemoveItem={handleItemRemove}
                         />
 
-                        <FiberAllocationSection
+                        <FiberAllocationSectionUpdate
                             selectedItems={selectedItems}
                             fiberAllocations={formData.fiber_allocations}
                             fiberList={fibers}
                             exportSale={formData.export_sale}
                             onAllocate={handleFiberAllocation}
                             onRemoveAllocation={handleRemoveAllocation}
+                            fiberItemAllocations={fiberItemAllocationsGroups}
                         />
 
                         <AddOnSection

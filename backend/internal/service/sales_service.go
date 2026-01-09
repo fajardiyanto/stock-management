@@ -544,7 +544,7 @@ func (s *SalesService) DeleteSale(ctx context.Context, saleId string) error {
 	return nil
 }
 
-func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.SaleResponse, error) {
+func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.SaleResponseById, error) {
 	db := config.GetDBConn().WithContext(ctx)
 
 	var result models.RawSalesData
@@ -577,18 +577,27 @@ func (s *SalesService) GetSaleById(ctx context.Context, saleId string) (*models.
 		return nil, err
 	}
 
+	itemMap := map[string][]models.ItemSales{
+		saleId: itemSales,
+	}
+
+	stockMap := make(map[string]models.StockSort, len(stockSorts))
+	for _, ss := range stockSorts {
+		stockMap[ss.Uuid] = ss
+	}
+
 	var addOns []models.ItemAddOnn
 	if err = db.Where("sale_id = ? AND deleted = false", saleId).
 		Find(&addOns).Error; err != nil {
 		return nil, apperror.NewNotFound(fmt.Sprintf("add-onn not found: %v", err))
 	}
 
-	fiberUsedList, err := s.fetchFiberList(db, result.FiberList, result.ExportSale)
+	fiberUsedList, fiberGroupResponse, err := s.fetchFiberList(db, result.FiberList, result.Uuid, result.ExportSale, itemMap, stockMap)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.buildSaleResponse(result, itemSales, stockSorts, addOns, fiberUsedList), nil
+	return s.buildSaleResponse(result, itemSales, stockSorts, addOns, fiberUsedList, fiberGroupResponse), nil
 }
 
 func (s *SalesService) fetchItemSalesWithStockSorts(db *gorm.DB, saleId string) ([]models.ItemSales, map[string]models.StockSort, error) {
@@ -625,35 +634,111 @@ func (s *SalesService) fetchItemSalesWithStockSorts(db *gorm.DB, saleId string) 
 	return itemSales, stockSortMap, nil
 }
 
-func (s *SalesService) fetchFiberList(db *gorm.DB, fiberList string, isExportSale bool) ([]models.FiberUsedList, error) {
-	if isExportSale || fiberList == "" {
-		return []models.FiberUsedList{}, nil
+func (s *SalesService) fetchFiberList(
+	db *gorm.DB,
+	fiberList string,
+	saleID string,
+	isExportSale bool,
+	itemMap map[string][]models.ItemSales,
+	stockMap map[string]models.StockSort,
+) ([]models.FiberUsedList, []models.FiberItemAllocationResponse, error) {
+
+	if isExportSale || strings.TrimSpace(fiberList) == "" {
+		return []models.FiberUsedList{}, []models.FiberItemAllocationResponse{}, nil
 	}
 
-	fiberIDs := strings.Split(fiberList, ",")
-	cleanIDs := make([]string, 0, len(fiberIDs))
-	for _, id := range fiberIDs {
-		if trimmed := strings.TrimSpace(id); trimmed != "" {
-			cleanIDs = append(cleanIDs, trimmed)
+	// ---- Clean fiber IDs
+	rawIDs := strings.Split(fiberList, ",")
+	fiberIDs := make([]string, 0, len(rawIDs))
+	for _, id := range rawIDs {
+		if v := strings.TrimSpace(id); v != "" {
+			fiberIDs = append(fiberIDs, v)
 		}
 	}
 
-	if len(cleanIDs) == 0 {
-		return []models.FiberUsedList{}, nil
+	if len(fiberIDs) == 0 {
+		return []models.FiberUsedList{}, []models.FiberItemAllocationResponse{}, nil
 	}
 
+	// ---- Load fibers
 	var fibers []models.Fiber
-	db.Where("uuid IN ?", cleanIDs).Find(&fibers)
+	if err := db.
+		Where("uuid IN ? AND sale_id = ? AND deleted = FALSE", fiberIDs, saleID).
+		Find(&fibers).Error; err != nil {
+		return nil, nil, err
+	}
 
-	result := make([]models.FiberUsedList, 0, len(fibers))
-	for _, fiber := range fibers {
-		result = append(result, models.FiberUsedList{
-			FiberId:   fiber.Uuid,
-			FiberName: fiber.Name,
+	if len(fibers) == 0 {
+		return []models.FiberUsedList{}, []models.FiberItemAllocationResponse{}, nil
+	}
+
+	// ---- FiberUsedList
+	fiberUsed := make([]models.FiberUsedList, 0, len(fibers))
+	fiberIDSet := make([]string, 0, len(fibers))
+
+	for _, f := range fibers {
+		fiberIDSet = append(fiberIDSet, f.Uuid)
+		fiberUsed = append(fiberUsed, models.FiberUsedList{
+			FiberId:     f.Uuid,
+			FiberName:   f.Name,
+			StockSortId: f.StockSortId,
+			SaleId:      f.SaleId,
 		})
 	}
 
-	return result, nil
+	// ---- Load allocations
+	var allocations []models.FiberAllocation
+	if err := db.
+		Where("fiber_id IN ? AND deleted = FALSE", fiberIDSet).
+		Find(&allocations).Error; err != nil {
+		return fiberUsed, nil, err
+	}
+
+	allocMap := make(map[string][]models.FiberAllocation)
+	for _, a := range allocations {
+		allocMap[a.FiberId] = append(allocMap[a.FiberId], a)
+	}
+
+	flatAllocations := make([]models.FiberItemAllocationResponse, 0)
+
+	items, ok := itemMap[saleID]
+	if !ok || len(items) == 0 {
+		return fiberUsed, flatAllocations, nil
+	}
+
+	for _, fiber := range fibers {
+		allocs, okAlloc := allocMap[fiber.Uuid]
+		if !okAlloc || len(allocs) == 0 {
+			continue
+		}
+
+		for _, fa := range allocs {
+			for _, it := range items {
+				if it.StockSortId != fa.StockSortId {
+					continue
+				}
+
+				ss, okSS := stockMap[it.StockSortId]
+				if !okSS {
+					continue
+				}
+
+				flatAllocations = append(flatAllocations, models.FiberItemAllocationResponse{
+					Uuid:             it.Uuid,
+					StockCode:        it.StockCode,
+					StockSortId:      ss.Uuid,
+					StockSortName:    ss.ItemName,
+					PricePerKilogram: it.PricePerKilogram,
+					Weight:           fa.Weight,
+					TotalAmount:      it.TotalAmount,
+					FiberId:          fiber.Uuid,
+					FiberName:        fiber.Name,
+				})
+			}
+		}
+	}
+
+	return fiberUsed, flatAllocations, nil
 }
 
 func (s *SalesService) buildSaleResponse(
@@ -662,7 +747,8 @@ func (s *SalesService) buildSaleResponse(
 	stockSortMap map[string]models.StockSort,
 	addOns []models.ItemAddOnn,
 	fiberUsedList []models.FiberUsedList,
-) *models.SaleResponse {
+	fiberGroups []models.FiberItemAllocationResponse,
+) *models.SaleResponseById {
 
 	customer := models.GetUserDetail{
 		Uuid:            result.CustomerUuid,
@@ -680,6 +766,7 @@ func (s *SalesService) buildSaleResponse(
 	itemSalesList := make([]models.ItemSaleList, 0, len(itemSales))
 	for _, item := range itemSales {
 		stockSort := stockSortMap[item.StockSortId]
+
 		itemSalesList = append(itemSalesList, models.ItemSaleList{
 			Uuid:             item.Uuid,
 			StockCode:        item.StockCode,
@@ -700,23 +787,24 @@ func (s *SalesService) buildSaleResponse(
 		})
 	}
 
-	return &models.SaleResponse{
-		ID:              result.ID,
-		Uuid:            result.Uuid,
-		SaleCode:        fmt.Sprintf("SELL%d", result.ID),
-		Customer:        customer,
-		CreateAt:        result.CreatedAt,
-		PaymentLateDay:  int(time.Since(result.CreatedAt).Hours() / 24),
-		ExportSale:      result.ExportSale,
-		TotalAmount:     result.TotalAmount,
-		PaidAmount:      result.PaidAmount,
-		RemainingAmount: result.TotalAmount - result.PaidAmount,
-		PaymentStatus:   result.PaymentStatus,
-		SalesDate:       result.PurchaseDate,
-		LastPaymentDate: lastPay,
-		FiberUsed:       fiberUsedList,
-		SoldItem:        itemSalesList,
-		AddOn:           itemAddOnList,
+	return &models.SaleResponseById{
+		ID:                 result.ID,
+		Uuid:               result.Uuid,
+		SaleCode:           fmt.Sprintf("SELL%d", result.ID),
+		Customer:           customer,
+		CreateAt:           result.CreatedAt,
+		PaymentLateDay:     int(time.Since(result.CreatedAt).Hours() / 24),
+		ExportSale:         result.ExportSale,
+		TotalAmount:        result.TotalAmount,
+		PaidAmount:         result.PaidAmount,
+		RemainingAmount:    result.TotalAmount - result.PaidAmount,
+		PaymentStatus:      result.PaymentStatus,
+		SalesDate:          result.PurchaseDate,
+		LastPaymentDate:    lastPay,
+		FiberUsed:          fiberUsedList,
+		SoldItem:           itemSalesList,
+		AddOn:              itemAddOnList,
+		FiberGroupResponse: fiberGroups,
 	}
 }
 

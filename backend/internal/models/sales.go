@@ -149,3 +149,35 @@ type RawSalesData struct {
 	CustomerShipping string     `gorm:"column:customer_shipping_address"`
 	LastPaymentDate  *time.Time `gorm:"column:last_payment_date"`
 }
+
+type SaleResponseById struct {
+	ID                 int                           `json:"id"`
+	Uuid               string                        `json:"uuid"`
+	SaleCode           string                        `json:"sale_code"`
+	Customer           GetUserDetail                 `json:"customer"`
+	CreateAt           time.Time                     `json:"create_at"`
+	PaymentLateDay     int                           `json:"payment_late_day"`
+	ExportSale         bool                          `json:"export_sale"`
+	TotalAmount        int                           `json:"total_amount"`
+	PaidAmount         int                           `json:"paid_amount"`
+	RemainingAmount    int                           `json:"remaining_amount"`
+	PaymentStatus      string                        `json:"payment_status"`
+	SalesDate          time.Time                     `json:"sales_date"`
+	FiberUsed          []FiberUsedList               `json:"fiber_used"`
+	SoldItem           []ItemSaleList                `json:"sold_items"`
+	AddOn              []ItemAddOnnList              `json:"add_ons"`
+	FiberGroupResponse []FiberItemAllocationResponse `json:"fiber_groups"`
+	LastPaymentDate    string                        `json:"last_payment_date"`
+}
+
+type FiberItemAllocationResponse struct {
+	Uuid             string `json:"id"`
+	StockCode        string `json:"stock_code"`
+	StockSortId      string `json:"stock_sort_id"`
+	StockSortName    string `json:"stock_sort_name"`
+	PricePerKilogram int    `json:"price_per_kilogram"`
+	Weight           int    `json:"weight"`
+	TotalAmount      int    `json:"total_amount"`
+	FiberId          string `json:"fiber_id"`
+	FiberName        string `json:"fiber_name"`
+}

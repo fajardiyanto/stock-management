@@ -26,23 +26,6 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
     handleEditSale,
     handleOpenPaymentDeposit,
 }) => {
-    const rows =
-        sale.fiber_groups && sale.fiber_groups.length > 0
-            ? sale.fiber_groups.flatMap((fiberGroup) =>
-                  fiberGroup.items.map((item, index) => ({
-                      ...item,
-                      __fiberName: fiberGroup.fiber_name,
-                      __fiberRowSpan: index === 0 ? fiberGroup.items.length : 0,
-                  }))
-              )
-            : sale.sold_items.map((item, index) => ({
-                  ...item,
-                  __fiberName: "",
-                  __fiberRowSpan: index === 0 ? sale.sold_items.length : 0,
-              }));
-
-    const totalRows = rows.length;
-
     const handlePrintNota = () => {
         window.open(`/dashboard/print-invoice?saleId=${sale.uuid}`, "_blank");
     };
@@ -62,21 +45,92 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
         );
     };
 
+    // Check if we should use fiber_groups or sold_items
+    const hasFiberGroups = sale.fiber_groups && sale.fiber_groups.length > 0;
+
+    // Build rows data structure
+    interface RowData {
+        item: any;
+        fiberName: string;
+        isFirstInFiberGroup: boolean;
+        fiberGroupSize: number;
+        addOnIndex: number | null; // Track which add-on to show in this row
+    }
+
+    const buildRows = (): RowData[] => {
+        let rows: RowData[] = [];
+        let itemRowCount = 0;
+
+        if (hasFiberGroups) {
+            sale.fiber_groups.forEach((fiberGroup) => {
+                fiberGroup.items.forEach((item, itemIndex) => {
+                    rows.push({
+                        item: item,
+                        fiberName: fiberGroup.fiber_name,
+                        isFirstInFiberGroup: itemIndex === 0,
+                        fiberGroupSize: fiberGroup.items.length,
+                        addOnIndex: itemRowCount,
+                    });
+                    itemRowCount++;
+                });
+            });
+        } else {
+            // Use sold_items with matching fibers
+            sale.sold_items.forEach((item, idx) => {
+                const matchingFibers = sale.fiber_used?.filter(
+                    (fiber) => fiber.stock_sort_id === item.stock_sort_id
+                );
+                rows.push({
+                    item: item,
+                    fiberName:
+                        matchingFibers?.map((f) => f.name).join(", ") || "",
+                    isFirstInFiberGroup: true,
+                    fiberGroupSize: 1,
+                    addOnIndex: idx,
+                });
+                itemRowCount++;
+            });
+        }
+
+        // If we have more add-ons than item rows, create additional rows for remaining add-ons
+        const addOnCount = sale.add_ons?.length || 0;
+        if (addOnCount > itemRowCount && rows.length > 0) {
+            const lastRow = rows[rows.length - 1];
+            for (let i = itemRowCount; i < addOnCount; i++) {
+                rows.push({
+                    item: null, // No item for this row, just add-on
+                    fiberName: "",
+                    isFirstInFiberGroup: false,
+                    fiberGroupSize: 0,
+                    addOnIndex: i,
+                });
+            }
+        }
+
+        return rows;
+    };
+
+    const rows = buildRows();
+    const totalRows = rows.length;
+
     return (
         <>
-            {rows.map((item, itemIndex) => {
-                const isFirstRow = itemIndex === 0;
+            {rows.map((rowData, rowIndex) => {
+                const isFirstRow = rowIndex === 0;
+                const item = rowData.item;
                 const addOn =
-                    isFirstRow && sale.add_ons.length > 0
-                        ? sale.add_ons[0]
+                    rowData.addOnIndex !== null &&
+                    sale.add_ons &&
+                    rowData.addOnIndex < sale.add_ons.length
+                        ? sale.add_ons[rowData.addOnIndex]
                         : null;
 
                 return (
                     <tr
-                        key={`${sale.uuid}-${item.id}-${itemIndex}`}
-                        className={`border border-gray-300 hover:bg-gray-50 transition border-t`}
+                        key={`${sale.uuid}-${item?.id || "addon"}-${rowIndex}`}
+                        className="border border-gray-300 hover:bg-gray-50 transition"
                     >
-                        {/* SALE INFO */}
+                        {/* SALE INFO - Only on first row */}
                         {isFirstRow && (
                             <>
                                 <td
@@ -112,106 +166,92 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                             </>
                         )}
 
-                        {/* ITEM */}
-                        <td className="px-6 py-4 border border-gray-300 font-bold text-sm text-gray-600">
-                            {item.stock_code}
-                        </td>
-                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
-                            {item.stock_sort_name}
-                        </td>
-                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
-                            {formatRupiah(item.price_per_kilogram)}
-                        </td>
-                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
-                            {item.weight} kg
-                        </td>
-                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
-                            {formatRupiah(item.total_amount)}
-                        </td>
-
-                        {/* ✅ FIBER COLUMN (CORRECT) */}
-                        {item.__fiberRowSpan > 0 && (
-                            <td
-                                rowSpan={item.__fiberRowSpan}
-                                className="px-6 py-4 border border-gray-300 align-middle"
-                            >
-                                <div
-                                    className={`${
-                                        item.__fiberName ? "bg-blue-100" : ""
-                                    } rounded px-2 py-1 text-center`}
-                                >
-                                    {item.__fiberName}
-                                </div>
-                            </td>
-                        )}
-
-                        {/* ADD ONS */}
-                        {isFirstRow && (
+                        {/* ITEM DETAILS - Only render if item exists */}
+                        {item ? (
                             <>
-                                <td
-                                    rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle"
-                                >
-                                    {sale.add_ons && sale.add_ons.length > 0
-                                        ? sale.add_ons.map((addOn, index) => (
-                                              <div
-                                                  key={addOn.id}
-                                                  className={`py-1 ${
-                                                      index <
-                                                      sale.add_ons.length - 1
-                                                          ? "border-b border-gray-300"
-                                                          : ""
-                                                  }`}
-                                              >
-                                                  {addOn.addon_name}
-                                              </div>
-                                          ))
-                                        : "-"}
+                                <td className="px-6 py-4 border border-gray-300 font-bold text-sm text-gray-600">
+                                    {item.stock_code}
                                 </td>
-
-                                <td
-                                    rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle"
-                                >
-                                    {sale.add_ons && sale.add_ons.length > 0
-                                        ? sale.add_ons.map((addOn, index) => (
-                                              <div
-                                                  key={addOn.id}
-                                                  className={`py-1 ${
-                                                      index <
-                                                      sale.add_ons.length - 1
-                                                          ? "border-b border-gray-300"
-                                                          : ""
-                                                  }`}
-                                              >
-                                                  {formatRupiah(
-                                                      addOn.addon_price
-                                                  )}
-                                              </div>
-                                          ))
-                                        : "-"}
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
+                                    {item.stock_sort_name}
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
+                                    {formatRupiah(item.price_per_kilogram)}
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
+                                    {item.weight} kg
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
+                                    {formatRupiah(item.total_amount)}
+                                </td>
+                            </>
+                        ) : (
+                            <>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                    -
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                    -
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                    -
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                    -
+                                </td>
+                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                    -
                                 </td>
                             </>
                         )}
 
-                        {/* ADD ONS + TOTAL */}
+                        {/* FIBER COLUMN - Show fiber name with rowSpan for grouped items */}
+                        {item && rowData.isFirstInFiberGroup && (
+                            <td
+                                rowSpan={rowData.fiberGroupSize}
+                                className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle"
+                            >
+                                {rowData.fiberName ? (
+                                    <div className="bg-blue-100 rounded px-2 py-1 text-center">
+                                        {rowData.fiberName}
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-400">-</span>
+                                )}
+                            </td>
+                        )}
+                        {!item && (
+                            <td className="px-6 py-4 border border-gray-300 text-sm text-gray-400">
+                                -
+                            </td>
+                        )}
+
+                        {/* ADD ONS - Each add-on in its own row */}
+                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle">
+                            {addOn ? addOn.addon_name : "-"}
+                        </td>
+                        <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle">
+                            {addOn ? formatRupiah(addOn.addon_price) : "-"}
+                        </td>
+
+                        {/* PAYMENT INFO - Only on first row */}
                         {isFirstRow && (
                             <>
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900"
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900 align-middle"
                                 >
                                     {formatRupiah(sale.total_amount)}
                                 </td>
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900"
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900 align-middle"
                                 >
                                     {formatRupiah(sale.paid_amount)}
                                 </td>
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900"
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-900 align-middle"
                                 >
                                     {formatRupiah(sale.remaining_amount)}
                                 </td>
@@ -243,7 +283,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 </td>
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-500"
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-500 align-middle"
                                 >
                                     {formatDate(sale.last_payment_date) || "-"}
                                 </td>
@@ -251,12 +291,13 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 {/* ACTIONS */}
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-right"
+                                    className="px-6 py-4 border border-gray-300 text-right text-sm font-medium align-middle"
                                 >
                                     <div className="flex justify-end gap-2">
                                         <button
                                             onClick={() => handleEditSale(sale)}
-                                            className="p-2 text-blue-500"
+                                            title="Edit Penjualan"
+                                            className="p-2 text-blue-500 hover:text-blue-800"
                                         >
                                             <PencilIcon size={18} />
                                         </button>
@@ -270,7 +311,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                             sale
                                                         )
                                                     }
-                                                    className="p-2 text-yellow-500"
+                                                    title="Tambah Pembayaran Deposit"
+                                                    className="p-2 text-yellow-400 hover:text-yellow-700"
                                                 >
                                                     <DollarSign size={18} />
                                                 </button>
@@ -278,7 +320,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                     onClick={() =>
                                                         handleOpenPayment(sale)
                                                     }
-                                                    className="p-2 text-green-500"
+                                                    title="Jadwalkan Pembayaran"
+                                                    className="p-2 text-green-500 hover:text-green-800"
                                                 >
                                                     <Calendar size={18} />
                                                 </button>
@@ -287,7 +330,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
 
                                         <button
                                             onClick={handlePrintNota}
-                                            className="p-2 text-purple-500"
+                                            title="Cetak Nota"
+                                            className="p-2 text-purple-500 hover:text-purple-800"
                                         >
                                             <Printer size={18} />
                                         </button>
@@ -298,7 +342,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                     sale.sale_code
                                                 )
                                             }
-                                            className="p-2 text-red-500"
+                                            title="Hapus Penjualan"
+                                            className="p-2 text-red-500 hover:text-red-800"
                                         >
                                             <Trash2 size={18} />
                                         </button>

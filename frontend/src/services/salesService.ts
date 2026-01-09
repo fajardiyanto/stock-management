@@ -4,6 +4,7 @@ import {
     SalePaginationResponse,
     SaleFilter,
     SaleEntry,
+    SaleEntryById,
 } from "../types/sales";
 import { apiCall } from "./";
 
@@ -70,8 +71,10 @@ export const salesService = {
         return response;
     },
 
-    getSaleById: async (saleId: string): Promise<ApiResponse<SaleEntry>> => {
-        const response = await apiCall<ApiResponse<SaleEntry>>(
+    getSaleById: async (
+        saleId: string
+    ): Promise<ApiResponse<SaleEntryById>> => {
+        const response = await apiCall<ApiResponse<SaleEntryById>>(
             `/sales/${saleId}`
         );
         return response;

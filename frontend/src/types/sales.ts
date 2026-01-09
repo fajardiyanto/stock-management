@@ -130,3 +130,36 @@ export interface FiberGroup {
     fiber_name: string;
     items: SoldItem[];
 }
+
+export interface SaleEntryById {
+    id: number;
+    uuid: string;
+    sale_code: string;
+    customer: Customer;
+    created_at: string;
+    payment_late_day: number;
+    export_sale: boolean;
+    total_amount: number;
+    remaining_amount: number;
+    paid_amount: number;
+    payment_status: PaymentStatus;
+    sales_date: string;
+    sold_items: SoldItem[];
+    add_ons: SoldAddon[];
+    fiber_used: FiberList[];
+    last_payment_date: string;
+    fiber_groups: FiberItemAllocationResponse[];
+}
+
+export interface FiberItemAllocationResponse {
+    uuid: string;
+    id: string;
+    stock_code: string;
+    stock_sort_id: string;
+    stock_sort_name: string;
+    price_per_kilogram: number;
+    weight: number;
+    total_amount: number;
+    fiber_id: string;
+    fiber_name: string;
+}

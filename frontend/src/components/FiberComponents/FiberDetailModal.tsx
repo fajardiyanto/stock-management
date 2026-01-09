@@ -1,13 +1,13 @@
 import React from "react";
 import { X } from "lucide-react";
 import { FiberResponse } from "../../types/fiber";
-import { SaleEntry } from "../../types/sales";
+import { SaleEntry, SaleEntryById } from "../../types/sales";
 import { formatDate } from "../../utils/FormatDate";
 
 interface FiberDetailModalProps {
     onClose: () => void;
     fiber: FiberResponse;
-    sale: SaleEntry | null;
+    sale: SaleEntryById | null;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({

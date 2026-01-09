@@ -13,7 +13,7 @@ import { useEditFiber } from "../hooks/fiber/useEditFiber";
 import { useToast } from "../contexts/ToastContext";
 import FiberDetailModal from "../components/FiberComponents/FiberDetailModal";
 import { salesService } from "../services/salesService";
-import { SaleEntry } from "../types/sales";
+import { SaleEntry, SaleEntryById } from "../types/sales";
 
 const FiberManagementPage: React.FC = () => {
     const [searchName, setSearchName] = useState("");
@@ -26,9 +26,8 @@ const FiberManagementPage: React.FC = () => {
     const [selectedFiber, setSelectedFiber] = useState<FiberResponse>(
         {} as FiberResponse
     );
-    const [detailSaleFiber, setDetailSaleFiber] = useState<SaleEntry | null>(
-        null
-    );
+    const [detailSaleFiber, setDetailSaleFiber] =
+        useState<SaleEntryById | null>(null);
 
     const initialAddFiberFormData: FiberRequest = {
         name: "",
