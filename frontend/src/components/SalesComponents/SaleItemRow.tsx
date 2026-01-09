@@ -146,12 +146,53 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                         )}
 
                         {/* ADD ONS */}
-                        <td className="px-6 py-4 border border-gray-300">
-                            {addOn?.addon_name || "-"}
-                        </td>
-                        <td className="px-6 py-4 border border-gray-300">
-                            {addOn ? formatRupiah(addOn.addon_price) : "-"}
-                        </td>
+                        {isFirstRow && (
+                            <>
+                                <td
+                                    rowSpan={totalRows}
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle"
+                                >
+                                    {sale.add_ons && sale.add_ons.length > 0
+                                        ? sale.add_ons.map((addOn, index) => (
+                                              <div
+                                                  key={addOn.id}
+                                                  className={`py-1 ${
+                                                      index <
+                                                      sale.add_ons.length - 1
+                                                          ? "border-b border-gray-300"
+                                                          : ""
+                                                  }`}
+                                              >
+                                                  {addOn.addon_name}
+                                              </div>
+                                          ))
+                                        : "-"}
+                                </td>
+
+                                <td
+                                    rowSpan={totalRows}
+                                    className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle"
+                                >
+                                    {sale.add_ons && sale.add_ons.length > 0
+                                        ? sale.add_ons.map((addOn, index) => (
+                                              <div
+                                                  key={addOn.id}
+                                                  className={`py-1 ${
+                                                      index <
+                                                      sale.add_ons.length - 1
+                                                          ? "border-b border-gray-300"
+                                                          : ""
+                                                  }`}
+                                              >
+                                                  {formatRupiah(
+                                                      addOn.addon_price
+                                                  )}
+                                              </div>
+                                          ))
+                                        : "-"}
+                                </td>
+                            </>
+                        )}
 
                         {/* ADD ONS + TOTAL */}
                         {isFirstRow && (
