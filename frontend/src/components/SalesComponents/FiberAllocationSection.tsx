@@ -279,7 +279,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                         {fiberAllocations.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={3}
+                                    colSpan={5}
                                     className="py-8 text-center text-gray-500"
                                 >
                                     Belum ada fiber dialokasikan.
@@ -304,13 +304,7 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                                         }
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {
-                                            selectedItems.find(
-                                                (i) =>
-                                                    i.tempId === alloc.item_id
-                                            )?.weight
-                                        }{" "}
-                                        Kg
+                                        {alloc.weight} Kg
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {formatRupiah(
