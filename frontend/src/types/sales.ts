@@ -79,6 +79,9 @@ export interface FiberAllocation {
     fiber_name: string;
     weight: number;
     stock_sort_id: string;
+    stock_code: string;
+    stock_sort_name: string;
+    price_per_kilogram: number;
 }
 
 export interface SelectedAddOn extends CreateAddOnRequest {

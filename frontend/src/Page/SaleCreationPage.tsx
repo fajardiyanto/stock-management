@@ -269,70 +269,67 @@ const SaleCreationPage: React.FC = () => {
                 </p>
             </header>
 
-            <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                                {error}
-                            </div>
-                        )}
-
-                        <SaleInfoSection
-                            formData={formData}
-                            onFormChange={handleFormChange}
-                            buyerList={buyerList}
-                        />
-
-                        <ItemSelectionSection
-                            selectedItems={selectedItems}
-                            itemSortirOptions={stockSorts}
-                            onAddItem={handleItemAdd}
-                            onRemoveItem={handleItemRemove}
-                        />
-
-                        <FiberAllocationSection
-                            selectedItems={selectedItems}
-                            fiberAllocations={formData.fiber_allocations}
-                            fiberList={fibers}
-                            exportSale={formData.export_sale}
-                            onAllocate={handleFiberAllocation}
-                            onRemoveAllocation={handleRemoveAllocation}
-                        />
-
-                        <AddOnSection
-                            selectedAddOns={selectedAddOns}
-                            onAddAddOn={handleAddOnAdd}
-                            onRemoveAddOn={handleAddOnRemove}
-                        />
-                    </div>
-
-                    <div className="lg:col-span-1 space-y-6">
-                        <SaleSummaryCard
-                            totalItem={totalItemPrice}
-                            totalAddon={totalAddonPrice}
-                            totalFiber={totalFiberPrice}
-                            total={grandTotal}
-                        />
-
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
-                                disabled={
-                                    isSubmitting ||
-                                    selectedItems.length === 0 ||
-                                    loading
-                                }
-                            >
-                                {isSubmitting
-                                    ? "Memproses..."
-                                    : "Simpan Penjualan"}
-                            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                            {error}
                         </div>
+                    )}
+
+                    <SaleInfoSection
+                        formData={formData}
+                        onFormChange={handleFormChange}
+                        buyerList={buyerList}
+                    />
+
+                    <ItemSelectionSection
+                        selectedItems={selectedItems}
+                        itemSortirOptions={stockSorts}
+                        onAddItem={handleItemAdd}
+                        onRemoveItem={handleItemRemove}
+                    />
+
+                    <FiberAllocationSection
+                        selectedItems={selectedItems}
+                        fiberAllocations={formData.fiber_allocations}
+                        fiberList={fibers}
+                        exportSale={formData.export_sale}
+                        onAllocate={handleFiberAllocation}
+                        onRemoveAllocation={handleRemoveAllocation}
+                    />
+
+                    <AddOnSection
+                        selectedAddOns={selectedAddOns}
+                        onAddAddOn={handleAddOnAdd}
+                        onRemoveAddOn={handleAddOnRemove}
+                    />
+                </div>
+
+                <div className="lg:col-span-1 space-y-6">
+                    <SaleSummaryCard
+                        totalItem={totalItemPrice}
+                        totalAddon={totalAddonPrice}
+                        totalFiber={totalFiberPrice}
+                        total={grandTotal}
+                    />
+
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            onClick={handleSubmit}
+                            className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
+                            disabled={
+                                isSubmitting ||
+                                selectedItems.length === 0 ||
+                                loading
+                            }
+                        >
+                            {isSubmitting ? "Memproses..." : "Simpan Penjualan"}
+                        </button>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     );
 };

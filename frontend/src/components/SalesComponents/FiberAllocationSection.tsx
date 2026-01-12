@@ -81,6 +81,9 @@ const FiberAllocationSection: React.FC<FiberAllocationSectionProps> = ({
                     fiber_name: fiber.name,
                     weight: weight,
                     stock_sort_id: item.stock_sort_id,
+                    stock_code: item.stock_code,
+                    stock_sort_name: item.item_name,
+                    price_per_kilogram: item.price_per_kilogram,
                 });
                 totalWeightAllocated += weight;
                 handleAllocationInputChange(item.tempId, "0");

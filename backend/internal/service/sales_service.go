@@ -290,9 +290,9 @@ func (s *SalesService) updateFibers(tx *gorm.DB, sale *models.Sale, request mode
 				return apperror.NewUnprocessableEntity("failed to free old fibers: ", err)
 			}
 
-			if err := tx.Model(&models.Fiber{}).
-				Where("uuid IN ?", oldFiberIDs).
-				Update("deleted", false).Error; err != nil {
+			if err := tx.Model(&models.FiberAllocation{}).
+				Where("fiber_id IN ?", oldFiberIDs).
+				Update("deleted", true).Error; err != nil {
 				return apperror.NewUnprocessableEntity("failed to free old fibers: ", err)
 			}
 		}

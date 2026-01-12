@@ -11,7 +11,6 @@ import {
     FiberAllocation,
     SelectedAddOn,
     BuyerOption,
-    SaleEntry,
     SaleEntryById,
     FiberItemAllocationResponse, // Use SaleEntry for fetched data
 } from "../types/sales";
@@ -55,13 +54,16 @@ const mapApiToFormState = (
         })
     );
 
-    const fiberAllocations: FiberAllocation[] = saleEntry.fiber_used.map(
+    const fiberAllocations: FiberAllocation[] = saleEntry.fiber_groups.map(
         (fiber) => ({
-            item_id: fiber.uuid,
-            fiber_id: fiber.uuid,
-            fiber_name: fiber.name,
-            weight: 0,
+            item_id: fiber.fiber_id,
+            fiber_id: fiber.fiber_id,
+            fiber_name: fiber.fiber_name,
+            weight: fiber.weight,
             stock_sort_id: fiber.stock_sort_id,
+            stock_code: fiber.stock_code,
+            stock_sort_name: fiber.stock_sort_name,
+            price_per_kilogram: fiber.price_per_kilogram,
         })
     );
 
@@ -143,7 +145,7 @@ const SaleUpdatePage: React.FC = () => {
 
             const stockSortsPromise = stockService.getAllStockSorts();
 
-            const fibersPromise = fiberService.getAllUsedFiber();
+            const fibersPromise = fiberService.getAllAvailableFiber();
 
             const [buyersResponse, stockSortsResponse, fibersResponse] =
                 await Promise.all([
@@ -214,8 +216,8 @@ const SaleUpdatePage: React.FC = () => {
                 } = mapApiToFormState(saleEntry);
 
                 setFormData(newFormData);
-                setSelectedItems(newSelectedItems);
                 setSelectedAddOns(newSelectedAddOns);
+                setSelectedItems(newSelectedItems);
                 setFiberItemAllocationsGroups(newFiberItemAllocations);
             } else {
                 setError(response.message || "Failed to fetch sale data");
@@ -297,6 +299,9 @@ const SaleUpdatePage: React.FC = () => {
                 (alloc) => alloc.fiber_id !== fiberUuid
             ),
         }));
+        setFiberItemAllocationsGroups((prev) =>
+            prev.filter((fa) => fa.fiber_id !== fiberUuid)
+        );
         setError("");
     };
 
@@ -391,72 +396,71 @@ const SaleUpdatePage: React.FC = () => {
                 </p>
             </header>
 
-            <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                                {error}
-                            </div>
-                        )}
-
-                        <SaleInfoSection
-                            formData={formData}
-                            onFormChange={handleFormChange}
-                            buyerList={buyerList}
-                        />
-
-                        <ItemSelectionSection
-                            selectedItems={selectedItems}
-                            itemSortirOptions={stockSorts}
-                            onAddItem={handleItemAdd}
-                            onRemoveItem={handleItemRemove}
-                        />
-
-                        <FiberAllocationSectionUpdate
-                            selectedItems={selectedItems}
-                            fiberAllocations={formData.fiber_allocations}
-                            fiberList={fibers}
-                            exportSale={formData.export_sale}
-                            onAllocate={handleFiberAllocation}
-                            onRemoveAllocation={handleRemoveAllocation}
-                            fiberItemAllocations={fiberItemAllocationsGroups}
-                        />
-
-                        <AddOnSection
-                            selectedAddOns={selectedAddOns}
-                            onAddAddOn={handleAddOnAdd}
-                            onRemoveAddOn={handleAddOnRemove}
-                        />
-                    </div>
-
-                    <div className="lg:col-span-1 space-y-6">
-                        <SaleSummaryCard
-                            totalItem={totalItemPrice}
-                            totalAddon={totalAddonPrice}
-                            totalFiber={totalFiberPrice}
-                            total={grandTotal}
-                        />
-
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
-                                disabled={
-                                    isSubmitting ||
-                                    !formData.customer_id ||
-                                    selectedItems.length === 0 ||
-                                    loading
-                                }
-                            >
-                                {isSubmitting
-                                    ? "Memproses..."
-                                    : "Perbarui Penjualan"}
-                            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                            {error}
                         </div>
+                    )}
+
+                    <SaleInfoSection
+                        formData={formData}
+                        onFormChange={handleFormChange}
+                        buyerList={buyerList}
+                    />
+
+                    <ItemSelectionSection
+                        selectedItems={selectedItems}
+                        itemSortirOptions={stockSorts}
+                        onAddItem={handleItemAdd}
+                        onRemoveItem={handleItemRemove}
+                    />
+
+                    <FiberAllocationSectionUpdate
+                        selectedItems={selectedItems}
+                        fiberAllocations={formData.fiber_allocations}
+                        fiberList={fibers}
+                        exportSale={formData.export_sale}
+                        onAllocate={handleFiberAllocation}
+                        onRemoveAllocation={handleRemoveAllocation}
+                        fiberItemAllocations={fiberItemAllocationsGroups}
+                    />
+
+                    <AddOnSection
+                        selectedAddOns={selectedAddOns}
+                        onAddAddOn={handleAddOnAdd}
+                        onRemoveAddOn={handleAddOnRemove}
+                    />
+                </div>
+
+                <div className="lg:col-span-1 space-y-6">
+                    <SaleSummaryCard
+                        totalItem={totalItemPrice}
+                        totalAddon={totalAddonPrice}
+                        totalFiber={totalFiberPrice}
+                        total={grandTotal}
+                    />
+
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            onClick={handleSubmit}
+                            className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
+                            disabled={
+                                isSubmitting ||
+                                !formData.customer_id ||
+                                selectedItems.length === 0 ||
+                                loading
+                            }
+                        >
+                            {isSubmitting
+                                ? "Memproses..."
+                                : "Perbarui Penjualan"}
+                        </button>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     );
 };
