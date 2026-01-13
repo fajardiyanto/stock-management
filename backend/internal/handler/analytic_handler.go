@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
 	"dashboard-app/pkg/baseHandler"
 	"fmt"
@@ -163,6 +164,82 @@ func (h *Analytic) GetCustomerPerformance(c *gin.Context) {
 	h.SendSuccess(c, http.StatusOK, "Customer performance retrieved successfully", data)
 }
 
+// GetSalesSupplierDetail godoc
+// @Summary Get customer performance
+// @Description Retrieve performance metrics for all customers
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.UserData}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/sales/supplier [get]
+func (h *Analytic) GetSalesSupplierDetail(c *gin.Context) {
+	var filter models.SalesSupplierDetailFilter
+
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
+	}
+
+	// Normalize pagination
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
+	}
+	if filter.Size < 1 {
+		filter.Size = 10
+	}
+	if filter.Size > 100 {
+		filter.Size = 100
+	}
+
+	// Fetch customer performance data
+	data, err := h.analyticRepository.GetSalesSupplierDetail(filter)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch customer performance")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, "Get sales supplier detail retrieved successfully", data)
+}
+
+// SalesSupplierDetailWithPurchaseData godoc
+// @Summary Get customer performance
+// @Description Retrieve performance metrics for all customers
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPResponseSuccess{data=[]models.UserData}
+// @Failure 500 {object} models.HTTPResponseError
+// @Router /analytics/sales/supplier/purchase [get]
+func (h *Analytic) SalesSupplierDetailWithPurchaseData(c *gin.Context) {
+	var filter models.SalesSupplierDetailFilter
+
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
+	}
+
+	// Normalize pagination
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
+	}
+	if filter.Size < 1 {
+		filter.Size = 10
+	}
+	if filter.Size > 100 {
+		filter.Size = 100
+	}
+
+	// Fetch customer performance data
+	data, err := h.analyticRepository.SalesSupplierDetailWithPurchaseData(filter)
+	if err != nil {
+		h.HandleError(c, err, "Failed to fetch customer performance")
+		return
+	}
+
+	h.SendSuccess(c, http.StatusOK, "Get sales supplier detail retrieved successfully", data)
+}
+
 // RegisterRoutes registers all analytics routes
 func (h *Analytic) RegisterRoutes(router *gin.RouterGroup) {
 	analytics := router.Group("/analytics")
@@ -178,5 +255,7 @@ func (h *Analytic) RegisterRoutes(router *gin.RouterGroup) {
 		// Performance metrics
 		analytics.GET("/supplier/performance", h.GetSupplierPerformance)
 		analytics.GET("/customer/performance", h.GetCustomerPerformance)
+		analytics.GET("/sales/supplier", h.GetSalesSupplierDetail)
+		analytics.GET("/sales/supplier/purchase", h.SalesSupplierDetailWithPurchaseData)
 	}
 }

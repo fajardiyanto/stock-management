@@ -448,3 +448,319 @@ func (s *AnalyticService) GetInventoryTurnover() (*models.InventoryTurnover, err
 		DaysOnHand:       result.DaysOnHand,
 	}, nil
 }
+
+func (s *AnalyticService) GetSalesSupplierDetail(
+	filter models.SalesSupplierDetailFilter,
+) (*models.SalesSupplierDetailPaginationResponse, error) {
+
+	db := config.GetDBConn()
+
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
+	}
+	if filter.Size <= 0 {
+		filter.Size = 10
+	}
+
+	offset := (filter.PageNo - 1) * filter.Size
+
+	var result []models.SalesSupplierDetailResponse
+	var total int64
+
+	query := `
+	WITH base_data AS (
+		SELECT
+			sup.name              AS supplier_name,
+			ss.sorted_item_name   AS item_name,
+			fa.weight             AS qty,
+			it.price_per_kilogram AS price,
+			cust.name             AS customer_name,
+			f.name                AS fiber_name
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN fibers f ON f.uuid = ANY(string_to_array(s.fiber_list, ','))
+				 JOIN fiber_allocations fa
+					  ON fa.fiber_id = f.uuid
+					 AND fa.deleted = false
+				 LEFT JOIN item_sales it
+						ON it.sale_id = s.uuid
+					   AND it.stock_sort_id = fa.stock_sort_id
+					   AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = fa.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND s.fiber_list IS NOT NULL
+		  AND s.fiber_list <> ''
+
+		UNION ALL
+
+		SELECT
+			sup.name              AS supplier_name,
+			ss.sorted_item_name   AS item_name,
+			it.weight             AS qty,
+			it.price_per_kilogram AS price,
+			cust.name             AS customer_name,
+			''                    AS fiber_name
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN item_sales it
+					  ON it.sale_id = s.uuid
+					 AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+	)
+
+	SELECT
+		supplier_name,
+		item_name,
+		qty,
+		price,
+		customer_name,
+		fiber_name
+	FROM base_data
+	ORDER BY supplier_name, item_name
+	LIMIT ? OFFSET ?;
+	`
+
+	if err := db.Raw(query, filter.Size, offset).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity(
+			"failed to fetch analytics stats", err,
+		)
+	}
+
+	countQuery := `
+	WITH base_data AS (
+		SELECT 1
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN fibers f
+					  ON f.uuid = ANY(string_to_array(s.fiber_list, ','))
+				 JOIN fiber_allocations fa
+					  ON fa.fiber_id = f.uuid
+						  AND fa.deleted = false
+				 LEFT JOIN item_sales it
+						   ON it.sale_id = s.uuid
+							   AND it.stock_sort_id = fa.stock_sort_id
+							   AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = fa.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND s.fiber_list IS NOT NULL
+		  AND s.fiber_list <> ''
+	
+		UNION ALL
+	
+		SELECT 1
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN item_sales it
+					  ON it.sale_id = s.uuid
+						  AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+	)
+	
+	SELECT COUNT(*) FROM base_data;
+	`
+
+	if err := db.Raw(countQuery).Scan(&total).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity(
+			"failed to count analytics stats", err,
+		)
+	}
+
+	return &models.SalesSupplierDetailPaginationResponse{
+		PageNo: filter.PageNo,
+		Size:   filter.Size,
+		Total:  total,
+		Data:   result,
+	}, nil
+}
+
+func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
+	filter models.SalesSupplierDetailFilter,
+) (*models.SalesSupplierDetailWithPurchaseDataPaginationResponse, error) {
+
+	db := config.GetDBConn()
+
+	if filter.PageNo < 1 {
+		filter.PageNo = 1
+	}
+	if filter.Size <= 0 {
+		filter.Size = 10
+	}
+
+	offset := (filter.PageNo - 1) * filter.Size
+
+	var result []models.SalesSupplierDetailWithPurchaseDataResponse
+	var total int64
+
+	query := `
+	WITH base_data AS (
+		SELECT
+			sup.name              AS supplier_name,
+			p.purchase_date       AS purchase_date,
+			ss.weight             AS stock_weight,
+			ss.current_weight     AS current_weight,
+			ss.sorted_item_name   AS item_name,
+			fa.weight             AS qty,
+			it.price_per_kilogram AS price,
+			cust.name             AS customer_name,
+			f.name                AS fiber_name
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN fibers f ON f.uuid = ANY(string_to_array(s.fiber_list, ','))
+				 JOIN fiber_allocations fa ON fa.fiber_id = f.uuid AND fa.deleted = false
+				 LEFT JOIN item_sales it
+						   ON it.sale_id = s.uuid
+							   AND it.stock_sort_id = fa.stock_sort_id
+							   AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = fa.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND s.fiber_list IS NOT NULL
+		  AND s.fiber_list <> ''
+	
+		UNION ALL
+	
+		SELECT
+			sup.name              AS supplier_name,
+			p.purchase_date       AS purchase_date,
+			ss.weight             AS stock_weight,
+			ss.current_weight     AS current_weight,
+			ss.sorted_item_name   AS item_name,
+			it.weight             AS qty,
+			si.price_per_kilogram AS price,
+			cust.name             AS customer_name,
+			''                    AS fiber_name
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN item_sales it ON it.sale_id = s.uuid
+				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+	),
+	
+		 numbered AS (
+			 SELECT *,
+					ROW_NUMBER() OVER (PARTITION BY supplier_name ORDER BY item_name) AS rn
+			 FROM base_data
+		 )
+	
+	SELECT
+		supplier_name,
+		purchase_date,
+		stock_weight,
+		item_name,
+		qty,
+		price,
+		customer_name,
+		fiber_name,
+		current_weight
+	FROM numbered
+	ORDER BY supplier_name, item_name
+	LIMIT ? OFFSET ?;
+	`
+
+	if err := db.Raw(query, filter.Size, offset).Scan(&result).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity(
+			"failed to fetch analytics stats", err,
+		)
+	}
+
+	countQuery := `
+	WITH base_data AS (
+		SELECT 1
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN fibers f
+					  ON f.uuid = ANY(string_to_array(s.fiber_list, ','))
+				 JOIN fiber_allocations fa
+					  ON fa.fiber_id = f.uuid
+						  AND fa.deleted = false
+				 LEFT JOIN item_sales it
+						   ON it.sale_id = s.uuid
+							   AND it.stock_sort_id = fa.stock_sort_id
+							   AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = fa.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND s.fiber_list IS NOT NULL
+		  AND s.fiber_list <> ''
+	
+		UNION ALL
+	
+		SELECT 1
+		FROM sales s
+				 JOIN "user" cust ON cust.uuid = s.customer_id
+				 JOIN item_sales it
+					  ON it.sale_id = s.uuid
+						  AND it.deleted = false
+				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
+				 JOIN stock_items si ON si.uuid = ss.stock_item_id
+				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
+				 JOIN purchase p ON p.stock_id = se.uuid
+				 JOIN "user" sup ON sup.uuid = p.supplier_id
+		WHERE s.deleted = false
+		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+	)
+	
+	SELECT COUNT(*) FROM base_data;
+	`
+
+	if err := db.Raw(countQuery).Scan(&total).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity(
+			"failed to count analytics stats", err,
+		)
+	}
+
+	results := make([]models.SalesSupplierDetailWithPurchaseDataResponse, 0)
+	for _, v := range result {
+		res := models.SalesSupplierDetailWithPurchaseDataResponse{
+			SupplierName:  v.SupplierName,
+			PurchaseDate:  v.PurchaseDate,
+			StockWeight:   v.StockWeight,
+			ItemName:      v.ItemName,
+			Quantity:      v.Quantity,
+			Price:         v.Price,
+			CustomerName:  v.CustomerName,
+			FiberName:     v.FiberName,
+			CurrentWeight: v.CurrentWeight,
+			AgeInDay:      int(time.Since(v.PurchaseDate).Hours() / 24),
+		}
+		results = append(results, res)
+	}
+
+	return &models.SalesSupplierDetailWithPurchaseDataPaginationResponse{
+		PageNo: filter.PageNo,
+		Size:   filter.Size,
+		Total:  total,
+		Data:   results,
+	}, nil
+}

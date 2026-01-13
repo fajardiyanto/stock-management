@@ -12,8 +12,12 @@ import { useDailyDashboardStats } from "../hooks/analytics/useDailyDashboardStat
 import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
 import { useStockDistributionData } from "../hooks/analytics/useStockDistributionData";
 import { usePerformanceData } from "../hooks/analytics/usePerformanceData";
+import { useSalesSupplierDetail } from "../hooks/analytics/useSalesSupplierDetail";
+import { useSalesSupplierDetailWithPurchase } from "../hooks/analytics/useSalesSupplierDetailWithPurchase";
+import SupplierSalesTable from "../components/AnalyticComponents/SupplierSalesTable";
 import { authService } from "../services/authService";
 import { Calendar } from "lucide-react";
+import SupplierSalesTableWithPurchase from "../components/AnalyticComponents/SupplierSalesTableWithPurchase";
 
 const AnalyticsPage: React.FC = () => {
     const userData = authService.getUser();
@@ -31,6 +35,48 @@ const AnalyticsPage: React.FC = () => {
         () => getMonthFromDate(selectedDate),
         [selectedDate]
     );
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
+    const [currentPageWithPurchase, setCurrentPageWithPurchase] = useState(1);
+    const [pageSizeWithPurchase, setPageSizeWithPurchase] = useState(10);
+
+    const salesSupplierDetailFilter = {
+        page_no: currentPage,
+        size: pageSize,
+    };
+    const memoFilter = useMemo(
+        () => salesSupplierDetailFilter,
+        [JSON.stringify(salesSupplierDetailFilter)]
+    );
+
+    const salesSupplierDetailWithPurchaseFilter = {
+        page_no: currentPageWithPurchase,
+        size: pageSizeWithPurchase,
+    };
+    const memoFilterWithPurchase = useMemo(
+        () => salesSupplierDetailWithPurchaseFilter,
+        [JSON.stringify(salesSupplierDetailWithPurchaseFilter)]
+    );
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setCurrentPage(1);
+    };
+
+    const handlePageChangeWithPurchase = (newPage: number) => {
+        setCurrentPageWithPurchase(newPage);
+    };
+
+    const handlePageSizeChangeWithPurchase = (newSize: number) => {
+        setPageSizeWithPurchase(newSize);
+        setCurrentPageWithPurchase(1);
+    };
 
     const {
         stats,
@@ -70,6 +116,26 @@ const AnalyticsPage: React.FC = () => {
         refetch: refetchCustomerPerformanceData,
     } = usePerformanceData("customer");
 
+    const {
+        salesSupplier: salesSupplierDetailData,
+        loading: salesSupplierDetailLoading,
+        error: salesSupplierDetailError,
+        refetch: refetchSalesSupplierDetail,
+    } = useSalesSupplierDetail(memoFilter);
+
+    const totalPages = Math.ceil(salesSupplierDetailData?.total / pageSize);
+
+    const {
+        salesSupplier: salesSupplierDetailWithPurchaseData,
+        loading: salesSupplierDetailWithPurchaseLoading,
+        error: salesSupplierDetailWithPurchaseError,
+        refetch: refetchSalesSupplierDetailWithPurchase,
+    } = useSalesSupplierDetailWithPurchase(memoFilterWithPurchase);
+
+    const totalPagesWithPurchase = Math.ceil(
+        salesSupplierDetailWithPurchaseData?.total / pageSizeWithPurchase
+    );
+
     const refreshButton = () => {
         refetchDashboardStats();
         refetchDailyDashboardStats();
@@ -77,6 +143,8 @@ const AnalyticsPage: React.FC = () => {
         refetchStockDistributionData();
         refetchSupplierPerformanceData();
         refetchCustomerPerformanceData();
+        refetchSalesSupplierDetail();
+        refetchSalesSupplierDetailWithPurchase();
     };
 
     if (
@@ -84,7 +152,9 @@ const AnalyticsPage: React.FC = () => {
         salesTrendDataLoading ||
         stockDistributionDataLoading ||
         supplierPerformanceDataLoading ||
-        customerPerformanceDataLoading
+        customerPerformanceDataLoading ||
+        salesSupplierDetailLoading ||
+        salesSupplierDetailWithPurchaseLoading
     ) {
         return (
             <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
@@ -98,7 +168,9 @@ const AnalyticsPage: React.FC = () => {
         salesTrendDataError ||
         stockDistributionDataError ||
         supplierPerformanceDataError ||
-        customerPerformanceDataError
+        customerPerformanceDataError ||
+        salesSupplierDetailError ||
+        salesSupplierDetailWithPurchaseError
     ) {
         return (
             <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
@@ -153,6 +225,24 @@ const AnalyticsPage: React.FC = () => {
                     selectedDate={selectedDate}
                 />
             )}
+
+            <SupplierSalesTable
+                data={salesSupplierDetailData}
+                selectedDate={dateNow}
+                loading={salesSupplierDetailLoading}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                totalPages={totalPages}
+            />
+
+            <SupplierSalesTableWithPurchase
+                data={salesSupplierDetailWithPurchaseData}
+                selectedDate={dateNow}
+                loading={salesSupplierDetailWithPurchaseLoading}
+                onPageChange={handlePageChangeWithPurchase}
+                onPageSizeChange={handlePageSizeChangeWithPurchase}
+                totalPages={totalPagesWithPurchase}
+            />
 
             <ChartAnalytics
                 salesTrendData={salesTrendData}

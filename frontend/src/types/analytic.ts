@@ -31,3 +31,74 @@ export interface UserData {
     name: string;
     total: number;
 }
+
+export interface SalesSupplierDetail {
+    supplier_name: string;
+    item_name: string;
+    qty: number;
+    price: number;
+    customer_name: string;
+    fiber_name: string;
+}
+
+export interface SupplierGroup {
+    supplier_name: string;
+    items: {
+        item_name: string;
+        sales: {
+            qty: number;
+            price: number;
+            customer_name: string;
+            fiber_name: string;
+        }[];
+    }[];
+}
+
+export interface SalesSupplierDetailPaginationResponse {
+    size: number;
+    page_no: number;
+    total: number;
+    data: SalesSupplierDetail[];
+}
+
+export interface SalesSupplierDetailFilter {
+    size?: number;
+    page_no?: number;
+}
+
+export interface SalesSupplierDetailWithPurchase {
+    supplier_name: string;
+    item_name: string;
+    qty: number;
+    price: number;
+    customer_name: string;
+    fiber_name: string;
+    age_in_day: number;
+    purchase_date: string;
+    stock_weight: number;
+    current_weight: number;
+}
+
+export interface SupplierGroupWithPurchase {
+    supplier_name: string;
+    items: {
+        item_name: string;
+        sales: {
+            qty: number;
+            price: number;
+            customer_name: string;
+            fiber_name: string;
+            age_in_day: number;
+            purchase_date: string;
+            stock_weight: number;
+            current_weight: number;
+        }[];
+    }[];
+}
+
+export interface SalesSupplierDetailWithPurchasePaginationResponse {
+    size: number;
+    page_no: number;
+    total: number;
+    data: SalesSupplierDetailWithPurchase[];
+}

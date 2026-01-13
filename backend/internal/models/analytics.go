@@ -91,3 +91,44 @@ type StockDistResult struct {
 	StockEntryID int   `gorm:"column:stock_entry_id"`
 	TotalWeight  int64 `gorm:"column:total_weight"`
 }
+
+type SalesSupplierDetailFilter struct {
+	Size   int `form:"size"`
+	PageNo int `form:"page_no"`
+}
+
+type SalesSupplierDetailResponse struct {
+	SupplierName string `json:"supplier_name" gorm:"column:supplier_name"`
+	ItemName     string `json:"item_name" gorm:"column:item_name"`
+	Quantity     int64  `json:"qty" gorm:"column:qty"`
+	Price        int64  `json:"price" gorm:"column:price"`
+	CustomerName string `json:"customer_name" gorm:"column:customer_name"`
+	FiberName    string `json:"fiber_name" gorm:"column:fiber_name"`
+}
+
+type SalesSupplierDetailPaginationResponse struct {
+	Size   int                           `json:"size"`
+	PageNo int                           `json:"page_no"`
+	Total  int64                         `json:"total"`
+	Data   []SalesSupplierDetailResponse `json:"data"`
+}
+
+type SalesSupplierDetailWithPurchaseDataResponse struct {
+	SupplierName  string    `json:"supplier_name" gorm:"column:supplier_name"`
+	PurchaseDate  time.Time `json:"purchase_date" gorm:"column:purchase_date"`
+	StockWeight   int64     `json:"stock_weight" gorm:"column:stock_weight"`
+	ItemName      string    `json:"item_name" gorm:"column:item_name"`
+	Quantity      int64     `json:"qty" gorm:"column:qty"`
+	Price         int64     `json:"price" gorm:"column:price"`
+	CustomerName  string    `json:"customer_name" gorm:"column:customer_name"`
+	FiberName     string    `json:"fiber_name" gorm:"column:fiber_name"`
+	CurrentWeight int64     `json:"current_weight" gorm:"column:current_weight"`
+	AgeInDay      int       `json:"age_in_day"`
+}
+
+type SalesSupplierDetailWithPurchaseDataPaginationResponse struct {
+	Size   int                                           `json:"size"`
+	PageNo int                                           `json:"page_no"`
+	Total  int64                                         `json:"total"`
+	Data   []SalesSupplierDetailWithPurchaseDataResponse `json:"data"`
+}

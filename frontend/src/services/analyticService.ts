@@ -6,6 +6,9 @@ import {
     SalesTrendData,
     StockDistributionData,
     UserData,
+    SalesSupplierDetailPaginationResponse,
+    SalesSupplierDetailFilter,
+    SalesSupplierDetailWithPurchasePaginationResponse,
 } from "../types/analytic";
 
 export const analyticService = {
@@ -57,6 +60,36 @@ export const analyticService = {
         const response = await apiCall<ApiResponse<UserData[]>>(
             `/analytics/customer/performance`
         );
+        return response;
+    },
+
+    getSalesSupplierDetail: async (
+        filters: SalesSupplierDetailFilter
+    ): Promise<ApiResponse<SalesSupplierDetailPaginationResponse>> => {
+        const queryParams = new URLSearchParams();
+
+        queryParams.append("page_no", String(filters.page_no || 1));
+        queryParams.append("size", String(filters.size || 10));
+
+        const response = await apiCall<
+            ApiResponse<SalesSupplierDetailPaginationResponse>
+        >(`/analytics/sales/supplier?${queryParams.toString()}`);
+        return response;
+    },
+
+    getSalesSupplierDetailWithPurchase: async (
+        filters: SalesSupplierDetailFilter
+    ): Promise<
+        ApiResponse<SalesSupplierDetailWithPurchasePaginationResponse>
+    > => {
+        const queryParams = new URLSearchParams();
+
+        queryParams.append("page_no", String(filters.page_no || 1));
+        queryParams.append("size", String(filters.size || 10));
+
+        const response = await apiCall<
+            ApiResponse<SalesSupplierDetailWithPurchasePaginationResponse>
+        >(`/analytics/sales/supplier/purchase?${queryParams.toString()}`);
         return response;
     },
 };

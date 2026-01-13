@@ -9,4 +9,6 @@ type AnalyticRepository interface {
 	GetStockDistributionData() ([]models.StockDistributionData, error)
 	GetSupplierPerformance() ([]models.UserData, error)
 	GetCustomerPerformance() ([]models.UserData, error)
+	GetSalesSupplierDetail(models.SalesSupplierDetailFilter) (*models.SalesSupplierDetailPaginationResponse, error)
+	SalesSupplierDetailWithPurchaseData(models.SalesSupplierDetailFilter) (*models.SalesSupplierDetailWithPurchaseDataPaginationResponse, error)
 }
