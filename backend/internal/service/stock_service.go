@@ -232,10 +232,10 @@ func (s *StockService) buildStockEntriesResponse(
 		resp := models.StockEntriesResponse{
 			Uuid:              data.Uuid,
 			StockCode:         fmt.Sprintf("STOCK%d", data.ID),
-			AgeInDay:          int(time.Since(data.CreatedAt).Hours() / 24),
+			AgeInDay:          int(time.Now().Sub(data.PurchaseDate).Hours() / 24),
 			PurchaseId:        data.PurchaseUuid,
 			Supplier:          supplierDetail,
-			PurchaseDate:      data.PurchaseDate.Format(time.RFC3339),
+			PurchaseDate:      data.PurchaseDate.UTC().Format(time.RFC3339),
 			StockItemResponse: make([]models.StockItemResponse, 0),
 		}
 
@@ -325,7 +325,7 @@ func (s *StockService) GetStockEntryById(stockId string) (*models.StockEntriesRe
 	resp := models.StockEntriesResponse{
 		Uuid:              result.Uuid,
 		StockCode:         fmt.Sprintf("STOCK-%d", result.ID),
-		AgeInDay:          int(time.Since(result.CreatedAt).Hours() / 24),
+		AgeInDay:          int(time.Now().Sub(result.PurchaseDate).Hours() / 24),
 		PurchaseId:        result.PurchaseUuid,
 		Supplier:          supplierDetail,
 		PurchaseDate:      result.PurchaseDate.Format(time.RFC3339),
@@ -503,7 +503,7 @@ func (s *StockService) UpdateStockById(stockId string, request models.CreatePurc
 	response.StockEntry = &models.StockEntriesResponse{
 		Uuid:              stockEntry.Uuid,
 		StockCode:         fmt.Sprintf("STOCK-%d", stockEntry.ID),
-		AgeInDay:          int(time.Since(stockEntry.CreatedAt).Hours() / 24),
+		AgeInDay:          int(time.Now().Sub(stockEntry.CreatedAt).Hours() / 24),
 		PurchaseId:        purchase.Uuid,
 		Supplier:          userDetail,
 		StockItemResponse: make([]models.StockItemResponse, 0, len(stockItems)),

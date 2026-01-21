@@ -3,7 +3,7 @@ import { ChevronRight, Edit2, Trash2 } from "lucide-react";
 import StockRowShrinkage from "./StockRowShrinkage";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { StockEntry, StockItem, StockSortResponse } from "../../types/stock";
-import { formatDate } from "../../utils/FormatDate";
+import { formatDateRawUTC } from "../../utils/FormatDate";
 
 interface StockRowDetailsProps {
     item: StockItem;
@@ -83,7 +83,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                 rowSpan={rowSpan}
                 className="px-6 py-4 text-sm text-gray-600 align-middle text-center border-r border-gray-200"
             >
-                {formatDate(stockEntry.purchase_date)}
+                {formatDateRawUTC(stockEntry.purchase_date)}
             </td>
             <td
                 rowSpan={rowSpan}

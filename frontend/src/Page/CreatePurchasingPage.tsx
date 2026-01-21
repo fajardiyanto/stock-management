@@ -295,7 +295,7 @@ const CreatePurchasingPage: React.FC = () => {
                     </button>
                     <button
                         type="submit"
-                        className="px-6 py-2 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-lg disabled:opacity-50"
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
                         disabled={isSubmitting || loading}
                     >
                         {submitButtonText}
