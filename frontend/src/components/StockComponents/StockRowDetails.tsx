@@ -138,15 +138,13 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
         >
             <button
                 onClick={onSort}
-                className={`inline-flex items-center gap-1.5 text-sm font-semibold transition border rounded-lg px-4 py-1.5 bg-white ${
-                    actionText === "Sortir"
-                        ? "text-blue-600 hover:text-blue-800 border-blue-300 hover:bg-blue-50"
-                        : "text-gray-700 hover:text-gray-900 border-gray-300 hover:bg-gray-50"
-                } ${
-                    sortItem?.weight !== sortItem?.current_weight
+                className={`inline-flex items-center gap-1.5 text-sm font-semibold transition border rounded-lg px-4 py-1.5 bg-white ${actionText === "Sortir"
+                    ? "text-blue-600 hover:text-blue-800 border-blue-300 hover:bg-blue-50"
+                    : "text-gray-700 hover:text-gray-900 border-gray-300 hover:bg-gray-50"
+                    } ${sortItem?.weight !== sortItem?.current_weight
                         ? "opacity-50 cursor-not-allowed"
                         : ""
-                }`}
+                    }`}
                 disabled={sortItem?.weight !== sortItem?.current_weight}
             >
                 <ChevronRight size={16} />
@@ -155,7 +153,10 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
         </td>
     );
 
-    const renderStockActionsColumn = (rowSpan: number) => (
+    const renderStockActionsColumn = (
+        rowSpan: number,
+        sortItem: StockSortResponse | null = null
+    ) => (
         <td
             rowSpan={rowSpan}
             className="px-6 py-4 align-middle border-l border-gray-200"
@@ -163,8 +164,13 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
             <div className="flex justify-center items-center gap-2">
                 <button
                     onClick={() => onEditStock(stockEntry.uuid)}
-                    className="border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-blue-600 transition"
+                    className={`border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-blue-600 transition 
+                        ${sortItem?.weight !== sortItem?.current_weight
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
                     title="Edit Stock"
+                    disabled={sortItem?.weight !== sortItem?.current_weight}
                 >
                     <Edit2 size={18} />
                 </button>
@@ -266,9 +272,8 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                 return (
                     <tr
                         key={sortItem.uuid}
-                        className={`bg-white hover:bg-gray-50 transition ${
-                            isFirstRow && isFirstItemRow ? rowClass : ""
-                        }`}
+                        className={`bg-white hover:bg-gray-50 transition ${isFirstRow && isFirstItemRow ? rowClass : ""
+                            }`}
                     >
                         {isFirstRow &&
                             isFirstItemRow &&
@@ -288,11 +293,10 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                             {sortItem.weight}
                         </td>
                         <td
-                            className={`px-2 py-4 text-sm font-bold text-center ${
-                                sortItem.current_weight === 0
-                                    ? "text-yellow-400"
-                                    : "text-green-600"
-                            }`}
+                            className={`px-2 py-4 text-sm font-bold text-center ${sortItem.current_weight === 0
+                                ? "text-yellow-400"
+                                : "text-green-600"
+                                }`}
                         >
                             {sortItem.current_weight}
                         </td>
@@ -317,7 +321,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
 
                         {isFirstRow &&
                             isFirstItemRow &&
-                            renderStockActionsColumn(totalStockRows)}
+                            renderStockActionsColumn(totalStockRows, sortItem)}
                     </tr>
                 );
             })}

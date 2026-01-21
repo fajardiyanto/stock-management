@@ -105,12 +105,6 @@ const CashFlowHistoryTable: React.FC<CashFlowHistoryTableProps> = ({
                                                 onClick={() => onRemove(entry)}
                                                 className="p-3 mb-0.5 text-red-500 hover:text-red-700 rounded-lg transition"
                                                 title="Remove Entry"
-                                                disabled={
-                                                    entry.purchase_id === "" ||
-                                                    entry.sales_id ===
-                                                        "EXPENSE" ||
-                                                    entry.sales_id === ""
-                                                }
                                             >
                                                 <Trash2 size={20} />
                                             </button>
