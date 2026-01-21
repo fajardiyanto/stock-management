@@ -119,11 +119,14 @@ func (s *AnalyticService) GetDailyGetAnalyticStats(date string) (*models.DailyAn
 		),
 		daily_sales AS (
 			SELECT
-				COALESCE(SUM(weight), 0) AS sales_weight,
-				COALESCE(SUM(total_amount), 0) AS sales_value
-			FROM item_sales
-			WHERE deleted = false
-			AND DATE(created_at) = ?
+             COALESCE(SUM(i.weight), 0) AS sales_weight,
+             COALESCE(SUM(s.total_amount), 0) AS sales_value
+			 FROM item_sales i
+					  JOIN sales s
+						   ON s.uuid = i.sale_id
+			 WHERE i.deleted = false
+			   AND s.deleted = false
+			   AND DATE(i.created_at) = ?
 		)
 		SELECT
 			dp.purchase_weight AS daily_purchase_weight,
