@@ -7,7 +7,8 @@ export type MenuId =
     | "users"
     | "fiber"
     | "analytics"
-    | "audit";
+    | "audit"
+    | "bookkeeping";
 
 export interface ApiError {
     message: string;

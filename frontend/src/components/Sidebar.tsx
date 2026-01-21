@@ -10,6 +10,7 @@ import {
     BoxIcon,
     HomeIcon,
     Activity,
+    BookAIcon,
 } from "lucide-react";
 import { MenuId, MenuItem, UserRole } from "../types";
 import { authService } from "../services/authService";
@@ -67,6 +68,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             roles: ["SUPER_ADMIN"],
         },
         {
+            id: "bookkeeping",
+            label: "Pembukuan Harian",
+            icon: BookAIcon,
+            roles: ["SUPER_ADMIN"],
+        },
+        {
             id: "audit",
             label: "Audit Trail",
             icon: Activity,
@@ -81,9 +88,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     return (
         <aside
-            className={`${
-                isOpen ? "w-64" : "w-20"
-            } bg-gray-900 text-white transition-all duration-300 ease-in-out flex flex-col`}
+            className={`${isOpen ? "w-64" : "w-20"
+                } bg-gray-900 text-white transition-all duration-300 ease-in-out flex flex-col`}
         >
             <div className="p-4 flex items-center justify-between">
                 {isOpen && (
@@ -104,11 +110,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <button
                             key={item.id}
                             onClick={() => setActiveMenu(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-2 transition ${
-                                activeMenu === item.id
-                                    ? "bg-blue-600 text-white"
-                                    : "text-gray-300 hover:bg-gray-800"
-                            }`}
+                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-2 transition ${activeMenu === item.id
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-300 hover:bg-gray-800"
+                                }`}
                         >
                             <Icon size={20} />
                             {isOpen && <span>{item.label}</span>}
