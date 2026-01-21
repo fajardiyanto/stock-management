@@ -57,14 +57,17 @@ func (s *AnalyticService) GetAnalyticStats(year, month string) (*models.Analytic
 			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 		),
 		sales_totals AS (
-			SELECT
-				COALESCE(SUM(total_amount), 0) AS total_sales,
-				COALESCE(SUM(weight), 0) AS total_sales_weight
-			FROM item_sales
-			WHERE deleted = false
-			  AND created_at >= make_date(?, ?, 1)
-			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
-		)
+			 SELECT
+				 COALESCE(SUM(s.total_amount), 0) AS total_sales,
+				 COALESCE(SUM(i.weight), 0) AS total_sales_weight
+			 FROM item_sales i
+					  JOIN sales s
+						   ON s.uuid = i.sale_id
+			 WHERE i.deleted = false
+			   AND s.deleted = false
+			   AND i.created_at >= make_date(?, ?, 1)
+			   AND i.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+		 )
 		SELECT
 			st.total_stock,
 			ft.total_fiber,
@@ -84,6 +87,7 @@ func (s *AnalyticService) GetAnalyticStats(year, month string) (*models.Analytic
 		year, monthInt,
 		year, monthInt,
 	).Scan(&result).Error; err != nil {
+		config.GetLogger().Error("eerrr", err.Error())
 		return nil, apperror.NewUnprocessableEntity("failed to fetch analytics stats: ", err)
 	}
 
