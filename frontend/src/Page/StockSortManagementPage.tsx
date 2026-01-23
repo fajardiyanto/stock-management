@@ -230,7 +230,8 @@ const StockSortManagementPage: React.FC = () => {
                 sorted_item_name: form.sorted_item_name,
                 weight: form.weight,
                 price_per_kilogram: form.price_per_kilogram,
-                current_weight: form.current_weight,
+                // current_weight: form.current_weight,
+                current_weight: form.weight,
                 is_shrinkage: form.is_shrinkage,
             })),
         };
