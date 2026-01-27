@@ -50,7 +50,6 @@ export const useDashboardStats = (
     }, [year, month, showToast]);
 
     useEffect(() => {
-        if (!month || !year) return;
         fetchDashboardStats();
     }, [year, month, fetchDashboardStats]);
 

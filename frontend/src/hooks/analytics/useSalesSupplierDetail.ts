@@ -53,7 +53,7 @@ export const useSalesSupplierDetail = (
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [filter, showToast]);
 
     useEffect(() => {
         fetchSalesSupplierDetail();

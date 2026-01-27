@@ -93,8 +93,10 @@ type StockDistResult struct {
 }
 
 type SalesSupplierDetailFilter struct {
-	Size   int `form:"size"`
-	PageNo int `form:"page_no"`
+	Size   int    `form:"size"`
+	PageNo int    `form:"page_no"`
+	Month  int    `form:"month"`
+	Year   string `form:"year"`
 }
 
 type SalesSupplierDetailResponse struct {

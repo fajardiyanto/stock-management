@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -262,4 +263,50 @@ func (h *BaseHandler) parseInt(s string) (int, error) {
 	var result int
 	_, err := fmt.Sscanf(s, "%d", &result)
 	return result, err
+}
+
+// ChangeDate ChaneDate change date to format YYYY-MM-DD
+func (h *BaseHandler) ChangeDate(dateStr string) string {
+	if dateStr == "" {
+		return ""
+	}
+
+	// Try parsing common datetime formats
+	layouts := []string{
+		time.RFC3339, // 2026-01-22T12:51:37Z
+		"2006-01-02T15:04:05.000Z07:00",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, dateStr); err == nil {
+			return t.Format("2006-01-02")
+		}
+	}
+
+	// fallback if parsing fails
+	return ""
+}
+
+func (h *BaseHandler) ParseMonth(month string) (int, error) {
+	// numeric month: "12"
+	if m, err := strconv.Atoi(month); err == nil {
+		if m < 1 || m > 12 {
+			return 0, apperror.NewBadRequest("invalid month")
+		}
+		return m, nil
+	}
+
+	// full month name: "January"
+	if t, err := time.Parse("January", month); err == nil {
+		return int(t.Month()), nil
+	}
+
+	// short month name: "Jan"
+	if t, err := time.Parse("Jan", month); err == nil {
+		return int(t.Month()), nil
+	}
+
+	return 0, apperror.NewBadRequest("invalid month")
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"dashboard-app/pkg/apperror"
 	"fmt"
-	"strconv"
 	"time"
 
 	"dashboard-app/internal/config"
@@ -21,18 +20,12 @@ func NewAnalyticService() repository.AnalyticRepository {
 // GetAnalyticStats =====================================================
 // GET ANALYTIC STATS - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetAnalyticStats(year, month string) (*models.AnalyticStatsResponse, error) {
+func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.AnalyticStatsResponse, error) {
 	db := config.GetDBConn()
-
-	// Single optimized query using CTEs to fetch all stats at once
-	monthInt, err := strconv.Atoi(month)
-	if err != nil || monthInt < 1 || monthInt > 12 {
-		return nil, apperror.NewBadRequest("invalid month")
-	}
 
 	var result models.AnalyticStatsResponse
 
-	if err = db.Raw(`
+	if err := db.Raw(`
 		WITH stock_totals AS (
 			SELECT COALESCE(SUM(current_weight), 0) AS total_stock
 			FROM stock_sorts
@@ -80,12 +73,12 @@ func (s *AnalyticService) GetAnalyticStats(year, month string) (*models.Analytic
 		CROSS JOIN purchase_totals pt
 		CROSS JOIN sales_totals sa
 	`,
-		year, monthInt,
-		year, monthInt,
-		year, monthInt,
-		year, monthInt,
-		year, monthInt,
-		year, monthInt,
+		year, month,
+		year, month,
+		year, month,
+		year, month,
+		year, month,
+		year, month,
 	).Scan(&result).Error; err != nil {
 		config.GetLogger().Error("eerrr", err.Error())
 		return nil, apperror.NewUnprocessableEntity("failed to fetch analytics stats: ", err)
@@ -295,7 +288,7 @@ func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
 func (s *AnalyticService) GetAnalyticsWithCache(cacheKey string, ttl time.Duration) (*models.AnalyticStatsResponse, error) {
 	// Implement caching logic here if you have a cache library
 	// For now, just call the regular method
-	return s.GetAnalyticStats("", "")
+	return s.GetAnalyticStats("", 0)
 }
 
 // GetDateRangeStats - Get stats for a specific date range
@@ -459,7 +452,6 @@ func (s *AnalyticService) GetInventoryTurnover() (*models.InventoryTurnover, err
 func (s *AnalyticService) GetSalesSupplierDetail(
 	filter models.SalesSupplierDetailFilter,
 ) (*models.SalesSupplierDetailPaginationResponse, error) {
-
 	db := config.GetDBConn()
 
 	if filter.PageNo < 1 {
@@ -501,6 +493,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
+		  AND s.created_at >= make_date(?, ?, 1)
+		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 
 		UNION ALL
 
@@ -523,6 +517,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+		  AND s.created_at >= make_date(?, ?, 1)
+		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 	)
 
 	SELECT
@@ -537,7 +533,14 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 	LIMIT ? OFFSET ?;
 	`
 
-	if err := db.Raw(query, filter.Size, offset).Scan(&result).Error; err != nil {
+	if err := db.Raw(
+		query,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+		filter.Size, offset,
+	).Scan(&result).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
 			"failed to fetch analytics stats", err,
 		)
@@ -565,6 +568,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
+		  AND s.created_at >= make_date(?, ?, 1)
+		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 	
 		UNION ALL
 	
@@ -581,12 +586,20 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+		  AND s.created_at >= make_date(?, ?, 1)
+		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
 	)
 	
 	SELECT COUNT(*) FROM base_data;
 	`
 
-	if err := db.Raw(countQuery).Scan(&total).Error; err != nil {
+	if err := db.Raw(
+		countQuery,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+		filter.Year, filter.Month,
+	).Scan(&total).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
 			"failed to count analytics stats", err,
 		)

@@ -46,9 +46,8 @@ export const useSalesTrendData = (date: string): UseSalesTrendDataResult => {
     }, [date, showToast]);
 
     useEffect(() => {
-        if (!date) return;
         fetchSalesTrendData();
-    }, [date, fetchSalesTrendData]);
+    }, [fetchSalesTrendData]);
 
     return {
         salesTrendData,

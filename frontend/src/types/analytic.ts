@@ -64,6 +64,8 @@ export interface SalesSupplierDetailPaginationResponse {
 export interface SalesSupplierDetailFilter {
     size?: number;
     page_no?: number;
+    month?: string;
+    year?: string;
 }
 
 export interface SalesSupplierDetailWithPurchase {

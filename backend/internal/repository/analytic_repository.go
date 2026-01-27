@@ -3,7 +3,7 @@ package repository
 import "dashboard-app/internal/models"
 
 type AnalyticRepository interface {
-	GetAnalyticStats(string, string) (*models.AnalyticStatsResponse, error)
+	GetAnalyticStats(string, int) (*models.AnalyticStatsResponse, error)
 	GetDailyGetAnalyticStats(string) (*models.DailyAnalyticStatsResponse, error)
 	GetSalesTrendData(string) ([]models.SalesTrendData, error)
 	GetStockDistributionData() ([]models.StockDistributionData, error)

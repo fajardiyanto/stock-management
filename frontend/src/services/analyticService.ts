@@ -16,8 +16,13 @@ export const analyticService = {
         year: string,
         month: string
     ): Promise<ApiResponse<DashboardStats>> => {
+        const queryParams = new URLSearchParams();
+
+        if (month) queryParams.append("month", month);
+        if (year) queryParams.append("year", year);
+
         const response = await apiCall<ApiResponse<DashboardStats>>(
-            `/analytics/stats/${month}/${year}`
+            `/analytics/stats/overal?${queryParams.toString()}`
         );
         return response;
     },
@@ -25,8 +30,12 @@ export const analyticService = {
     getDailyDashboardStats: async (
         date: string
     ): Promise<ApiResponse<DailyDashboardStats>> => {
+        const queryParams = new URLSearchParams();
+
+        if (date) queryParams.append("date", date);
+
         const response = await apiCall<ApiResponse<DailyDashboardStats>>(
-            `/analytics/daily/${date}/stats`
+            `/analytics/daily/stats?${queryParams.toString()}`
         );
         return response;
     },
@@ -34,8 +43,12 @@ export const analyticService = {
     getSalesTrendData: async (
         year: string
     ): Promise<ApiResponse<SalesTrendData[]>> => {
+        const queryParams = new URLSearchParams();
+
+        if (year) queryParams.append("year", year);
+
         const response = await apiCall<ApiResponse<SalesTrendData[]>>(
-            `/analytics/sales/trend/${year}`
+            `/analytics/sales/trend?${queryParams.toString()}`
         );
         return response;
     },
@@ -70,6 +83,8 @@ export const analyticService = {
 
         queryParams.append("page_no", String(filters.page_no || 1));
         queryParams.append("size", String(filters.size || 10));
+        if (filters.month) queryParams.append("month", filters.month);
+        if (filters.year) queryParams.append("year", filters.year);
 
         const response = await apiCall<
             ApiResponse<SalesSupplierDetailPaginationResponse>

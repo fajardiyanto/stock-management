@@ -41,8 +41,8 @@ func Run() error {
 	auditLogHandler := handler.NewAuditLogHandler(auditLogService, validate)
 
 	api := app.Group("/v1/api")
-	api.Use(middleware.RequestResponseLogger())
-	api.Use(middleware.AuditTrailLogger())
+	//api.Use(middleware.RequestResponseLogger())
+	//api.Use(middleware.AuditTrailLogger())
 
 	userHandler.RegisterPublicRoutes(api)
 

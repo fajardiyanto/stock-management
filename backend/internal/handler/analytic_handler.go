@@ -3,11 +3,14 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
+	"dashboard-app/pkg/apperror"
 	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type Analytic struct {
@@ -32,10 +35,30 @@ func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository, valid
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/stats [get]
 func (h *Analytic) GetOverallStats(c *gin.Context) {
-	month := c.Param("month")
-	year := c.Param("year")
+	monthParam := c.Query("month")
+	yearParam := c.Query("year")
+
+	// Year
+	year := yearParam
+	if year == "" {
+		year = strconv.Itoa(time.Now().Year())
+	}
+
+	// Month → INT
+	var monthInt int
+	if monthParam == "" {
+		monthInt = int(time.Now().Month())
+	} else {
+		m, err := h.ParseMonth(monthParam)
+		if err != nil {
+			h.HandleError(c, err, "Invalid month")
+			return
+		}
+		monthInt = m
+	}
+
 	// Fetch overall statistics
-	data, err := h.analyticRepository.GetAnalyticStats(year, month)
+	data, err := h.analyticRepository.GetAnalyticStats(year, monthInt)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch analytics statistics")
 		return
@@ -56,16 +79,19 @@ func (h *Analytic) GetOverallStats(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/daily/{date} [get]
 func (h *Analytic) GetDailyStats(c *gin.Context) {
-	date := c.Param("date")
+	date := c.Query("date")
 
-	// Validate date format
-	if !h.IsValidDate(date) {
-		h.SendError(c, http.StatusBadRequest, "Invalid date format. Use YYYY-MM-DD", nil)
-		return
+	now := date
+	if date == "" {
+		now = time.Now().Format("2006-01-02")
+		// Validate date format
+		if !h.IsValidDate(now) {
+			h.SendError(c, http.StatusBadRequest, "Invalid date format. Use YYYY-MM-DD", nil)
+			return
+		}
 	}
-
 	// Fetch daily statistics
-	data, err := h.analyticRepository.GetDailyGetAnalyticStats(date)
+	data, err := h.analyticRepository.GetDailyGetAnalyticStats(now)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch daily statistics")
 		return
@@ -86,16 +112,14 @@ func (h *Analytic) GetDailyStats(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/trends/{year} [get]
 func (h *Analytic) GetSalesTrend(c *gin.Context) {
-	year := c.Param("year")
+	year := c.Query("year")
+	now := year
+	if year == "" {
+		now = strconv.Itoa(time.Now().Year())
 
-	// Validate year format
-	if !h.IsValidYear(year) {
-		h.SendError(c, http.StatusBadRequest, "Invalid year format. Use YYYY (e.g., 2025)", nil)
-		return
 	}
-
 	// Fetch sales trend data
-	data, err := h.analyticRepository.GetSalesTrendData(year)
+	data, err := h.analyticRepository.GetSalesTrendData(now)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch sales trend data")
 		return
@@ -192,6 +216,21 @@ func (h *Analytic) GetSalesSupplierDetail(c *gin.Context) {
 		filter.Size = 100
 	}
 
+	if filter.Year == "" {
+		filter.Year = strconv.Itoa(time.Now().Year())
+	}
+
+	// Month (default = current month)
+	if filter.Month == 0 {
+		filter.Month = int(time.Now().Month())
+	}
+
+	// Validate month
+	if filter.Month < 1 || filter.Month > 12 {
+		h.HandleError(c, apperror.NewBadRequest("invalid month"), "Invalid month")
+		return
+	}
+
 	// Fetch customer performance data
 	data, err := h.analyticRepository.GetSalesSupplierDetail(filter)
 	if err != nil {
@@ -245,11 +284,11 @@ func (h *Analytic) RegisterRoutes(router *gin.RouterGroup) {
 	analytics := router.Group("/analytics")
 	{
 		// Core analytics
-		analytics.GET("/stats/:month/:year", h.GetOverallStats)
-		analytics.GET("/daily/:date/stats", h.GetDailyStats)
+		analytics.GET("/stats/overal", h.GetOverallStats)
+		analytics.GET("/daily/stats", h.GetDailyStats)
 
 		// Trends and distribution
-		analytics.GET("/sales/trend/:year", h.GetSalesTrend)
+		analytics.GET("/sales/trend", h.GetSalesTrend)
 		analytics.GET("/stock/distribution", h.GetStockDistribution)
 
 		// Performance metrics
