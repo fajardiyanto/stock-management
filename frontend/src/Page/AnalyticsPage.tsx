@@ -40,7 +40,6 @@ import { Range } from "react-date-range";
 const AnalyticsPage: React.FC = () => {
     const userData = authService.getUser();
 
-    // Initialize with default date directly to ensure consistent initial state
     const [dateRange, setDateRange] = useState<Range[]>([
         {
             startDate: startOfMonth(new Date()),
@@ -492,7 +491,7 @@ const AnalyticsPage: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Tren Penjualan & Pembelian
+                                    Tren Penjualan & Pembelian Tahun: {dateYear}
                                 </h3>
                                 <ResponsiveContainer width="100%" height={300}>
                                     <LineChart
