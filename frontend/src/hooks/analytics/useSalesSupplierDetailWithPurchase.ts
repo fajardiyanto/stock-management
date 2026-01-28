@@ -3,7 +3,7 @@ import { analyticService } from "../../services/analyticService";
 import { useToast } from "../../contexts/ToastContext";
 import {
     SalesSupplierDetailWithPurchasePaginationResponse,
-    SalesSupplierDetailFilter,
+    DailyBookKeepingFilter,
 } from "../../types/analytic";
 
 interface UseSalesSupplierDetailWithPurchaseResult {
@@ -14,7 +14,7 @@ interface UseSalesSupplierDetailWithPurchaseResult {
 }
 
 export const useSalesSupplierDetailWithPurchase = (
-    filter: SalesSupplierDetailFilter
+    filter: DailyBookKeepingFilter
 ): UseSalesSupplierDetailWithPurchaseResult => {
     const [salesSupplier, setSalesSupplier] =
         useState<SalesSupplierDetailWithPurchasePaginationResponse>(
@@ -54,7 +54,7 @@ export const useSalesSupplierDetailWithPurchase = (
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [filter, showToast]);
 
     useEffect(() => {
         fetchSalesSupplierDetailWithPurchase();

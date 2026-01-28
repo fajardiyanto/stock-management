@@ -104,3 +104,10 @@ export interface SalesSupplierDetailWithPurchasePaginationResponse {
     total: number;
     data: SalesSupplierDetailWithPurchase[];
 }
+
+export interface DailyBookKeepingFilter {
+    size?: number;
+    page_no?: number;
+    start_date?: string;
+    end_date?: string;
+}

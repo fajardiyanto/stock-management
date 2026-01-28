@@ -1,20 +1,32 @@
 import React, { useState, useMemo } from "react";
 import SupplierSalesTableWithPurchase from "../components/AnalyticComponents/SupplierSalesTableWithPurchase";
 import { useSalesSupplierDetailWithPurchase } from "../hooks/analytics/useSalesSupplierDetailWithPurchase";
-import { Calendar } from "lucide-react";
+import { DailyBookKeepingFilter } from "../types/analytic";
+import DateRangeInput from "../components/DateRangeInput";
+import { Range } from "react-date-range";
+import { format, startOfMonth } from "date-fns";
 
 const DailyBookKeepingPage: React.FC = () => {
-    const [dateNow, setDateNow] = React.useState<string>(
-        new Date().toISOString().split("T")[0]
-    );
+    const [dateRange, setDateRange] = useState<Range[]>([
+        {
+            startDate: startOfMonth(new Date()),
+            endDate: new Date(),
+            key: "selection",
+        },
+    ]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-
-    const salesSupplierFilter = {
+    const salesSupplierFilter: DailyBookKeepingFilter = {
         page_no: currentPage,
         size: pageSize,
+        start_date: dateRange[0].startDate
+            ? format(dateRange[0].startDate, "yyyy-MM-dd")
+            : undefined,
+        end_date: dateRange[0].endDate
+            ? format(dateRange[0].endDate, "yyyy-MM-dd")
+            : undefined,
     };
 
     const memoFilterWithPurchase = useMemo(
@@ -30,6 +42,7 @@ const DailyBookKeepingPage: React.FC = () => {
         setPageSize(newSize);
         setCurrentPage(1);
     };
+    console.log("Memoized Filter:", memoFilterWithPurchase);
 
     const {
         salesSupplier: salesSupplierDetailData,
@@ -38,13 +51,9 @@ const DailyBookKeepingPage: React.FC = () => {
         refetch: refetchSalesSupplierDetail,
     } = useSalesSupplierDetailWithPurchase(memoFilterWithPurchase);
 
-    const totalPages = Math.ceil(
-        salesSupplierDetailData?.total / pageSize
-    );
+    const totalPages = Math.ceil(salesSupplierDetailData?.total / pageSize);
 
-    if (
-        salesSupplierDetailLoading
-    ) {
+    if (salesSupplierDetailLoading) {
         return (
             <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow">
                 <div className="text-gray-500">Loading dashboard...</div>
@@ -52,9 +61,7 @@ const DailyBookKeepingPage: React.FC = () => {
         );
     }
 
-    if (
-        salesSupplierDetailError
-    ) {
+    if (salesSupplierDetailError) {
         return (
             <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg shadow">
                 <p className="font-bold mb-2">Error Loading Data</p>
@@ -78,28 +85,25 @@ const DailyBookKeepingPage: React.FC = () => {
                             Pembukuan Harian
                         </h1>
                         <p className="text-gray-500 mt-1">
-                            Lihat ringkasan penjualan dan stok untuk tanggal tertentu
+                            Lihat ringkasan penjualan dan stok untuk tanggal
+                            tertentu
                         </p>
                     </div>
                     <div className="relative">
-                        <input
-                            type="date"
-                            value={dateNow}
-                            max={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => setDateNow(e.target.value)}
-                            placeholder="dd/mm/yyyy"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
-                        />
-                        <Calendar
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                            size={18}
+                        <DateRangeInput
+                            ranges={dateRange}
+                            onChange={(item) => setDateRange([item.selection])}
                         />
                     </div>
                 </header>
 
                 <SupplierSalesTableWithPurchase
                     data={salesSupplierDetailData}
-                    selectedDate={dateNow}
+                    selectedDate={
+                        dateRange[0].startDate
+                            ? format(dateRange[0].startDate, "yyyy-MM-dd")
+                            : ""
+                    }
                     loading={salesSupplierDetailLoading}
                     onPageChange={handlePageChange}
                     onPageSizeChange={handlePageSize}

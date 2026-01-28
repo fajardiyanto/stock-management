@@ -9,6 +9,7 @@ import {
     SalesSupplierDetailPaginationResponse,
     SalesSupplierDetailFilter,
     SalesSupplierDetailWithPurchasePaginationResponse,
+    DailyBookKeepingFilter,
 } from "../types/analytic";
 
 export const analyticService = {
@@ -93,7 +94,7 @@ export const analyticService = {
     },
 
     getSalesSupplierDetailWithPurchase: async (
-        filters: SalesSupplierDetailFilter
+        filters: DailyBookKeepingFilter
     ): Promise<
         ApiResponse<SalesSupplierDetailWithPurchasePaginationResponse>
     > => {
@@ -101,6 +102,8 @@ export const analyticService = {
 
         queryParams.append("page_no", String(filters.page_no || 1));
         queryParams.append("size", String(filters.size || 10));
+        if (filters.start_date) queryParams.append("start_date", filters.start_date);
+        if (filters.end_date) queryParams.append("end_date", filters.end_date);
 
         const response = await apiCall<
             ApiResponse<SalesSupplierDetailWithPurchasePaginationResponse>
