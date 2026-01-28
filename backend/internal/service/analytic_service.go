@@ -614,7 +614,7 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 }
 
 func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
-	filter models.SalesSupplierDetailFilter,
+	filter models.DailyBookKeepingFilter,
 ) (*models.SalesSupplierDetailWithPurchaseDataPaginationResponse, error) {
 
 	db := config.GetDBConn()
@@ -624,6 +624,10 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 	}
 	if filter.Size <= 0 {
 		filter.Size = 10
+	}
+
+	if filter.StartDate != "" && filter.EndDate == "" {
+		filter.EndDate = filter.StartDate
 	}
 
 	offset := (filter.PageNo - 1) * filter.Size
@@ -659,6 +663,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
+		  AND s.created_at >= CAST(? AS DATE)
+          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	
 		UNION ALL
 	
@@ -682,6 +688,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+		   AND s.created_at >= CAST(? AS DATE)
+      	   AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	),
 	
 		 numbered AS (
@@ -705,7 +713,15 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 	LIMIT ? OFFSET ?;
 	`
 
-	if err := db.Raw(query, filter.Size, offset).Scan(&result).Error; err != nil {
+	if err := db.Raw(
+		query,
+		filter.StartDate,
+		filter.EndDate,
+		filter.StartDate,
+		filter.EndDate,
+		filter.Size,
+		offset,
+	).Scan(&result).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
 			"failed to fetch analytics stats", err,
 		)
@@ -733,6 +749,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
+		  AND s.created_at >= CAST(? AS DATE)
+		  AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	
 		UNION ALL
 	
@@ -749,12 +767,20 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
+		  AND s.created_at >= CAST(? AS DATE)
+      	  AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	)
 	
 	SELECT COUNT(*) FROM base_data;
 	`
 
-	if err := db.Raw(countQuery).Scan(&total).Error; err != nil {
+	if err := db.Raw(
+		countQuery,
+		filter.StartDate,
+		filter.EndDate,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&total).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
 			"failed to count analytics stats", err,
 		)

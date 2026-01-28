@@ -251,7 +251,7 @@ func (h *Analytic) GetSalesSupplierDetail(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/sales/supplier/purchase [get]
 func (h *Analytic) SalesSupplierDetailWithPurchaseData(c *gin.Context) {
-	var filter models.SalesSupplierDetailFilter
+	var filter models.DailyBookKeepingFilter
 
 	// Bind query parameters
 	if err := h.BindQuery(c, &filter); err != nil {

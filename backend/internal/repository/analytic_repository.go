@@ -10,5 +10,5 @@ type AnalyticRepository interface {
 	GetSupplierPerformance() ([]models.UserData, error)
 	GetCustomerPerformance() ([]models.UserData, error)
 	GetSalesSupplierDetail(models.SalesSupplierDetailFilter) (*models.SalesSupplierDetailPaginationResponse, error)
-	SalesSupplierDetailWithPurchaseData(models.SalesSupplierDetailFilter) (*models.SalesSupplierDetailWithPurchaseDataPaginationResponse, error)
+	SalesSupplierDetailWithPurchaseData(models.DailyBookKeepingFilter) (*models.SalesSupplierDetailWithPurchaseDataPaginationResponse, error)
 }
