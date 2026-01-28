@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { analyticService } from '../../services/analyticService';
 import { useToast } from '../../contexts/ToastContext';
-import { StockDistributionData } from "../../types/analytic";
+import { AnalyticStatsFilter, StockDistributionData } from "../../types/analytic";
 
 interface UseStockDistributionDataResult {
     stockDistributionData: StockDistributionData[];
@@ -10,7 +10,9 @@ interface UseStockDistributionDataResult {
     refetch: () => Promise<void>;
 }
 
-export const useStockDistributionData = (): UseStockDistributionDataResult => {
+export const useStockDistributionData = (
+    filter: AnalyticStatsFilter
+): UseStockDistributionDataResult => {
     const [stockDistributionData, setStockDistributionData] = useState<
         StockDistributionData[]
     >([]);
@@ -23,7 +25,7 @@ export const useStockDistributionData = (): UseStockDistributionDataResult => {
         setError("");
 
         try {
-            const response = await analyticService.getStockDistributionData();
+            const response = await analyticService.getStockDistributionData(filter);
 
             if (response.status_code === 200) {
                 setStockDistributionData(response.data);
@@ -45,7 +47,7 @@ export const useStockDistributionData = (): UseStockDistributionDataResult => {
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [filter, showToast]);
 
     useEffect(() => {
         fetchStockDistributionData();

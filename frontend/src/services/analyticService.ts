@@ -7,20 +7,19 @@ import {
     StockDistributionData,
     UserData,
     SalesSupplierDetailPaginationResponse,
-    SalesSupplierDetailFilter,
     SalesSupplierDetailWithPurchasePaginationResponse,
     DailyBookKeepingFilter,
+    AnalyticStatsFilter,
 } from "../types/analytic";
 
 export const analyticService = {
     getDashboardStats: async (
-        year: string,
-        month: string
+        filter: AnalyticStatsFilter
     ): Promise<ApiResponse<DashboardStats>> => {
         const queryParams = new URLSearchParams();
 
-        if (month) queryParams.append("month", month);
-        if (year) queryParams.append("year", year);
+        if (filter.start_date) queryParams.append("start_date", filter.start_date);
+        if (filter.end_date) queryParams.append("end_date", filter.end_date);
 
         const response = await apiCall<ApiResponse<DashboardStats>>(
             `/analytics/stats/overal?${queryParams.toString()}`
@@ -54,38 +53,59 @@ export const analyticService = {
         return response;
     },
 
-    getStockDistributionData: async (): Promise<
+    getStockDistributionData: async (
+        filters: AnalyticStatsFilter
+    ): Promise<
         ApiResponse<StockDistributionData[]>
     > => {
+        const queryParams = new URLSearchParams();
+
+        if (filters.start_date) queryParams.append("start_date", filters.start_date);
+        if (filters.end_date) queryParams.append("end_date", filters.end_date);
+
         const response = await apiCall<ApiResponse<StockDistributionData[]>>(
-            `/analytics/stock/distribution`
+            `/analytics/stock/distribution?${queryParams.toString()}`
         );
         return response;
     },
 
-    getSupplierPerformance: async (): Promise<ApiResponse<UserData[]>> => {
+    getSupplierPerformance: async (
+         filters: AnalyticStatsFilter
+    ): Promise<ApiResponse<UserData[]>> => {
+        const queryParams = new URLSearchParams();
+
+        if (filters.start_date) queryParams.append("start_date", filters.start_date);
+        if (filters.end_date) queryParams.append("end_date", filters.end_date);
+
         const response = await apiCall<ApiResponse<UserData[]>>(
-            `/analytics/supplier/performance`
+            `/analytics/supplier/performance?${queryParams.toString()}`
         );
         return response;
     },
 
-    getCustomerPerformance: async (): Promise<ApiResponse<UserData[]>> => {
+    getCustomerPerformance: async (
+         filters: AnalyticStatsFilter
+    ): Promise<ApiResponse<UserData[]>> => {
+        const queryParams = new URLSearchParams();
+
+        if (filters.start_date) queryParams.append("start_date", filters.start_date);
+        if (filters.end_date) queryParams.append("end_date", filters.end_date);
+
         const response = await apiCall<ApiResponse<UserData[]>>(
-            `/analytics/customer/performance`
+            `/analytics/customer/performance?${queryParams.toString()}`
         );
         return response;
     },
 
     getSalesSupplierDetail: async (
-        filters: SalesSupplierDetailFilter
+        filters: DailyBookKeepingFilter
     ): Promise<ApiResponse<SalesSupplierDetailPaginationResponse>> => {
         const queryParams = new URLSearchParams();
 
         queryParams.append("page_no", String(filters.page_no || 1));
         queryParams.append("size", String(filters.size || 10));
-        if (filters.month) queryParams.append("month", filters.month);
-        if (filters.year) queryParams.append("year", filters.year);
+        if (filters.start_date) queryParams.append("start_date", filters.start_date);
+        if (filters.end_date) queryParams.append("end_date", filters.end_date);
 
         const response = await apiCall<
             ApiResponse<SalesSupplierDetailPaginationResponse>

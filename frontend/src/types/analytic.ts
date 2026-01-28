@@ -111,3 +111,10 @@ export interface DailyBookKeepingFilter {
     start_date?: string;
     end_date?: string;
 }
+
+export interface AnalyticStatsFilter {
+    size: number;
+    page_no: number;
+    start_date?: string;
+    end_date?: string;
+}

@@ -106,6 +106,11 @@ type DailyBookKeepingFilter struct {
 	EndDate   string `form:"end_date"`
 }
 
+type AnalyticStatsFilter struct {
+	StartDate string `form:"start_date"`
+	EndDate   string `form:"end_date"`
+}
+
 type SalesSupplierDetailResponse struct {
 	SupplierName string `json:"supplier_name" gorm:"column:supplier_name"`
 	ItemName     string `json:"item_name" gorm:"column:item_name"`

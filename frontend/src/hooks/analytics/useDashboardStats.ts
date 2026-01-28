@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { analyticService } from "../../services/analyticService";
 import { useToast } from "../../contexts/ToastContext";
-import { DashboardStats } from "../../types/analytic";
+import { DashboardStats, AnalyticStatsFilter } from "../../types/analytic";
 
 interface UseDashboardStatsResult {
     stats: DashboardStats | null;
@@ -11,8 +11,7 @@ interface UseDashboardStatsResult {
 }
 
 export const useDashboardStats = (
-    year: string,
-    month: string
+    filter: AnalyticStatsFilter
 ): UseDashboardStatsResult => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -25,8 +24,7 @@ export const useDashboardStats = (
 
         try {
             const response = await analyticService.getDashboardStats(
-                year,
-                month
+                filter,
             );
 
             if (response.status_code === 200) {
@@ -47,11 +45,11 @@ export const useDashboardStats = (
         } finally {
             setLoading(false);
         }
-    }, [year, month, showToast]);
+    }, [filter, showToast]);
 
     useEffect(() => {
         fetchDashboardStats();
-    }, [year, month, fetchDashboardStats]);
+    }, [filter, fetchDashboardStats]);
 
     return {
         stats,

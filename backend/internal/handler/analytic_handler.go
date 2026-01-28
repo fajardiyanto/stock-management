@@ -3,7 +3,6 @@ package handler
 import (
 	"dashboard-app/internal/models"
 	"dashboard-app/internal/repository"
-	"dashboard-app/pkg/apperror"
 	"dashboard-app/pkg/baseHandler"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -33,32 +32,17 @@ func NewAnalyticsHandler(analyticRepository repository.AnalyticRepository, valid
 // @Produce json
 // @Success 200 {object} models.HTTPResponseSuccess{data=models.AnalyticStatsResponse}
 // @Failure 500 {object} models.HTTPResponseError
-// @Router /analytics/stats [get]
+// @Router /analytics/stats/overal [get]
 func (h *Analytic) GetOverallStats(c *gin.Context) {
-	monthParam := c.Query("month")
-	yearParam := c.Query("year")
+	var filter models.AnalyticStatsFilter
 
-	// Year
-	year := yearParam
-	if year == "" {
-		year = strconv.Itoa(time.Now().Year())
-	}
-
-	// Month → INT
-	var monthInt int
-	if monthParam == "" {
-		monthInt = int(time.Now().Month())
-	} else {
-		m, err := h.ParseMonth(monthParam)
-		if err != nil {
-			h.HandleError(c, err, "Invalid month")
-			return
-		}
-		monthInt = m
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
 	}
 
 	// Fetch overall statistics
-	data, err := h.analyticRepository.GetAnalyticStats(year, monthInt)
+	data, err := h.analyticRepository.GetAnalyticStats(filter)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch analytics statistics")
 		return
@@ -110,7 +94,7 @@ func (h *Analytic) GetDailyStats(c *gin.Context) {
 // @Success 200 {object} models.HTTPResponseSuccess{data=[]models.SalesTrendData}
 // @Failure 400 {object} models.HTTPResponseError
 // @Failure 500 {object} models.HTTPResponseError
-// @Router /analytics/trends/{year} [get]
+// @Router /analytics/trends [get]
 func (h *Analytic) GetSalesTrend(c *gin.Context) {
 	year := c.Query("year")
 	now := year
@@ -138,8 +122,15 @@ func (h *Analytic) GetSalesTrend(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/distribution [get]
 func (h *Analytic) GetStockDistribution(c *gin.Context) {
+	var filter models.AnalyticStatsFilter
+
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
+	}
+
 	// Fetch stock distribution data
-	data, err := h.analyticRepository.GetStockDistributionData()
+	data, err := h.analyticRepository.GetStockDistributionData(filter)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch stock distribution")
 		return
@@ -158,8 +149,15 @@ func (h *Analytic) GetStockDistribution(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/suppliers [get]
 func (h *Analytic) GetSupplierPerformance(c *gin.Context) {
+	var filter models.AnalyticStatsFilter
+
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
+	}
+
 	// Fetch supplier performance data
-	data, err := h.analyticRepository.GetSupplierPerformance()
+	data, err := h.analyticRepository.GetSupplierPerformance(filter)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch supplier performance")
 		return
@@ -178,8 +176,15 @@ func (h *Analytic) GetSupplierPerformance(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/customers [get]
 func (h *Analytic) GetCustomerPerformance(c *gin.Context) {
+	var filter models.AnalyticStatsFilter
+
+	// Bind query parameters
+	if err := h.BindQuery(c, &filter); err != nil {
+		return // Error already sent
+	}
+
 	// Fetch customer performance data
-	data, err := h.analyticRepository.GetCustomerPerformance()
+	data, err := h.analyticRepository.GetCustomerPerformance(filter)
 	if err != nil {
 		h.HandleError(c, err, "Failed to fetch customer performance")
 		return
@@ -198,7 +203,7 @@ func (h *Analytic) GetCustomerPerformance(c *gin.Context) {
 // @Failure 500 {object} models.HTTPResponseError
 // @Router /analytics/sales/supplier [get]
 func (h *Analytic) GetSalesSupplierDetail(c *gin.Context) {
-	var filter models.SalesSupplierDetailFilter
+	var filter models.DailyBookKeepingFilter
 
 	// Bind query parameters
 	if err := h.BindQuery(c, &filter); err != nil {
@@ -214,21 +219,6 @@ func (h *Analytic) GetSalesSupplierDetail(c *gin.Context) {
 	}
 	if filter.Size > 100 {
 		filter.Size = 100
-	}
-
-	if filter.Year == "" {
-		filter.Year = strconv.Itoa(time.Now().Year())
-	}
-
-	// Month (default = current month)
-	if filter.Month == 0 {
-		filter.Month = int(time.Now().Month())
-	}
-
-	// Validate month
-	if filter.Month < 1 || filter.Month > 12 {
-		h.HandleError(c, apperror.NewBadRequest("invalid month"), "Invalid month")
-		return
 	}
 
 	// Fetch customer performance data

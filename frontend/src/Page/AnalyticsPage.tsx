@@ -2,18 +2,17 @@ import React, { useState, useMemo } from "react";
 import {
     getDefaultDateOnly,
     getYearFromDate,
-    getMonthFromDate,
 } from "../utils/DefaultDate";
 import { useDashboardStats } from "../hooks/analytics/useDashboardStats";
-import { useDailyDashboardStats } from "../hooks/analytics/useDailyDashboardStats";
 import { useSalesTrendData } from "../hooks/analytics/useSalesTrendData";
 import { useStockDistributionData } from "../hooks/analytics/useStockDistributionData";
 import { usePerformanceData } from "../hooks/analytics/usePerformanceData";
 import { useSalesSupplierDetail } from "../hooks/analytics/useSalesSupplierDetail";
 import { authService } from "../services/authService";
-import { Calendar, Package, Layers, ShoppingCart, TrendingUp } from "lucide-react";
+import { Package, Layers, ShoppingCart, TrendingUp } from "lucide-react";
 import { formatNumber } from "../utils/CleanNumber";
 import {
+    AnalyticStatsFilter,
     SupplierGroup,
 } from "../types/analytic";
 import { formatRupiah } from "../utils/FormatRupiah";
@@ -34,32 +33,33 @@ import {
     Cell,
 } from "recharts";
 import { useDebounce } from "../utils/useDebounce";
+import DateRangeInput from "../components/DateRangeInput";
+import { format, startOfMonth } from "date-fns";
+import { Range } from "react-date-range";
 
 const AnalyticsPage: React.FC = () => {
     const userData = authService.getUser();
 
     // Initialize with default date directly to ensure consistent initial state
-    const [selectedDate, setSelectedDate] = useState(getDefaultDateOnly());
-    const debouncedDate = useDebounce(selectedDate, 500);
+    const [dateRange, setDateRange] = useState<Range[]>([
+        {
+            startDate: startOfMonth(new Date()),
+            endDate: new Date(),
+            key: "selection",
+        },
+    ]);
+    const debouncedDate = useDebounce(dateRange[0].startDate, 500);
 
-    const dateYear = getYearFromDate(debouncedDate);
-    const dateMonth = getMonthFromDate(debouncedDate);
+    const formattedDate = debouncedDate
+        ? format(debouncedDate, "yyyy-MM-dd")
+        : getDefaultDateOnly();
+
+    const dateYear = getYearFromDate(formattedDate);
 
     const dateNow = getDefaultDateOnly();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-
-    const salesSupplierDetailFilter = {
-        page_no: currentPage,
-        size: pageSize,
-        month: dateMonth,
-        year: dateYear,
-    };
-    const memoFilter = useMemo(
-        () => salesSupplierDetailFilter,
-        [JSON.stringify(salesSupplierDetailFilter)]
-    );
 
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
@@ -70,15 +70,27 @@ const AnalyticsPage: React.FC = () => {
         setCurrentPage(1);
     };
 
+    const analyticStatsFilter: AnalyticStatsFilter = {
+        page_no: currentPage,
+        size: pageSize,
+        start_date: dateRange[0].startDate
+            ? format(dateRange[0].startDate, "yyyy-MM-dd")
+            : undefined,
+        end_date: dateRange[0].endDate
+            ? format(dateRange[0].endDate, "yyyy-MM-dd")
+            : undefined,
+    }
+    const memoAnalyticStatsFilter = useMemo(
+        () => analyticStatsFilter,
+        [JSON.stringify(analyticStatsFilter)]
+    );
+
     const {
         stats,
         loading: dashboardStatsLoading,
         error: dashboardStatsError,
         refetch: refetchDashboardStats,
-    } = useDashboardStats(dateYear, dateMonth);
-
-    const { dailyStats, refetch: refetchDailyDashboardStats } =
-        useDailyDashboardStats(debouncedDate);
+    } = useDashboardStats(memoAnalyticStatsFilter);
 
     const {
         salesTrendData,
@@ -92,28 +104,28 @@ const AnalyticsPage: React.FC = () => {
         loading: stockDistributionDataLoading,
         error: stockDistributionDataError,
         refetch: refetchStockDistributionData,
-    } = useStockDistributionData();
+    } = useStockDistributionData(memoAnalyticStatsFilter);
 
     const {
         userData: supplierData,
         loading: supplierPerformanceDataLoading,
         error: supplierPerformanceDataError,
         refetch: refetchSupplierPerformanceData,
-    } = usePerformanceData("supplier");
+    } = usePerformanceData("supplier", memoAnalyticStatsFilter);
 
     const {
         userData: customerData,
         loading: customerPerformanceDataLoading,
         error: customerPerformanceDataError,
         refetch: refetchCustomerPerformanceData,
-    } = usePerformanceData("customer");
+    } = usePerformanceData("customer", memoAnalyticStatsFilter);
 
     const {
         salesSupplier: salesSupplierDetailData,
         loading: salesSupplierDetailLoading,
         error: salesSupplierDetailError,
         refetch: refetchSalesSupplierDetail,
-    } = useSalesSupplierDetail(memoFilter);
+    } = useSalesSupplierDetail(memoAnalyticStatsFilter);
 
     const totalPages = Math.ceil(salesSupplierDetailData?.total / pageSize);
 
@@ -121,7 +133,6 @@ const AnalyticsPage: React.FC = () => {
 
     const refreshButton = () => {
         refetchDashboardStats();
-        refetchDailyDashboardStats();
         refetchSalesTrendData();
         refetchStockDistributionData();
         refetchSupplierPerformanceData();
@@ -211,17 +222,9 @@ const AnalyticsPage: React.FC = () => {
                         </p>
                     </div>
                     <div className="relative">
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            max={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            placeholder="dd/mm/yyyy"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700 appearance-none"
-                        />
-                        <Calendar
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                            size={18}
+                        <DateRangeInput
+                            ranges={dateRange}
+                            onChange={(item) => setDateRange([item.selection])}
                         />
                     </div>
                 </header>
@@ -374,109 +377,6 @@ const AnalyticsPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                    </div>
-
-                    <div>
-                        <div>
-                            <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                        Ringkasan Penjualan Harian
-                                    </h3>
-                                    <div className="flex items-center gap-4">
-                                        <label className="text-sm text-gray-600">
-                                            Lihat ringkasan penjualan dan stok untuk
-                                            tanggal tertentu
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                                        <h4 className="text-base font-semibold text-blue-900 mb-2">
-                                            Total Terjual
-                                        </h4>
-                                        <p className="text-3xl font-bold text-blue-700 mb-2">
-                                            Rp {formatNumber(dailyStats?.daily_sales_value || 0)}
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            Total nilai penjualan untuk{" "}
-                                            {new Date(selectedDate).toLocaleDateString(
-                                                "id-ID",
-                                                {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                }
-                                            )}
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                                        <h4 className="text-base font-semibold text-green-900 mb-2">
-                                            Total Pembelian
-                                        </h4>
-                                        <p className="text-3xl font-bold text-green-700 mb-2">
-                                            Rp{" "}
-                                            {formatNumber(dailyStats?.daily_purchase_value || 0)}
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            Total nilai pembelian untuk{" "}
-                                            {new Date(selectedDate).toLocaleDateString(
-                                                "id-ID",
-                                                {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                }
-                                            )}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                                        <h4 className="text-base font-semibold text-orange-900 mb-2">
-                                            Total Berat Terjual
-                                        </h4>
-                                        <p className="text-3xl font-bold text-orange-700 mb-2">
-                                            {dailyStats?.daily_sales_weight} kg
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            Total berat penjualan untuk{" "}
-                                            {new Date(selectedDate).toLocaleDateString(
-                                                "id-ID",
-                                                {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                }
-                                            )}
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                                        <h4 className="text-base font-semibold text-purple-900 mb-2">
-                                            Total Berat Pembelian
-                                        </h4>
-                                        <p className="text-3xl font-bold text-purple-700 mb-2">
-                                            {dailyStats?.daily_purchase_weight} kg
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            Total berat pembelian untuk{" "}
-                                            {new Date(selectedDate).toLocaleDateString(
-                                                "id-ID",
-                                                {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                }
-                                            )}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">

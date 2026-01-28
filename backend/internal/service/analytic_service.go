@@ -20,7 +20,7 @@ func NewAnalyticService() repository.AnalyticRepository {
 // GetAnalyticStats =====================================================
 // GET ANALYTIC STATS - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.AnalyticStatsResponse, error) {
+func (s *AnalyticService) GetAnalyticStats(filter models.AnalyticStatsFilter) (*models.AnalyticStatsResponse, error) {
 	db := config.GetDBConn()
 
 	var result models.AnalyticStatsResponse
@@ -31,8 +31,8 @@ func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.Anal
 			FROM stock_sorts
 			WHERE deleted = false
 			  AND is_shrinkage = false
-			  AND created_at >= make_date(?, ?, 1)
-			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+			  AND created_at >= CAST(? AS DATE)
+      	   	  AND created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		),
 		fiber_totals AS (
 			SELECT COUNT(*) AS total_fiber
@@ -46,8 +46,8 @@ func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.Anal
 				COALESCE(SUM(weight), 0) AS total_purchase_weight
 			FROM stock_items
 			WHERE deleted = false
-			  AND created_at >= make_date(?, ?, 1)
-			  AND created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+			  AND created_at >= CAST(? AS DATE)
+      	   	  AND created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		),
 		sales_totals AS (
 			 SELECT
@@ -58,8 +58,8 @@ func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.Anal
 						   ON s.uuid = i.sale_id
 			 WHERE i.deleted = false
 			   AND s.deleted = false
-			   AND i.created_at >= make_date(?, ?, 1)
-			   AND i.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+			   AND s.created_at >= CAST(? AS DATE)
+			   AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		 )
 		SELECT
 			st.total_stock,
@@ -73,14 +73,13 @@ func (s *AnalyticService) GetAnalyticStats(year string, month int) (*models.Anal
 		CROSS JOIN purchase_totals pt
 		CROSS JOIN sales_totals sa
 	`,
-		year, month,
-		year, month,
-		year, month,
-		year, month,
-		year, month,
-		year, month,
+		filter.StartDate,
+		filter.EndDate,
+		filter.StartDate,
+		filter.EndDate,
+		filter.StartDate,
+		filter.EndDate,
 	).Scan(&result).Error; err != nil {
-		config.GetLogger().Error("eerrr", err.Error())
 		return nil, apperror.NewUnprocessableEntity("failed to fetch analytics stats: ", err)
 	}
 
@@ -203,7 +202,7 @@ func (s *AnalyticService) GetSalesTrendData(year string) ([]models.SalesTrendDat
 
 // GetStockDistributionData - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistributionData, error) {
+func (s *AnalyticService) GetStockDistributionData(filter models.AnalyticStatsFilter) ([]models.StockDistributionData, error) {
 	db := config.GetDBConn()
 
 	// Optimized query with proper grouping
@@ -217,10 +216,15 @@ func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistribution
 		INNER JOIN stock_entries se ON se.uuid = si.stock_entry_id
 		WHERE si.deleted = false
 		AND se.deleted = false
+		AND si.created_at >= CAST(? AS DATE)
+        AND si.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		GROUP BY se.id
 		HAVING SUM(si.weight) > 0
 		ORDER BY se.id
-	`).Scan(&distributions).Error; err != nil {
+	`,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&distributions).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to fetch stock distribution: ", err)
 	}
 
@@ -238,7 +242,7 @@ func (s *AnalyticService) GetStockDistributionData() ([]models.StockDistribution
 
 // GetSupplierPerformance - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
+func (s *AnalyticService) GetSupplierPerformance(filter models.AnalyticStatsFilter) ([]models.UserData, error) {
 	db := config.GetDBConn()
 
 	var userData []models.UserData
@@ -250,10 +254,15 @@ func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
 		INNER JOIN "user" u ON u.uuid = p.supplier_id
 		WHERE p.deleted = false
 		AND u.status = true
+		AND p.purchase_date >= CAST(? AS DATE)
+        AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 		GROUP BY u.uuid, u.name
 		HAVING SUM(p.total_amount) > 0
 		ORDER BY total DESC
-	`).Scan(&userData).Error; err != nil {
+	`,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&userData).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to fetch supplier performance: ", err)
 	}
 
@@ -262,7 +271,7 @@ func (s *AnalyticService) GetSupplierPerformance() ([]models.UserData, error) {
 
 // GetCustomerPerformance - Optimized with Single Query
 // =====================================================
-func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
+func (s *AnalyticService) GetCustomerPerformance(filter models.AnalyticStatsFilter) ([]models.UserData, error) {
 	db := config.GetDBConn()
 
 	var userData []models.UserData
@@ -274,10 +283,15 @@ func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
 		INNER JOIN "user" u ON u.uuid = s.customer_id
 		WHERE s.deleted = false
 		AND u.status = true
+		AND s.created_at >= CAST(? AS DATE)
+        AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		GROUP BY u.uuid, u.name
 		HAVING SUM(s.total_amount) > 0
 		ORDER BY total DESC
-	`).Scan(&userData).Error; err != nil {
+	`,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&userData).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity("failed to fetch customer performance: ", err)
 	}
 
@@ -288,7 +302,8 @@ func (s *AnalyticService) GetCustomerPerformance() ([]models.UserData, error) {
 func (s *AnalyticService) GetAnalyticsWithCache(cacheKey string, ttl time.Duration) (*models.AnalyticStatsResponse, error) {
 	// Implement caching logic here if you have a cache library
 	// For now, just call the regular method
-	return s.GetAnalyticStats("", 0)
+	filter := models.AnalyticStatsFilter{}
+	return s.GetAnalyticStats(filter)
 }
 
 // GetDateRangeStats - Get stats for a specific date range
@@ -450,7 +465,7 @@ func (s *AnalyticService) GetInventoryTurnover() (*models.InventoryTurnover, err
 }
 
 func (s *AnalyticService) GetSalesSupplierDetail(
-	filter models.SalesSupplierDetailFilter,
+	filter models.DailyBookKeepingFilter,
 ) (*models.SalesSupplierDetailPaginationResponse, error) {
 	db := config.GetDBConn()
 
@@ -493,8 +508,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
-		  AND s.created_at >= make_date(?, ?, 1)
-		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+		  AND s.created_at >= CAST(? AS DATE)
+          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 
 		UNION ALL
 
@@ -517,8 +532,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
-		  AND s.created_at >= make_date(?, ?, 1)
-		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+		  AND s.created_at >= CAST(? AS DATE)
+          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	)
 
 	SELECT
@@ -535,10 +550,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 
 	if err := db.Raw(
 		query,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
+		filter.StartDate, filter.EndDate,
+		filter.StartDate, filter.EndDate,
 		filter.Size, offset,
 	).Scan(&result).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
@@ -568,8 +581,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
-		  AND s.created_at >= make_date(?, ?, 1)
-		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+		  AND s.created_at >= CAST(? AS DATE)
+          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	
 		UNION ALL
 	
@@ -586,8 +599,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
-		  AND s.created_at >= make_date(?, ?, 1)
-		  AND s.created_at <  make_date(?, ?, 1) + INTERVAL '1 month'
+		  AND s.created_at >= CAST(? AS DATE)
+          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	)
 	
 	SELECT COUNT(*) FROM base_data;
@@ -595,10 +608,8 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 
 	if err := db.Raw(
 		countQuery,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
-		filter.Year, filter.Month,
+		filter.StartDate, filter.EndDate,
+		filter.StartDate, filter.EndDate,
 	).Scan(&total).Error; err != nil {
 		return nil, apperror.NewUnprocessableEntity(
 			"failed to count analytics stats", err,

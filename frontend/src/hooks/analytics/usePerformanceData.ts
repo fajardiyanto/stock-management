@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { analyticService } from '../../services/analyticService';
 import { useToast } from '../../contexts/ToastContext';
-import { UserData } from "../../types/analytic";
+import { UserData, AnalyticStatsFilter } from "../../types/analytic";
 
 interface UsePerformanceDataResult {
     userData: UserData[];
@@ -10,7 +10,7 @@ interface UsePerformanceDataResult {
     refetch: () => Promise<void>;
 }
 
-export const usePerformanceData = (type: string): UsePerformanceDataResult => {
+export const usePerformanceData = (type: string, filter: AnalyticStatsFilter): UsePerformanceDataResult => {
     const [userData, setUserData] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -23,8 +23,8 @@ export const usePerformanceData = (type: string): UsePerformanceDataResult => {
         try {
             const response =
                 type === "customer"
-                    ? await analyticService.getCustomerPerformance()
-                    : await analyticService.getSupplierPerformance();
+                    ? await analyticService.getCustomerPerformance(filter)
+                    : await analyticService.getSupplierPerformance(filter);
 
             if (response.status_code === 200) {
                 setUserData(response.data);
@@ -46,7 +46,7 @@ export const usePerformanceData = (type: string): UsePerformanceDataResult => {
         } finally {
             setLoading(false);
         }
-    }, [type, showToast]);
+    }, [type, filter, showToast]);
 
     useEffect(() => {
         fetchPerformaceData();

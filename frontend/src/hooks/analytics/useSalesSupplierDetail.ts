@@ -3,7 +3,7 @@ import { analyticService } from "../../services/analyticService";
 import { useToast } from "../../contexts/ToastContext";
 import {
     SalesSupplierDetailPaginationResponse,
-    SalesSupplierDetailFilter,
+    DailyBookKeepingFilter,
 } from "../../types/analytic";
 
 interface UseSalesSupplierDetailResult {
@@ -14,7 +14,7 @@ interface UseSalesSupplierDetailResult {
 }
 
 export const useSalesSupplierDetail = (
-    filter: SalesSupplierDetailFilter
+    filter: DailyBookKeepingFilter
 ): UseSalesSupplierDetailResult => {
     const [salesSupplier, setSalesSupplier] =
         useState<SalesSupplierDetailPaginationResponse>(
