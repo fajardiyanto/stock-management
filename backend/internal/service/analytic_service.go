@@ -544,7 +544,7 @@ func (s *AnalyticService) GetSalesSupplierDetail(
 		customer_name,
 		fiber_name
 	FROM base_data
-	ORDER BY supplier_name, item_name
+	ORDER BY fiber_name, supplier_name, item_name
 	LIMIT ? OFFSET ?;
 	`
 
@@ -655,17 +655,13 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 			ss.current_weight     AS current_weight,
 			ss.sorted_item_name   AS item_name,
 			fa.weight             AS qty,
-			it.price_per_kilogram AS price,
+			s.total_amount        AS price,
 			cust.name             AS customer_name,
 			f.name                AS fiber_name
 		FROM sales s
 				 JOIN "user" cust ON cust.uuid = s.customer_id
 				 JOIN fibers f ON f.uuid = ANY(string_to_array(s.fiber_list, ','))
 				 JOIN fiber_allocations fa ON fa.fiber_id = f.uuid AND fa.deleted = false
-				 LEFT JOIN item_sales it
-						   ON it.sale_id = s.uuid
-							   AND it.stock_sort_id = fa.stock_sort_id
-							   AND it.deleted = false
 				 JOIN stock_sorts ss ON ss.uuid = fa.stock_sort_id
 				 JOIN stock_items si ON si.uuid = ss.stock_item_id
 				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
@@ -691,7 +687,7 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 			''                    AS fiber_name
 		FROM sales s
 				 JOIN "user" cust ON cust.uuid = s.customer_id
-				 JOIN item_sales it ON it.sale_id = s.uuid
+				 JOIN item_sales it ON it.sale_id = s.uuid AND it.deleted = false
 				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
 				 JOIN stock_items si ON si.uuid = ss.stock_item_id
 				 JOIN stock_entries se ON se.uuid = si.stock_entry_id
@@ -770,7 +766,7 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 				 JOIN "user" cust ON cust.uuid = s.customer_id
 				 JOIN item_sales it
 					  ON it.sale_id = s.uuid
-						  AND it.deleted = false
+					  AND it.deleted = false
 				 JOIN stock_sorts ss ON ss.uuid = it.stock_sort_id
 				 JOIN stock_items si ON si.uuid = ss.stock_item_id
 				 JOIN stock_entries se ON se.uuid = si.stock_entry_id

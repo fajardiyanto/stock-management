@@ -4,12 +4,12 @@ import { useSalesSupplierDetailWithPurchase } from "../hooks/analytics/useSalesS
 import { DailyBookKeepingFilter } from "../types/analytic";
 import DateRangeInput from "../components/DateRangeInput";
 import { Range } from "react-date-range";
-import { format, startOfMonth } from "date-fns";
+import { format } from "date-fns";
 
 const DailyBookKeepingPage: React.FC = () => {
     const [dateRange, setDateRange] = useState<Range[]>([
         {
-            startDate: startOfMonth(new Date()),
+            startDate: new Date(),
             endDate: new Date(),
             key: "selection",
         },
@@ -42,7 +42,6 @@ const DailyBookKeepingPage: React.FC = () => {
         setPageSize(newSize);
         setCurrentPage(1);
     };
-    console.log("Memoized Filter:", memoFilterWithPurchase);
 
     const {
         salesSupplier: salesSupplierDetailData,

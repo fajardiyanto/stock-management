@@ -54,6 +54,17 @@ export interface SupplierGroup {
     }[];
 }
 
+export interface FiberGroup {
+    fiber_name: string;
+    rows: {
+        supplier_name: string;
+        item_name: string;
+        qty: number;
+        price: number;
+        customer_name: string;
+    }[];
+}
+
 export interface SalesSupplierDetailPaginationResponse {
     size: number;
     page_no: number;

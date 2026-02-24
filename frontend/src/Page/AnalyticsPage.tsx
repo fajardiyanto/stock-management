@@ -13,7 +13,7 @@ import { Package, Layers, ShoppingCart, TrendingUp } from "lucide-react";
 import { formatNumber } from "../utils/CleanNumber";
 import {
     AnalyticStatsFilter,
-    SupplierGroup,
+    FiberGroup,
 } from "../types/analytic";
 import { formatRupiah } from "../utils/FormatRupiah";
 import Pagination from "../components/Pagination";
@@ -34,7 +34,7 @@ import {
 } from "recharts";
 import { useDebounce } from "../utils/useDebounce";
 import DateRangeInput from "../components/DateRangeInput";
-import { format, startOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { Range } from "react-date-range";
 
 const AnalyticsPage: React.FC = () => {
@@ -42,7 +42,7 @@ const AnalyticsPage: React.FC = () => {
 
     const [dateRange, setDateRange] = useState<Range[]>([
         {
-            startDate: startOfMonth(new Date()),
+            startDate: new Date(),
             endDate: new Date(),
             key: "selection",
         },
@@ -140,38 +140,28 @@ const AnalyticsPage: React.FC = () => {
     };
 
     const groupedDataSupplierSales = useMemo(() => {
-        const suppliers: { [key: string]: SupplierGroup } = {};
+        const fibers: { [key: string]: FiberGroup } = {};
 
         salesSupplierDetailData?.data?.forEach((item) => {
-            if (!suppliers[item.supplier_name]) {
-                suppliers[item.supplier_name] = {
-                    supplier_name: item.supplier_name,
-                    items: [],
+            const key = item.fiber_name || "";
+            if (!fibers[key]) {
+                fibers[key] = {
+                    fiber_name: key,
+                    rows: [],
                 };
             }
-
-            const supplierGroup = suppliers[item.supplier_name];
-            let itemGroup = supplierGroup.items.find(
-                (i) => i.item_name === item.item_name
-            );
-
-            if (!itemGroup) {
-                itemGroup = {
-                    item_name: item.item_name,
-                    sales: [],
-                };
-                supplierGroup.items.push(itemGroup);
-            }
-
-            itemGroup.sales.push({
+            fibers[key].rows.push({
+                supplier_name: item.supplier_name,
+                item_name: item.item_name,
                 qty: item.qty,
                 price: item.price,
                 customer_name: item.customer_name,
-                fiber_name: item.fiber_name,
             });
         });
 
-        return Object.values(suppliers);
+        return Object.values(fibers).sort((a, b) =>
+            a.fiber_name.localeCompare(b.fiber_name)
+        );
     }, [salesSupplierDetailData]);
 
     var startIdxSupplierSales = 0;
@@ -397,12 +387,12 @@ const AnalyticsPage: React.FC = () => {
                                     <tr>
                                         {[
                                             "#",
+                                            "Fiber",
                                             "Supplier",
                                             "Item",
+                                            "Pembeli",
                                             "Berat Penjualan",
                                             "Harga Beli",
-                                            "Pembeli",
-                                            "Fiber",
                                         ].map((header) => (
                                             <th
                                                 key={header}
@@ -414,62 +404,42 @@ const AnalyticsPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
-                                    {groupedDataSupplierSales?.map((supplier, supplierIndex) => {
-                                        const supplierRowSpan = supplier.items.reduce(
-                                            (sum, item) => sum + item.sales.length,
-                                            0
-                                        );
-
-                                        return supplier.items.map((item, itemIndex) => {
-                                            return item.sales.map((sale, saleIndex) => {
-                                                const isFirstRowOfSupplier =
-                                                    itemIndex === 0 && saleIndex === 0;
-                                                const isFirstRowOfItem = saleIndex === 0;
-
-                                                return (
-                                                    <tr
-                                                        key={`${supplierIndex}-${itemIndex}-${saleIndex}`}
-                                                        className="hover:bg-gray-50 transition"
-                                                    >
-                                                        <td className="px-6 py-4 border border-gray-300 whitespace-nowrap text-sm text-gray-700">
-                                                            {(startIdxSupplierSales += 1)}
+                                    {groupedDataSupplierSales?.map((fiberGroup, fiberIndex) => {
+                                        return fiberGroup.rows.map((row, rowIndex) => {
+                                            const isFirstRow = rowIndex === 0;
+                                            return (
+                                                <tr
+                                                    key={`${fiberIndex}-${rowIndex}`}
+                                                    className="hover:bg-gray-50 transition"
+                                                >
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap text-sm text-gray-700">
+                                                        {(startIdxSupplierSales += 1)}
+                                                    </td>
+                                                    {isFirstRow && (
+                                                        <td
+                                                            rowSpan={fiberGroup.rows.length}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {fiberGroup.fiber_name || "-"}
                                                         </td>
-                                                        {isFirstRowOfSupplier && (
-                                                            <td
-                                                                rowSpan={supplierRowSpan}
-                                                                className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                            >
-                                                                {supplier.supplier_name}
-                                                            </td>
-                                                        )}
-
-                                                        {isFirstRowOfItem && (
-                                                            <td
-                                                                rowSpan={item.sales.length}
-                                                                className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                            >
-                                                                {item.item_name}
-                                                            </td>
-                                                        )}
-
-                                                        <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                            {sale.qty}kg
-                                                        </td>
-
-                                                        <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                            {formatRupiah(sale.price)}
-                                                        </td>
-
-                                                        <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                            {sale.customer_name}
-                                                        </td>
-
-                                                        <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                            {sale.fiber_name || "-"}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            });
+                                                    )}
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {row.supplier_name}
+                                                    </td>
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {row.item_name}
+                                                    </td>
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {row.customer_name}
+                                                    </td>
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {row.qty}kg
+                                                    </td>
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {formatRupiah(row.price)}
+                                                    </td>
+                                                </tr>
+                                            );
                                         });
                                     })}
                                 </tbody>
