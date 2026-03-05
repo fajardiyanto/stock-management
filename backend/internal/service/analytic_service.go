@@ -682,7 +682,7 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 			ss.current_weight     AS current_weight,
 			ss.sorted_item_name   AS item_name,
 			it.weight             AS qty,
-			si.price_per_kilogram AS price,
+			ss.price_per_kilogram AS price,
 			cust.name             AS customer_name,
 			''                    AS fiber_name
 		FROM sales s
