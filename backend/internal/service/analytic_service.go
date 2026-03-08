@@ -50,17 +50,25 @@ func (s *AnalyticService) GetAnalyticStats(filter models.AnalyticStatsFilter) (*
       	   	  AND created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		),
 		sales_totals AS (
-			 SELECT
-				 COALESCE(SUM(s.total_amount), 0) AS total_sales,
-				 COALESCE(SUM(i.weight), 0) AS total_sales_weight
-			 FROM item_sales i
-					  JOIN sales s
-						   ON s.uuid = i.sale_id
-			 WHERE i.deleted = false
-			   AND s.deleted = false
-			   AND s.created_at >= CAST(? AS DATE)
-			   AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
-		 )
+			SELECT
+				COALESCE((
+					SELECT SUM(total_amount)
+					FROM sales
+					WHERE deleted = false
+					AND created_at >= CAST(? AS DATE)
+					AND created_at < CAST(? AS DATE) + INTERVAL '1 day'
+				), 0) AS total_sales,
+
+				COALESCE((
+					SELECT SUM(i.weight)
+					FROM item_sales i
+					JOIN sales s ON s.uuid = i.sale_id
+					WHERE i.deleted = false
+					AND s.deleted = false
+					AND s.created_at >= CAST(? AS DATE)
+					AND s.created_at < CAST(? AS DATE) + INTERVAL '1 day'
+				), 0) AS total_sales_weight
+		)
 		SELECT
 			st.total_stock,
 			ft.total_fiber,
@@ -73,6 +81,8 @@ func (s *AnalyticService) GetAnalyticStats(filter models.AnalyticStatsFilter) (*
 		CROSS JOIN purchase_totals pt
 		CROSS JOIN sales_totals sa
 	`,
+		filter.StartDate,
+		filter.EndDate,
 		filter.StartDate,
 		filter.EndDate,
 		filter.StartDate,
