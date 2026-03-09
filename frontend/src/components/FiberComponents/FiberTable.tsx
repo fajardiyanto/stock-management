@@ -58,11 +58,10 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                 (header) => (
                                     <th
                                         key={header}
-                                        className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${
-                                            header === "Actions"
-                                                ? "text-right"
-                                                : "text-left"
-                                        }`}
+                                        className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${header === "Actions"
+                                            ? "text-right"
+                                            : "text-left"
+                                            }`}
                                     >
                                         {header}
                                     </th>
@@ -107,7 +106,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {unit.sale_code && (
                                             <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {unit.sale_code}
+                                                {unit?.sale_code}
                                             </span>
                                         )}
                                     </td>
@@ -132,6 +131,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                     }
                                                     title="Lihat Detail Fiber"
                                                     className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition"
+                                                    disabled={unit.sale_id === ""}
                                                 >
                                                     <EyeIcon size={18} />
                                                 </button>

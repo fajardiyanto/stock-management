@@ -8,12 +8,13 @@ import (
 	"dashboard-app/internal/repository"
 	"dashboard-app/pkg/apperror"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type SalesService struct{}
@@ -1158,7 +1159,7 @@ func (s *SalesService) buildResponses(rawSales []models.RawSalesData, data model
 							StockSortName:    ss.ItemName,
 							PricePerKilogram: it.PricePerKilogram,
 							Weight:           fa.Weight,
-							TotalAmount:      it.TotalAmount,
+							TotalAmount:      fa.Weight * it.PricePerKilogram,
 						},
 					)
 				}
