@@ -4,6 +4,7 @@ import StockRowShrinkage from "./StockRowShrinkage";
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { StockEntry, StockItem, StockSortResponse } from "../../types/stock";
 import { formatDateRawUTC } from "../../utils/FormatDate";
+import { authService } from "../../services/authService";
 
 interface StockRowDetailsProps {
     item: StockItem;
@@ -24,6 +25,8 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
     onEditStock,
     onDeleteStock,
 }) => {
+    const userData = authService.getUser();
+
     const isFirstRow = itemIndex === 0;
     const isSorted = item.is_sorted;
 
@@ -145,7 +148,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                     }`}
-                disabled={sortItem?.weight !== sortItem?.current_weight}
+                disabled={sortItem?.weight !== sortItem?.current_weight || userData?.role !== 'SUPER_ADMIN'}
             >
                 <ChevronRight size={16} />
                 {actionText}
@@ -170,7 +173,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                             : ""
                         }`}
                     title="Edit Stock"
-                    disabled={sortItem?.weight !== sortItem?.current_weight}
+                    disabled={sortItem?.weight !== sortItem?.current_weight || userData?.role !== 'SUPER_ADMIN'}
                 >
                     <Edit2 size={18} />
                 </button>
@@ -180,6 +183,7 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                     }
                     className="border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-red-600 transition"
                     title="Delete Stock"
+                    disabled={userData?.role !== 'SUPER_ADMIN'}
                 >
                     <Trash2 size={18} />
                 </button>

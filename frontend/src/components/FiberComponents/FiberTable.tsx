@@ -6,6 +6,7 @@ import {
     STATUS_MAP,
 } from "../../types/fiber";
 import Pagination from "../Pagination";
+import { User } from "../../types/user";
 
 interface FiberTableProps {
     data: FiberPaginationResponse;
@@ -18,6 +19,7 @@ interface FiberTableProps {
     onDelete: (unit: FiberResponse) => void;
     onStatusChange: (unit: FiberResponse) => void;
     onDetail: (unit: FiberResponse) => void;
+    userData: User | null;
 }
 
 const getStatusBadge = (status: "FREE" | "USED") => {
@@ -45,6 +47,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
     onDelete,
     onStatusChange,
     onDetail,
+    userData,
 }) => {
     const startIdx = (currentPage - 1) * (data?.size ?? 0) + 1;
 
@@ -119,6 +122,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                     }
                                                     title="Tandai Tersedia (Check In)"
                                                     className="p-2 text-green-600 hover:bg-green-100 rounded-full transition"
+                                                    disabled={userData?.role !== 'SUPER_ADMIN'}
                                                 >
                                                     <CheckCircle size={18} />
                                                 </button>
@@ -131,7 +135,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                     }
                                                     title="Lihat Detail Fiber"
                                                     className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition"
-                                                    disabled={unit.sale_id === ""}
+                                                    disabled={unit.sale_id === "" || userData?.role !== 'SUPER_ADMIN'}
                                                 >
                                                     <EyeIcon size={18} />
                                                 </button>
@@ -141,6 +145,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                 onClick={() => onEdit(unit)}
                                                 title="Edit"
                                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition"
+                                                disabled={userData?.role !== 'SUPER_ADMIN'}
                                             >
                                                 <Edit2 size={18} />
                                             </button>
@@ -152,6 +157,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                     }
                                                     title="Hapus"
                                                     className="p-2 text-red-600 hover:bg-red-100 rounded-full transition"
+                                                    disabled={userData?.role !== 'SUPER_ADMIN'}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>

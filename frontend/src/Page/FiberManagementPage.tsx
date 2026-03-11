@@ -14,8 +14,11 @@ import { useToast } from "../contexts/ToastContext";
 import FiberDetailModal from "../components/FiberComponents/FiberDetailModal";
 import { salesService } from "../services/salesService";
 import { SaleEntry, SaleEntryById } from "../types/sales";
+import { authService } from "../services/authService";
 
 const FiberManagementPage: React.FC = () => {
+    const userData = authService.getUser();
+
     const [searchName, setSearchName] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [modalType, setModalType] = useState<
@@ -193,6 +196,7 @@ const FiberManagementPage: React.FC = () => {
                     <button
                         onClick={handleOpenAddModal}
                         className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition shadow-lg"
+                        disabled={userData?.role !== 'SUPER_ADMIN'}
                     >
                         <Plus size={18} /> Tambah Fiber
                     </button>
@@ -217,6 +221,7 @@ const FiberManagementPage: React.FC = () => {
                     onDelete={handleOpenDelete}
                     onStatusChange={handleStatusChange}
                     onDetail={handleOpenDetail}
+                    userData={userData}
                 />
             </div>
 

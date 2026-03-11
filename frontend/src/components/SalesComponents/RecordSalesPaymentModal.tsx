@@ -13,6 +13,7 @@ import { getDefaultDate } from "../../utils/DefaultDate";
 import { paymentService } from "../../services/paymentService";
 import { SummaryBox, ProgressBox } from "../Box";
 import { MaxDate } from "../../utils/MaxDate";
+import { authService } from "../../services/authService";
 
 interface RecordSalesPaymentModalProps {
     sale: SaleEntry;
@@ -29,6 +30,8 @@ const RecordSalesPaymentModal: React.FC<RecordSalesPaymentModalProps> = ({
     onClose,
     onRefresh,
 }) => {
+    const userData = authService.getUser();
+
     const [formData, setFormData] = useState<CreatePaymentSalesRequest>({
         sales_id: "",
         sales_date: getDefaultDate(),
@@ -286,7 +289,8 @@ const RecordSalesPaymentModal: React.FC<RecordSalesPaymentModalProps> = ({
                             disabled={
                                 isSubmitting ||
                                 rawPaymentAmount <= 0 ||
-                                rawPaymentAmount > remainingBefore
+                                rawPaymentAmount > remainingBefore ||
+                                userData?.role !== 'SUPER_ADMIN'
                             }
                         >
                             {isSubmitting ? "Mencatat..." : "Catat Pembayaran"}

@@ -10,6 +10,7 @@ import {
 import { formatRupiah } from "../../utils/FormatRupiah";
 import { formatDate, formatDateRawUTC } from "../../utils/FormatDate";
 import { PaymentStatusLabel, PAYMENT_STATUS } from "../../types/payment";
+import { authService } from "../../services/authService";
 
 interface SaleItemRowProps {
     sale: SaleEntry;
@@ -26,6 +27,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
     handleEditSale,
     handleOpenPaymentDeposit,
 }) => {
+    const userData = authService.getUser();
+
     const handlePrintNota = () => {
         window.open(`/dashboard/print-invoice?saleId=${sale.uuid}`, "_blank");
     };
@@ -120,8 +123,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                 const item = rowData.item;
                 const addOn =
                     rowData.addOnIndex !== null &&
-                    sale.add_ons &&
-                    rowData.addOnIndex < sale.add_ons.length
+                        sale.add_ons &&
+                        rowData.addOnIndex < sale.add_ons.length
                         ? sale.add_ons[rowData.addOnIndex]
                         : null;
 
@@ -264,11 +267,10 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                         <div
                                             className="h-full bg-blue-500"
                                             style={{
-                                                width: `${
-                                                    (sale.paid_amount /
-                                                        sale.total_amount) *
+                                                width: `${(sale.paid_amount /
+                                                    sale.total_amount) *
                                                     100
-                                                }%`,
+                                                    }%`,
                                             }}
                                         ></div>
                                     </div>
@@ -298,35 +300,37 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                             onClick={() => handleEditSale(sale)}
                                             title="Edit Penjualan"
                                             className="p-2 text-blue-500 hover:text-blue-800"
+                                            disabled={userData?.role !== 'SUPER_ADMIN'}
                                         >
                                             <PencilIcon size={18} />
                                         </button>
 
                                         {sale.payment_status !==
                                             PAYMENT_STATUS.FULL && (
-                                            <>
-                                                <button
-                                                    onClick={() =>
-                                                        handleOpenPaymentDeposit(
-                                                            sale
-                                                        )
-                                                    }
-                                                    title="Tambah Pembayaran Deposit"
-                                                    className="p-2 text-yellow-400 hover:text-yellow-700"
-                                                >
-                                                    <DollarSign size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleOpenPayment(sale)
-                                                    }
-                                                    title="Jadwalkan Pembayaran"
-                                                    className="p-2 text-green-500 hover:text-green-800"
-                                                >
-                                                    <Calendar size={18} />
-                                                </button>
-                                            </>
-                                        )}
+                                                <>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleOpenPaymentDeposit(
+                                                                sale
+                                                            )
+                                                        }
+                                                        title="Tambah Pembayaran Deposit"
+                                                        className="p-2 text-yellow-400 hover:text-yellow-700"
+                                                        disabled={userData?.role !== 'SUPER_ADMIN'}
+                                                    >
+                                                        <DollarSign size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleOpenPayment(sale)
+                                                        }
+                                                        title="Jadwalkan Pembayaran"
+                                                        className="p-2 text-green-500 hover:text-green-800"
+                                                    >
+                                                        <Calendar size={18} />
+                                                    </button>
+                                                </>
+                                            )}
 
                                         <button
                                             onClick={handlePrintNota}
@@ -344,6 +348,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                             }
                                             title="Hapus Penjualan"
                                             className="p-2 text-red-500 hover:text-red-800"
+                                            disabled={userData?.role !== 'SUPER_ADMIN'}
                                         >
                                             <Trash2 size={18} />
                                         </button>

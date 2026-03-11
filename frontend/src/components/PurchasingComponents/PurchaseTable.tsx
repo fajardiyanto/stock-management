@@ -10,6 +10,7 @@ import RecordPaymentModal from "./RecordPaymentModal";
 import { paymentService } from "../../services/paymentService";
 import { useToast } from "../../contexts/ToastContext";
 import PurchaseEditModal from "./PurchaseEditModal";
+import { authService } from "../../services/authService";
 
 interface PurchaseTableProps {
     data: Purchasing[];
@@ -34,6 +35,8 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
     onPageSizeChange,
     onRefresh,
 }) => {
+    const userData = authService.getUser();
+
     const [purchase, setPurchase] = useState<Purchasing>({} as Purchasing);
     const [modalType, setModalType] = useState<"ADD" | "EDIT" | null>(null);
     const [payments, setPayments] = useState<PaymentResponse[]>([]);
@@ -119,11 +122,10 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             ].map((header) => (
                                 <th
                                     key={header}
-                                    className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${
-                                        header === "Actions"
-                                            ? "text-right"
-                                            : "text-left"
-                                    }`}
+                                    className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${header === "Actions"
+                                        ? "text-right"
+                                        : "text-left"
+                                        }`}
                                 >
                                     {header}
                                 </th>
@@ -135,7 +137,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             const percentage =
                                 item.total_amount > 0
                                     ? (item.paid_amount / item.total_amount) *
-                                      100
+                                    100
                                     : 0;
                             return (
                                 <tr key={index} className="hover:bg-gray-50">
@@ -168,7 +170,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                         <PurchaseStatusBadge
                                             status={
                                                 PaymentStatusLabel[
-                                                    item.payment_status
+                                                item.payment_status
                                                 ]
                                             }
                                             percentage={percentage}
@@ -185,6 +187,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                                 }
                                                 className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition"
                                                 title="Edit"
+                                                disabled={userData?.role !== 'SUPER_ADMIN'}
                                             >
                                                 <Edit2 size={18} />
                                             </button>
@@ -194,6 +197,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                                 }
                                                 className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition"
                                                 title="Payment"
+                                                disabled={userData?.role !== 'SUPER_ADMIN'}
                                             >
                                                 <Calendar size={18} />
                                             </button>
