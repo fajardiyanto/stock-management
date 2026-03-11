@@ -293,13 +293,13 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 {/* ACTIONS */}
                                 <td
                                     rowSpan={totalRows}
-                                    className={`px-6 py-4 border border-gray-300 text-right text-sm font-medium align-middle ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
+                                    className="px-6 py-4 border border-gray-300 text-right text-sm font-medium align-middle"
                                 >
                                     <div className="flex justify-end gap-2">
                                         <button
                                             onClick={() => handleEditSale(sale)}
                                             title="Edit Penjualan"
-                                            className={`p-2 text-blue-500 hover:text-blue-800 `}
+                                            className={`p-2 text-blue-500 hover:text-blue-800 ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                         >
                                             <PencilIcon size={18} />
                                         </button>
@@ -314,8 +314,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                             )
                                                         }
                                                         title="Tambah Pembayaran Deposit"
-                                                        className="p-2 text-yellow-400 hover:text-yellow-700"
-                                                        disabled={userData?.role !== 'SUPER_ADMIN'}
+                                                        className={`p-2 text-yellow-400 hover:text-yellow-700 ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                     >
                                                         <DollarSign size={18} />
                                                     </button>
@@ -324,7 +323,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                             handleOpenPayment(sale)
                                                         }
                                                         title="Jadwalkan Pembayaran"
-                                                        className="p-2 text-green-500 hover:text-green-800"
+                                                        className={`p-2 text-green-500 hover:text-green-800 ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                     >
                                                         <Calendar size={18} />
                                                     </button>
@@ -346,8 +345,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                                 )
                                             }
                                             title="Hapus Penjualan"
-                                            className="p-2 text-red-500 hover:text-red-800"
-                                            disabled={userData?.role !== 'SUPER_ADMIN'}
+                                            className={`p-2 text-red-500 hover:text-red-800 ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                         >
                                             <Trash2 size={18} />
                                         </button>
