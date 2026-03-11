@@ -121,8 +121,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                         onStatusChange(unit)
                                                     }
                                                     title="Tandai Tersedia (Check In)"
-                                                    className="p-2 text-green-600 hover:bg-green-100 rounded-full transition"
-                                                    disabled={userData?.role !== 'SUPER_ADMIN'}
+                                                    className={`p-2 text-green-600 hover:bg-green-100 rounded-full transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                 >
                                                     <CheckCircle size={18} />
                                                 </button>
@@ -134,8 +133,8 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                         onDetail(unit)
                                                     }
                                                     title="Lihat Detail Fiber"
-                                                    className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition"
-                                                    disabled={unit.sale_id === "" || userData?.role !== 'SUPER_ADMIN'}
+                                                    className={`p-2 text-gray-600 hover:bg-gray-200 rounded-full transition`}
+                                                    disabled={unit.sale_id === ""}
                                                 >
                                                     <EyeIcon size={18} />
                                                 </button>
@@ -144,8 +143,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                             <button
                                                 onClick={() => onEdit(unit)}
                                                 title="Edit"
-                                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition"
-                                                disabled={userData?.role !== 'SUPER_ADMIN'}
+                                                className={`p-2 text-blue-600 hover:bg-blue-100 rounded-full transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                             >
                                                 <Edit2 size={18} />
                                             </button>
@@ -156,8 +154,7 @@ const FiberTable: React.FC<FiberTableProps> = ({
                                                         onDelete(unit)
                                                     }
                                                     title="Hapus"
-                                                    className="p-2 text-red-600 hover:bg-red-100 rounded-full transition"
-                                                    disabled={userData?.role !== 'SUPER_ADMIN'}
+                                                    className={`p-2 text-red-600 hover:bg-red-100 rounded-full transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>

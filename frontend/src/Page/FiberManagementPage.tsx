@@ -195,8 +195,7 @@ const FiberManagementPage: React.FC = () => {
 
                     <button
                         onClick={handleOpenAddModal}
-                        className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition shadow-lg"
-                        disabled={userData?.role !== 'SUPER_ADMIN'}
+                        className={`flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition shadow-lg ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                     >
                         <Plus size={18} /> Tambah Fiber
                     </button>

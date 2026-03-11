@@ -185,9 +185,8 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                                 onClick={() =>
                                                     handleEditPurchase(item)
                                                 }
-                                                className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition"
+                                                className={`text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                 title="Edit"
-                                                disabled={userData?.role !== 'SUPER_ADMIN'}
                                             >
                                                 <Edit2 size={18} />
                                             </button>
@@ -195,9 +194,8 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                                 onClick={() =>
                                                     handleOpenPayment(item)
                                                 }
-                                                className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition"
+                                                className={`text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                                 title="Payment"
-                                                disabled={userData?.role !== 'SUPER_ADMIN'}
                                             >
                                                 <Calendar size={18} />
                                             </button>

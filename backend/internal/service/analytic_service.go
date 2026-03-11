@@ -680,8 +680,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
-		  AND s.created_at >= CAST(? AS DATE)
-          AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
+		  AND p.purchase_date >= CAST(? AS DATE)
+          AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 	
 		UNION ALL
 	
@@ -705,8 +705,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
-		   AND s.created_at >= CAST(? AS DATE)
-      	   AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
+		   AND p.purchase_date >= CAST(? AS DATE)
+      	   AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 	),
 	
 		 numbered AS (
@@ -766,8 +766,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		WHERE s.deleted = false
 		  AND s.fiber_list IS NOT NULL
 		  AND s.fiber_list <> ''
-		  AND s.created_at >= CAST(? AS DATE)
-		  AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
+		  AND p.purchase_date >= CAST(? AS DATE)
+		  AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 	
 		UNION ALL
 	
@@ -784,8 +784,8 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 				 JOIN "user" sup ON sup.uuid = p.supplier_id
 		WHERE s.deleted = false
 		  AND (s.fiber_list IS NULL OR s.fiber_list = '')
-		  AND s.created_at >= CAST(? AS DATE)
-      	  AND s.created_at <  CAST(? AS DATE) + INTERVAL '1 day'
+		  AND p.purchase_date >= CAST(? AS DATE)
+      	  AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 	)
 	
 	SELECT COUNT(*) FROM base_data;

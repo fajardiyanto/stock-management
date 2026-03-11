@@ -147,8 +147,11 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                     } ${sortItem?.weight !== sortItem?.current_weight
                         ? "opacity-50 cursor-not-allowed"
                         : ""
+                    } ${userData?.role !== 'SUPER_ADMIN' && actionText === "Edit Sortir"
+                        ? "hidden"
+                        : ""
                     }`}
-                disabled={sortItem?.weight !== sortItem?.current_weight || userData?.role !== 'SUPER_ADMIN'}
+                disabled={sortItem?.weight !== sortItem?.current_weight}
             >
                 <ChevronRight size={16} />
                 {actionText}
@@ -171,9 +174,9 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                         ${sortItem?.weight !== sortItem?.current_weight
                             ? "opacity-50 cursor-not-allowed"
                             : ""
-                        }`}
+                        } ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                     title="Edit Stock"
-                    disabled={sortItem?.weight !== sortItem?.current_weight || userData?.role !== 'SUPER_ADMIN'}
+                    disabled={sortItem?.weight !== sortItem?.current_weight}
                 >
                     <Edit2 size={18} />
                 </button>
@@ -181,9 +184,9 @@ const StockRowDetails: React.FC<StockRowDetailsProps> = ({
                     onClick={() =>
                         onDeleteStock(stockEntry.uuid, stockEntry.stock_code)
                     }
-                    className="border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-red-600 transition"
+                    className={`border border-gray-300 p-2 rounded-lg hover:bg-gray-100 text-red-600 transition ${userData?.role !== 'SUPER_ADMIN' && 'hidden'
+                        }`}
                     title="Delete Stock"
-                    disabled={userData?.role !== 'SUPER_ADMIN'}
                 >
                     <Trash2 size={18} />
                 </button>

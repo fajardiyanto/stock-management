@@ -293,14 +293,13 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                 {/* ACTIONS */}
                                 <td
                                     rowSpan={totalRows}
-                                    className="px-6 py-4 border border-gray-300 text-right text-sm font-medium align-middle"
+                                    className={`px-6 py-4 border border-gray-300 text-right text-sm font-medium align-middle ${userData?.role !== 'SUPER_ADMIN' && 'hidden'}`}
                                 >
                                     <div className="flex justify-end gap-2">
                                         <button
                                             onClick={() => handleEditSale(sale)}
                                             title="Edit Penjualan"
-                                            className="p-2 text-blue-500 hover:text-blue-800"
-                                            disabled={userData?.role !== 'SUPER_ADMIN'}
+                                            className={`p-2 text-blue-500 hover:text-blue-800 `}
                                         >
                                             <PencilIcon size={18} />
                                         </button>
@@ -335,7 +334,7 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                                         <button
                                             onClick={handlePrintNota}
                                             title="Cetak Nota"
-                                            className="p-2 text-purple-500 hover:text-purple-800"
+                                            className="p-2 text-purple-500 hover:text-purple-800 "
                                         >
                                             <Printer size={18} />
                                         </button>

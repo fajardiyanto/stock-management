@@ -255,56 +255,107 @@ const AnalyticsPage: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border border-purple-200">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-sm font-semibold text-gray-700">
-                                                Total Fiber Tersedia
-                                            </h3>
-                                            <Layers className="text-purple-600" size={24} />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-4xl font-bold text-gray-900">
-                                                {stats.total_fiber}
-                                            </p>
-                                            <p className="text-sm text-gray-600">units</p>
-                                        </div>
-                                    </div>
+                                    {userData?.role === 'SUPER_ADMIN' && (
+                                        <>
+                                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border border-purple-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Fiber Tersedia
+                                                    </h3>
+                                                    <Layers className="text-purple-600" size={24} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-4xl font-bold text-gray-900">
+                                                        {stats.total_fiber}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">units</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border border-orange-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Pembelian
+                                                    </h3>
+                                                    <ShoppingCart
+                                                        className="text-orange-600"
+                                                        size={24}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-gray-500">Rp</p>
+                                                    <p className="text-3xl font-bold text-gray-900">
+                                                        {formatNumber(stats.total_purchase)}
+                                                    </p>
+                                                </div>
+                                            </div>
 
-                                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border border-orange-200">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-sm font-semibold text-gray-700">
-                                                Total Pembelian
-                                            </h3>
-                                            <ShoppingCart
-                                                className="text-orange-600"
-                                                size={24}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-gray-500">Rp</p>
-                                            <p className="text-3xl font-bold text-gray-900">
-                                                {formatNumber(stats.total_purchase)}
-                                            </p>
-                                        </div>
-                                    </div>
+                                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border border-blue-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Penjualan
+                                                    </h3>
+                                                    <TrendingUp
+                                                        className="text-blue-600"
+                                                        size={24}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-gray-500">Rp</p>
+                                                    <p className="text-3xl font-bold text-gray-900">
+                                                        {formatNumber(stats.total_sales)}
+                                                    </p>
+                                                </div>
+                                            </div><div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border border-purple-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Fiber Tersedia
+                                                    </h3>
+                                                    <Layers className="text-purple-600" size={24} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-4xl font-bold text-gray-900">
+                                                        {stats.total_fiber}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">units</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border border-orange-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Pembelian
+                                                    </h3>
+                                                    <ShoppingCart
+                                                        className="text-orange-600"
+                                                        size={24}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-gray-500">Rp</p>
+                                                    <p className="text-3xl font-bold text-gray-900">
+                                                        {formatNumber(stats.total_purchase)}
+                                                    </p>
+                                                </div>
+                                            </div>
 
-                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border border-blue-200">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-sm font-semibold text-gray-700">
-                                                Total Penjualan
-                                            </h3>
-                                            <TrendingUp
-                                                className="text-blue-600"
-                                                size={24}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-gray-500">Rp</p>
-                                            <p className="text-3xl font-bold text-gray-900">
-                                                {formatNumber(stats.total_sales)}
-                                            </p>
-                                        </div>
-                                    </div>
+                                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border border-blue-200">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-semibold text-gray-700">
+                                                        Total Penjualan
+                                                    </h3>
+                                                    <TrendingUp
+                                                        className="text-blue-600"
+                                                        size={24}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-gray-500">Rp</p>
+                                                    <p className="text-3xl font-bold text-gray-900">
+                                                        {formatNumber(stats.total_sales)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -456,163 +507,164 @@ const AnalyticsPage: React.FC = () => {
                             onPageSizeChange={handlePageSizeChange}
                         />
                     </div>
+                    {userData?.role === 'SUPER_ADMIN' && (
+                        <div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        Tren Penjualan & Pembelian Tahun: {dateYear}
+                                    </h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <LineChart
+                                            data={salesTrendData}
+                                            margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="month" />
+                                            <YAxis
+                                                domain={[finalMin, finalMax]}
+                                                tickFormatter={(value) => formatRupiah(value)}
+                                            />
+                                            <Tooltip
+                                                formatter={(value: number | undefined) =>
+                                                    value != null ? formatRupiah(value) : "-"
+                                                }
+                                            />
+                                            <Legend />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="sales_revenue"
+                                                stroke="#3b82f6"
+                                                strokeWidth={2}
+                                                name="Penjualan"
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="purchase_revenue"
+                                                stroke="#f59e0b"
+                                                strokeWidth={2}
+                                                name="Pembelian"
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
 
-                    <div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Tren Penjualan & Pembelian Tahun: {dateYear}
-                                </h3>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart
-                                        data={salesTrendData}
-                                        margin={{ top: 20, right: 10, left: 60, bottom: 5 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="month" />
-                                        <YAxis
-                                            domain={[finalMin, finalMax]}
-                                            tickFormatter={(value) => formatRupiah(value)}
-                                        />
-                                        <Tooltip
-                                            formatter={(value: number | undefined) =>
-                                                value != null ? formatRupiah(value) : "-"
-                                            }
-                                        />
-                                        <Legend />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="sales_revenue"
-                                            stroke="#3b82f6"
-                                            strokeWidth={2}
-                                            name="Penjualan"
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="purchase_revenue"
-                                            stroke="#f59e0b"
-                                            strokeWidth={2}
-                                            name="Pembelian"
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        Distribusi Stok
+                                    </h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={stockDistributionData}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={false}
+                                                label={({ name, value }) =>
+                                                    `${name}: ${value} kg`
+                                                }
+                                                outerRadius={100}
+                                                fill="#8884d8"
+                                                dataKey="value"
+                                            >
+                                                {stockDistributionData?.map((entry, index) => (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.color}
+                                                    />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
 
-                            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Distribusi Stok
-                                </h3>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie
-                                            data={stockDistributionData}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            label={({ name, value }) =>
-                                                `${name}: ${value} kg`
-                                            }
-                                            outerRadius={100}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                        >
-                                            {stockDistributionData?.map((entry, index) => (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={entry.color}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        Performa Supplier
+                                    </h3>
+                                    {supplierData && (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                data={supplierData}
+                                                margin={{
+                                                    top: 20,
+                                                    right: 10,
+                                                    left: 60,
+                                                    bottom: 5,
+                                                }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis
+                                                    width={80}
+                                                    tickFormatter={(value) =>
+                                                        formatRupiah(value)
+                                                    }
                                                 />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                                <Tooltip
+                                                    formatter={(value: number | undefined) =>
+                                                        value != null
+                                                            ? formatRupiah(value)
+                                                            : "-"
+                                                    }
+                                                />
+                                                <Legend />
+                                                <Bar
+                                                    dataKey="total"
+                                                    fill="#8b5cf6"
+                                                    name="Total Pembelian"
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </div>
+
+                                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        Performa Customer
+                                    </h3>
+                                    {customerData && (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                data={customerData}
+                                                margin={{
+                                                    top: 20,
+                                                    right: 10,
+                                                    left: 60,
+                                                    bottom: 5,
+                                                }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis
+                                                    width={80}
+                                                    tickFormatter={(value) =>
+                                                        formatRupiah(value)
+                                                    }
+                                                />
+                                                <Tooltip
+                                                    formatter={(value: number | undefined) =>
+                                                        value != null
+                                                            ? formatRupiah(value)
+                                                            : "-"
+                                                    }
+                                                />
+                                                <Legend />
+                                                <Bar
+                                                    dataKey="total"
+                                                    fill="#8b5cf6"
+                                                    name="Total Pembelian"
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </div>
                             </div>
                         </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Performa Supplier
-                                </h3>
-                                {supplierData && (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart
-                                            data={supplierData}
-                                            margin={{
-                                                top: 20,
-                                                right: 10,
-                                                left: 60,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="name" />
-                                            <YAxis
-                                                width={80}
-                                                tickFormatter={(value) =>
-                                                    formatRupiah(value)
-                                                }
-                                            />
-                                            <Tooltip
-                                                formatter={(value: number | undefined) =>
-                                                    value != null
-                                                        ? formatRupiah(value)
-                                                        : "-"
-                                                }
-                                            />
-                                            <Legend />
-                                            <Bar
-                                                dataKey="total"
-                                                fill="#8b5cf6"
-                                                name="Total Pembelian"
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )}
-                            </div>
-
-                            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Performa Customer
-                                </h3>
-                                {customerData && (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart
-                                            data={customerData}
-                                            margin={{
-                                                top: 20,
-                                                right: 10,
-                                                left: 60,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="name" />
-                                            <YAxis
-                                                width={80}
-                                                tickFormatter={(value) =>
-                                                    formatRupiah(value)
-                                                }
-                                            />
-                                            <Tooltip
-                                                formatter={(value: number | undefined) =>
-                                                    value != null
-                                                        ? formatRupiah(value)
-                                                        : "-"
-                                                }
-                                            />
-                                            <Legend />
-                                            <Bar
-                                                dataKey="total"
-                                                fill="#8b5cf6"
-                                                name="Total Pembelian"
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </>
             )}
         </div>
