@@ -82,6 +82,7 @@ export interface SalesSupplierDetailFilter {
 export interface SalesSupplierDetailWithPurchase {
     supplier_name: string;
     item_name: string;
+    item_sort_name: string;
     qty: number;
     price: number;
     customer_name: string;
@@ -90,6 +91,7 @@ export interface SalesSupplierDetailWithPurchase {
     purchase_date: string;
     stock_weight: number;
     current_weight: number;
+    stock_sort_weight: number;
 }
 
 export interface SupplierGroupWithPurchase {
@@ -105,6 +107,8 @@ export interface SupplierGroupWithPurchase {
             purchase_date: string;
             stock_weight: number;
             current_weight: number;
+            item_sort_name: string;
+            stock_sort_weight: number;
         }[];
     }[];
 }

@@ -37,6 +37,9 @@ const StockSortManagementPage: React.FC = () => {
     ]);
     const [error, setError] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState<SubmitSortRequest | null>(null);
+    const [confirmWarning, setConfirmWarning] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -181,7 +184,7 @@ const StockSortManagementPage: React.FC = () => {
         showToast("Form berhasil di-reset", "info");
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -204,42 +207,38 @@ const StockSortManagementPage: React.FC = () => {
             return;
         }
 
-        const totalWeight = validResults.reduce((sum, r) => sum + r.weight, 0);
-        if (totalWeight > totalOriginalWeight) {
-            setError("Total berat sortir melebihi berat item asli!");
-            showToast("Total berat sortir melebihi berat item asli!", "error");
-            return;
-        }
-
+        let warning = "";
         if (!isEditMode && remainingWeight < 0) {
-            setError(
-                "Total berat yang disortir melebihi sisa berat yang tersedia!"
-            );
-            showToast(
-                "Total berat yang disortir melebihi sisa berat yang tersedia!",
-                "error"
-            );
-            return;
+            warning = "Total berat yang disortir melebihi sisa berat yang tersedia! Apakah Anda tetap ingin melanjutkan?";
         }
 
-        setIsSubmitting(true);
-
-        const finalPayload: SubmitSortRequest = {
+        const payload: SubmitSortRequest = {
             stock_item_uuid: stockItemId,
             stock_sort_request: validResults.map((form) => ({
                 sorted_item_name: form.sorted_item_name,
                 weight: form.weight,
                 price_per_kilogram: form.price_per_kilogram,
-                // current_weight: form.current_weight,
                 current_weight: form.weight,
                 is_shrinkage: form.is_shrinkage,
             })),
         };
 
+        setPendingPayload(payload);
+        setConfirmWarning(warning);
+        setShowConfirmDialog(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setShowConfirmDialog(false);
+
+        if (!pendingPayload || !stockItemId) return;
+
+        setIsSubmitting(true);
+
         try {
             const response = isEditMode
-                ? await stockService.updateStockSort(stockItemId, finalPayload)
-                : await stockService.createStockSort(finalPayload);
+                ? await stockService.updateStockSort(stockItemId, pendingPayload)
+                : await stockService.createStockSort(pendingPayload);
 
             if (response.status_code === 200 || response.status_code === 201) {
                 showToast(
@@ -265,8 +264,15 @@ const StockSortManagementPage: React.FC = () => {
             showToast(errorMessage, "error");
         } finally {
             setIsSubmitting(false);
+            setPendingPayload(null);
             navigate("/dashboard/stock");
         }
+    };
+
+    const handleCancelSave = () => {
+        setShowConfirmDialog(false);
+        setPendingPayload(null);
+        setConfirmWarning("");
     };
 
     if (loading || !stockInfo) {
@@ -376,9 +382,7 @@ const StockSortManagementPage: React.FC = () => {
                     <button
                         type="submit"
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg disabled:opacity-50 flex items-center"
-                        disabled={
-                            isSubmitting || (!isEditMode && remainingWeight < 0)
-                        }
+                        disabled={isSubmitting || remainingWeight > 0}
                     >
                         {isSubmitting ? (
                             <>
@@ -393,6 +397,61 @@ const StockSortManagementPage: React.FC = () => {
                     </button>
                 </div>
             </form>
+
+            {/* Confirmation Dialog */}
+            {showConfirmDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all">
+                        <div className="flex items-center mb-4">
+                            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                                <svg
+                                    className="w-6 h-6 text-yellow-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                Konfirmasi Penyimpanan
+                            </h3>
+                        </div>
+                        {confirmWarning && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+                                <strong>Peringatan!</strong> {confirmWarning}
+                            </div>
+                        )}
+                        <p className="text-gray-600 mb-6">
+                            Apakah Anda yakin ingin{" "}
+                            {isEditMode ? "memperbarui" : "menyimpan"} hasil
+                            sortir ini? Data yang sudah disimpan tidak dapat
+                            diubah kembali.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={handleCancelSave}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition font-medium"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmSave}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg"
+                            >
+                                {isEditMode ? "Ya, Perbarui" : "Ya, Simpan"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

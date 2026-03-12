@@ -58,6 +58,8 @@ const SupplierSalesTableWithPurchase: React.FC<
                     purchase_date: item.purchase_date,
                     stock_weight: item.stock_weight,
                     current_weight: item.current_weight,
+                    item_sort_name: item.item_sort_name,
+                    stock_sort_weight: item.stock_sort_weight,
                 });
             });
 
@@ -78,6 +80,8 @@ const SupplierSalesTableWithPurchase: React.FC<
                                     "Umur Stock",
                                     "Item",
                                     "Berat Beli",
+                                    "Item Sort",
+                                    "Berat Beli Sort",
                                     "Harga Beli",
                                     "Pembeli",
                                     "Berat Penjualan",
@@ -106,6 +110,11 @@ const SupplierSalesTableWithPurchase: React.FC<
                                     const totalStockWeight = Math.max(
                                         ...item.sales.map(
                                             (s) => s.stock_weight ?? 0
+                                        )
+                                    );
+                                    const totalStockSortWeight = Math.max(
+                                        ...item.sales.map(
+                                            (s) => s.stock_sort_weight ?? 0
                                         )
                                     );
                                     const currentWeight = Math.max(
@@ -159,6 +168,24 @@ const SupplierSalesTableWithPurchase: React.FC<
                                                         className="px-6 py-4 border border-gray-300 whitespace-nowrap"
                                                     >
                                                         {totalStockWeight} Kg
+                                                    </td>
+                                                )}
+
+                                                {isFirstRowOfItem && (
+                                                    <td
+                                                        rowSpan={item.sales.length}
+                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                    >
+                                                        {sale.item_sort_name}
+                                                    </td>
+                                                )}
+
+                                                {isFirstRowOfItem && (
+                                                    <td
+                                                        rowSpan={item.sales.length}
+                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                    >
+                                                        {totalStockSortWeight} Kg
                                                     </td>
                                                 )}
 

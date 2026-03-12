@@ -128,16 +128,18 @@ type SalesSupplierDetailPaginationResponse struct {
 }
 
 type SalesSupplierDetailWithPurchaseDataResponse struct {
-	SupplierName  string    `json:"supplier_name" gorm:"column:supplier_name"`
-	PurchaseDate  time.Time `json:"purchase_date" gorm:"column:purchase_date"`
-	StockWeight   int64     `json:"stock_weight" gorm:"column:stock_weight"`
-	ItemName      string    `json:"item_name" gorm:"column:item_name"`
-	Quantity      int64     `json:"qty" gorm:"column:qty"`
-	Price         int64     `json:"price" gorm:"column:price"`
-	CustomerName  string    `json:"customer_name" gorm:"column:customer_name"`
-	FiberName     string    `json:"fiber_name" gorm:"column:fiber_name"`
-	CurrentWeight int64     `json:"current_weight" gorm:"column:current_weight"`
-	AgeInDay      int       `json:"age_in_day"`
+	SupplierName    string    `json:"supplier_name" gorm:"column:supplier_name"`
+	PurchaseDate    time.Time `json:"purchase_date" gorm:"column:purchase_date"`
+	StockWeight     int64     `json:"stock_weight" gorm:"column:stock_weight"`
+	ItemName        string    `json:"item_name" gorm:"column:item_name"`
+	StockSortWeight int64     `json:"stock_sort_weight" gorm:"column:stock_sort_weight"`
+	ItemSortName    string    `json:"item_sort_name" gorm:"column:item_sort_name"`
+	Quantity        int64     `json:"qty" gorm:"column:qty"`
+	Price           int64     `json:"price" gorm:"column:price"`
+	CustomerName    string    `json:"customer_name" gorm:"column:customer_name"`
+	FiberName       string    `json:"fiber_name" gorm:"column:fiber_name"`
+	CurrentWeight   int64     `json:"current_weight" gorm:"column:current_weight"`
+	AgeInDay        int       `json:"age_in_day"`
 }
 
 type SalesSupplierDetailWithPurchaseDataPaginationResponse struct {
