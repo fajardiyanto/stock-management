@@ -98,17 +98,19 @@ export interface SupplierGroupWithPurchase {
     supplier_name: string;
     items: {
         item_name: string;
-        sales: {
-            qty: number;
-            price: number;
-            customer_name: string;
-            fiber_name: string;
-            age_in_day: number;
-            purchase_date: string;
-            stock_weight: number;
-            current_weight: number;
+        sorts: {
             item_sort_name: string;
             stock_sort_weight: number;
+            sales: {
+                qty: number;
+                price: number;
+                customer_name: string;
+                fiber_name: string;
+                age_in_day: number;
+                purchase_date: string;
+                stock_weight: number;
+                current_weight: number;
+            }[];
         }[];
     }[];
 }

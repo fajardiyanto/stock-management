@@ -36,20 +36,33 @@ const SupplierSalesTableWithPurchase: React.FC<
                     };
                 }
 
-                const SupplierGroupWithPurchase = suppliers[item.supplier_name];
-                let itemGroup = SupplierGroupWithPurchase.items.find(
+                const supplierGroup = suppliers[item.supplier_name];
+                let itemGroup = supplierGroup.items.find(
                     (i) => i.item_name === item.item_name
                 );
 
                 if (!itemGroup) {
                     itemGroup = {
                         item_name: item.item_name,
-                        sales: [],
+                        sorts: [],
                     };
-                    SupplierGroupWithPurchase.items.push(itemGroup);
+                    supplierGroup.items.push(itemGroup);
                 }
 
-                itemGroup.sales.push({
+                let sortGroup = itemGroup.sorts.find(
+                    (s) => s.item_sort_name === item.item_sort_name
+                );
+
+                if (!sortGroup) {
+                    sortGroup = {
+                        item_sort_name: item.item_sort_name,
+                        stock_sort_weight: item.stock_sort_weight,
+                        sales: [],
+                    };
+                    itemGroup.sorts.push(sortGroup);
+                }
+
+                sortGroup.sales.push({
                     qty: item.qty,
                     price: item.price,
                     customer_name: item.customer_name,
@@ -58,8 +71,6 @@ const SupplierSalesTableWithPurchase: React.FC<
                     purchase_date: item.purchase_date,
                     stock_weight: item.stock_weight,
                     current_weight: item.current_weight,
-                    item_sort_name: item.item_sort_name,
-                    stock_sort_weight: item.stock_sort_weight,
                 });
             });
 
@@ -71,8 +82,9 @@ const SupplierSalesTableWithPurchase: React.FC<
         return (
             <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
                 <div className="mb-6">
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">Pembukuan Harian Barang Terjual</h1>
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-green-200">
+                        <thead className="bg-gray-50">
                             <tr>
                                 {[
                                     "#",
@@ -99,117 +111,131 @@ const SupplierSalesTableWithPurchase: React.FC<
                         <tbody className="bg-white divide-y divide-gray-100">
                             {groupedData.map((supplier, supplierIndex) => {
                                 const supplierRowSpan = supplier.items.reduce(
-                                    (sum, item) => sum + item.sales.length,
+                                    (sum, item) => sum + item.sorts.reduce(
+                                        (sortSum, sort) => sortSum + sort.sales.length,
+                                        0
+                                    ),
                                     0
                                 );
 
+                                let isFirstRowOfSupplierRendered = false;
+
                                 return supplier.items.map((item, itemIndex) => {
-                                    const ageInDay = Math.max(
-                                        ...item.sales.map((s) => s.age_in_day ?? 0)
+                                    const itemRowSpan = item.sorts.reduce(
+                                        (sum, sort) => sum + sort.sales.length,
+                                        0
                                     );
-                                    const totalStockWeight = Math.max(
-                                        ...item.sales.map(
-                                            (s) => s.stock_weight ?? 0
+                                    const ageInDay = Math.max(
+                                        ...item.sorts.flatMap((sort) =>
+                                            sort.sales.map((s) => s.age_in_day ?? 0)
                                         )
                                     );
-                                    const totalStockSortWeight = Math.max(
-                                        ...item.sales.map(
-                                            (s) => s.stock_sort_weight ?? 0
+                                    const totalStockWeight = Math.max(
+                                        ...item.sorts.flatMap((sort) =>
+                                            sort.sales.map((s) => s.stock_weight ?? 0)
                                         )
                                     );
                                     const currentWeight = Math.max(
-                                        ...item.sales.map(
-                                            (s) => s.current_weight ?? 0
+                                        ...item.sorts.flatMap((sort) =>
+                                            sort.sales.map((s) => s.current_weight ?? 0)
                                         )
                                     );
-                                    return item.sales.map((sale, saleIndex) => {
-                                        const isFirstRowOfSupplier =
-                                            itemIndex === 0 && saleIndex === 0;
-                                        const isFirstRowOfItem = saleIndex === 0;
 
-                                        return (
-                                            <tr
-                                                key={`${supplierIndex}-${itemIndex}-${saleIndex}`}
-                                                className="hover:bg-gray-50 transition"
-                                            >
-                                                <td className="px-6 py-4 border border-gray-300 whitespace-nowrap text-sm text-gray-700">
-                                                    {(startIdx += 1)}
-                                                </td>
-                                                {isFirstRowOfSupplier && (
-                                                    <td
-                                                        rowSpan={supplierRowSpan}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {supplier.supplier_name}
+                                    let isFirstRowOfItemRendered = false;
+
+                                    return item.sorts.map((sort, sortIndex) => {
+                                        return sort.sales.map((sale, saleIndex) => {
+                                            const showSupplier = !isFirstRowOfSupplierRendered;
+                                            const showItem = !isFirstRowOfItemRendered;
+                                            const isFirstRowOfSort = saleIndex === 0;
+
+                                            if (showSupplier) isFirstRowOfSupplierRendered = true;
+                                            if (showItem) isFirstRowOfItemRendered = true;
+
+                                            return (
+                                                <tr
+                                                    key={`${supplierIndex}-${itemIndex}-${sortIndex}-${saleIndex}`}
+                                                    className="hover:bg-gray-50 transition"
+                                                >
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap text-sm text-gray-700">
+                                                        {(startIdx += 1)}
                                                     </td>
-                                                )}
+                                                    {showSupplier && (
+                                                        <td
+                                                            rowSpan={supplierRowSpan}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {supplier.supplier_name}
+                                                        </td>
+                                                    )}
 
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {ageInDay} hari
+                                                    {showItem && (
+                                                        <td
+                                                            rowSpan={itemRowSpan}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {ageInDay} hari
+                                                        </td>
+                                                    )}
+
+                                                    {showItem && (
+                                                        <td
+                                                            rowSpan={itemRowSpan}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {item.item_name}
+                                                        </td>
+                                                    )}
+
+                                                    {showItem && (
+                                                        <td
+                                                            rowSpan={itemRowSpan}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {totalStockWeight} Kg
+                                                        </td>
+                                                    )}
+
+                                                    {isFirstRowOfSort && (
+                                                        <td
+                                                            rowSpan={sort.sales.length}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {sort.item_sort_name}
+                                                        </td>
+                                                    )}
+
+                                                    {isFirstRowOfSort && (
+                                                        <td
+                                                            rowSpan={sort.sales.length}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {sort.stock_sort_weight} Kg
+                                                        </td>
+                                                    )}
+
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {formatRupiah(sale.price)}
                                                     </td>
-                                                )}
 
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {item.item_name}
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {sale.customer_name}
                                                     </td>
-                                                )}
 
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {totalStockWeight} Kg
+                                                    <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
+                                                        {sale.qty} Kg
                                                     </td>
-                                                )}
-
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {sale.item_sort_name}
-                                                    </td>
-                                                )}
-
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {totalStockSortWeight} Kg
-                                                    </td>
-                                                )}
-
-                                                <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                    {formatRupiah(sale.price)}
-                                                </td>
-
-                                                <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                    {sale.customer_name}
-                                                </td>
-
-                                                <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">
-                                                    {sale.qty} Kg
-                                                </td>
-                                                {isFirstRowOfItem && (
-                                                    <td
-                                                        rowSpan={item.sales.length}
-                                                        className="px-6 py-4 border border-gray-300 whitespace-nowrap"
-                                                    >
-                                                        {currentWeight} Kg
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        );
+                                                    {showItem && (
+                                                        <td
+                                                            rowSpan={itemRowSpan}
+                                                            className="px-6 py-4 border border-gray-300 whitespace-nowrap"
+                                                        >
+                                                            {currentWeight} Kg
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        });
                                     });
                                 });
                             })}
