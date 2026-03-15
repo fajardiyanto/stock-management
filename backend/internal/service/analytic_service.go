@@ -809,8 +809,63 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		)
 	}
 
+	// Query for unsold stock sorts (weight == current_weight)
+	unsoldQuery := `
+	SELECT
+		sup.name              AS supplier_name,
+		p.purchase_date       AS purchase_date,
+		si.weight             AS stock_weight,
+		si.item_name          AS item_name,
+		ss.weight             AS stock_sort_weight,
+		ss.current_weight     AS current_weight,
+		ss.sorted_item_name   AS item_sort_name,
+		0                     AS qty,
+		si.price_per_kilogram AS price,
+		'-'                   AS customer_name,
+		'-'                   AS fiber_name
+	FROM stock_sorts ss
+		JOIN stock_items si ON si.uuid = ss.stock_item_id
+		JOIN stock_entries se ON se.uuid = si.stock_entry_id
+		JOIN purchase p ON p.stock_id = se.uuid
+		JOIN "user" sup ON sup.uuid = p.supplier_id
+	WHERE ss.weight = ss.current_weight
+	  AND p.purchase_date >= CAST(? AS DATE)
+	  AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
+	ORDER BY sup.name, si.item_name;
+	`
+
+	var unsoldResult []models.SalesSupplierDetailWithPurchaseDataResponse
+	if err := db.Raw(
+		unsoldQuery,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&unsoldResult).Error; err != nil {
+		return nil, apperror.NewUnprocessableEntity(
+			"failed to fetch unsold stock data", err,
+		)
+	}
+
 	results := make([]models.SalesSupplierDetailWithPurchaseDataResponse, 0)
 	for _, v := range result {
+		res := models.SalesSupplierDetailWithPurchaseDataResponse{
+			SupplierName:    v.SupplierName,
+			PurchaseDate:    v.PurchaseDate,
+			StockWeight:     v.StockWeight,
+			ItemName:        v.ItemName,
+			StockSortWeight: v.StockSortWeight,
+			ItemSortName:    v.ItemSortName,
+			Quantity:        v.Quantity,
+			Price:           v.Price,
+			CustomerName:    v.CustomerName,
+			FiberName:       v.FiberName,
+			CurrentWeight:   v.CurrentWeight,
+			AgeInDay:        int(time.Since(v.PurchaseDate).Hours() / 24),
+		}
+		results = append(results, res)
+	}
+
+	// Append unsold stock data into the same results
+	for _, v := range unsoldResult {
 		res := models.SalesSupplierDetailWithPurchaseDataResponse{
 			SupplierName:    v.SupplierName,
 			PurchaseDate:    v.PurchaseDate,
