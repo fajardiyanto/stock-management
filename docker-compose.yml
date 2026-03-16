@@ -49,13 +49,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: http://72.61.140.136:8000/v1/api
+        REACT_APP_API_URL: https://gdapekong.com/api/v1/api
     container_name: stockfish-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://72.61.140.136:8000/v1/api
+      - REACT_APP_API_URL=https://gdapekong.com/api/v1/api
     depends_on:
       - backend
     networks:
