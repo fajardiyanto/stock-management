@@ -828,7 +828,7 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 		JOIN stock_entries se ON se.uuid = si.stock_entry_id
 		JOIN purchase p ON p.stock_id = se.uuid
 		JOIN "user" sup ON sup.uuid = p.supplier_id
-	WHERE ss.weight = ss.current_weight
+	WHERE ss.weight = ss.current_weight AND ss.is_shrinkage = false
 	  AND p.purchase_date >= CAST(? AS DATE)
 	  AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
 	ORDER BY sup.name, si.item_name;
