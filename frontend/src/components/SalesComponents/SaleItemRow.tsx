@@ -58,6 +58,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
         isFirstInFiberGroup: boolean;
         fiberGroupSize: number;
         addOnIndex: number | null; // Track which add-on to show in this row
+        isFirstItemOccurrence: boolean; // First time this item id appears
+        itemRowSpan: number;           // How many rows this item spans
     }
 
     const buildRows = (): RowData[] => {
@@ -73,6 +75,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                         isFirstInFiberGroup: itemIndex === 0,
                         fiberGroupSize: fiberGroup.items.length,
                         addOnIndex: itemRowCount,
+                        isFirstItemOccurrence: false, // will be computed below
+                        itemRowSpan: 1,               // will be computed below
                     });
                     itemRowCount++;
                 });
@@ -90,6 +94,8 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                     isFirstInFiberGroup: true,
                     fiberGroupSize: 1,
                     addOnIndex: idx,
+                    isFirstItemOccurrence: true,
+                    itemRowSpan: 1,
                 });
                 itemRowCount++;
             });
@@ -98,7 +104,6 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
         // If we have more add-ons than item rows, create additional rows for remaining add-ons
         const addOnCount = sale.add_ons?.length || 0;
         if (addOnCount > itemRowCount && rows.length > 0) {
-            const lastRow = rows[rows.length - 1];
             for (let i = itemRowCount; i < addOnCount; i++) {
                 rows.push({
                     item: null, // No item for this row, just add-on
@@ -106,8 +111,29 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                     isFirstInFiberGroup: false,
                     fiberGroupSize: 0,
                     addOnIndex: i,
+                    isFirstItemOccurrence: false,
+                    itemRowSpan: 1,
                 });
             }
+        }
+
+        // Compute item rowSpan: merge consecutive rows that share the same item id
+        if (hasFiberGroups) {
+            const seenItemIds = new Map<string, number>(); // itemId -> first row index
+            rows.forEach((row, idx) => {
+                if (!row.item) return;
+                const itemId = row.item.id;
+                if (seenItemIds.has(itemId)) {
+                    // Not the first occurrence — mark as hidden
+                    row.isFirstItemOccurrence = false;
+                    // Increment the rowSpan of the first occurrence
+                    rows[seenItemIds.get(itemId)!].itemRowSpan++;
+                } else {
+                    seenItemIds.set(itemId, idx);
+                    row.isFirstItemOccurrence = true;
+                    row.itemRowSpan = 1;
+                }
+            });
         }
 
         return rows;
@@ -172,21 +198,25 @@ const SaleItemRow: React.FC<SaleItemRowProps> = ({
                         {/* ITEM DETAILS - Only render if item exists */}
                         {item ? (
                             <>
-                                <td className="px-6 py-4 border border-gray-300 font-bold text-sm text-gray-600">
-                                    {item.stock_code}
-                                </td>
-                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
-                                    {item.stock_sort_name}
-                                </td>
-                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
-                                    {formatRupiah(item.price_per_kilogram)}
-                                </td>
-                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-600">
-                                    {item.weight} kg
-                                </td>
-                                <td className="px-6 py-4 border border-gray-300 text-sm text-gray-800">
-                                    {formatRupiah(item.total_amount)}
-                                </td>
+                                {rowData.isFirstItemOccurrence && (
+                                    <>
+                                        <td rowSpan={rowData.itemRowSpan} className="px-6 py-4 border border-gray-300 font-bold text-sm text-gray-600 align-middle">
+                                            {item.stock_code}
+                                        </td>
+                                        <td rowSpan={rowData.itemRowSpan} className="px-6 py-4 border border-gray-300 text-sm text-gray-800 align-middle">
+                                            {item.stock_sort_name}
+                                        </td>
+                                        <td rowSpan={rowData.itemRowSpan} className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle">
+                                            {formatRupiah(item.price_per_kilogram)}
+                                        </td>
+                                        <td rowSpan={rowData.itemRowSpan} className="px-6 py-4 border border-gray-300 text-sm text-gray-600 align-middle">
+                                            {item.weight} kg
+                                        </td>
+                                        <td rowSpan={rowData.itemRowSpan} className="px-6 py-4 border border-gray-300 text-sm text-gray-800 align-middle">
+                                            {formatRupiah(item.total_amount)}
+                                        </td>
+                                    </>
+                                )}
                             </>
                         ) : (
                             <>
