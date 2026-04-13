@@ -305,54 +305,6 @@ const AnalyticsPage: React.FC = () => {
                                                         {formatNumber(stats.total_sales)}
                                                     </p>
                                                 </div>
-                                            </div><div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border border-purple-200">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-sm font-semibold text-gray-700">
-                                                        Total Fiber Tersedia
-                                                    </h3>
-                                                    <Layers className="text-purple-600" size={24} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-4xl font-bold text-gray-900">
-                                                        {stats.total_fiber}
-                                                    </p>
-                                                    <p className="text-sm text-gray-600">units</p>
-                                                </div>
-                                            </div>
-                                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border border-orange-200">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-sm font-semibold text-gray-700">
-                                                        Total Pembelian
-                                                    </h3>
-                                                    <ShoppingCart
-                                                        className="text-orange-600"
-                                                        size={24}
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-xs text-gray-500">Rp</p>
-                                                    <p className="text-3xl font-bold text-gray-900">
-                                                        {formatNumber(stats.total_purchase)}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border border-blue-200">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-sm font-semibold text-gray-700">
-                                                        Total Penjualan
-                                                    </h3>
-                                                    <TrendingUp
-                                                        className="text-blue-600"
-                                                        size={24}
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-xs text-gray-500">Rp</p>
-                                                    <p className="text-3xl font-bold text-gray-900">
-                                                        {formatNumber(stats.total_sales)}
-                                                    </p>
-                                                </div>
                                             </div>
                                         </>
                                     )}
