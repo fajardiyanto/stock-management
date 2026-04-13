@@ -25,14 +25,15 @@ func (s *AnalyticService) GetAnalyticStats(filter models.AnalyticStatsFilter) (*
 
 	var result models.AnalyticStatsResponse
 
+	// for stock_totals
+	// AND created_at >= CAST(? AS DATE)
+	// AND created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 	if err := db.Raw(`
 		WITH stock_totals AS (
 			SELECT COALESCE(SUM(current_weight), 0) AS total_stock
 			FROM stock_sorts
 			WHERE deleted = false
 			  AND is_shrinkage = false
-			  AND created_at >= CAST(? AS DATE)
-      	   	  AND created_at <  CAST(? AS DATE) + INTERVAL '1 day'
 		),
 		fiber_totals AS (
 			SELECT COUNT(*) AS total_fiber
@@ -81,8 +82,6 @@ func (s *AnalyticService) GetAnalyticStats(filter models.AnalyticStatsFilter) (*
 		CROSS JOIN purchase_totals pt
 		CROSS JOIN sales_totals sa
 	`,
-		filter.StartDate,
-		filter.EndDate,
 		filter.StartDate,
 		filter.EndDate,
 		filter.StartDate,
@@ -831,6 +830,7 @@ func (s *AnalyticService) SalesSupplierDetailWithPurchaseData(
 	WHERE ss.weight = ss.current_weight AND ss.is_shrinkage = false
 	  AND p.purchase_date >= CAST(? AS DATE)
 	  AND p.purchase_date <  CAST(? AS DATE) + INTERVAL '1 day'
+	  AND ss.deleted = false
 	ORDER BY sup.name, si.item_name;
 	`
 
