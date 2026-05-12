@@ -3,6 +3,7 @@ package config
 import (
 	"dashboard-app/internal/constants"
 	"dashboard-app/internal/models"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -33,25 +34,32 @@ func InitMysql(db databaseInterface.Database) {
 			logger.Error(err).Quit()
 		}
 
-		if err := database.Orm().AutoMigrate(
-			&models.User{},
-			&models.Purchase{},
-			&models.Payment{},
-			&models.StockEntry{},
-			&models.StockItem{},
-			&models.StockSort{},
-			&models.Fiber{},
-			&models.Sale{},
-			&models.ItemAddOnn{},
-			&models.ItemSales{},
-			&models.AuditLog{},
-			&models.FiberAllocation{},
-		); err != nil {
-			logger.Error("Error when migrate table, with err: %s", err)
-			return
-		}
+		if models.GetConfig().Migrate {
+			logger.Info("Migrate flag is enabled — running AutoMigrate, CreateIndexes, and seed data")
 
-		autoInitSuperAdmin(database.Orm())
+			if err := database.Orm().AutoMigrate(
+				&models.User{},
+				&models.Purchase{},
+				&models.Payment{},
+				&models.StockEntry{},
+				&models.StockItem{},
+				&models.StockSort{},
+				&models.Fiber{},
+				&models.Sale{},
+				&models.ItemAddOnn{},
+				&models.ItemSales{},
+				&models.AuditLog{},
+				&models.FiberAllocation{},
+			); err != nil {
+				logger.Error("Error when migrate table, with err: %s", err)
+				return
+			}
+
+			CreateIndexes(database.Orm())
+			autoInitSuperAdmin(database.Orm())
+		} else {
+			logger.Info("Migrate flag is disabled — skipping AutoMigrate, indexes, and seed data")
+		}
 	}
 }
 

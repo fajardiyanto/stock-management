@@ -14,6 +14,7 @@ type Config struct {
 	ApiSecret       string `yaml:"api_secret" default:"SECRET"`
 	Environment     string `yaml:"environment" default:"PRODUCTION"`
 	DefaultPassword string `yaml:"default_password" default:"password"`
+	Migrate         bool   `yaml:"migrate" default:"false"`
 	Database        struct {
 		Mysql interfaces.SQLConfig `yaml:"mysql"`
 	} `yaml:"database"`
