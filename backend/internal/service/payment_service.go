@@ -7,9 +7,10 @@ import (
 	"dashboard-app/internal/repository"
 	"dashboard-app/pkg/apperror"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 type PaymentService struct {
@@ -265,7 +266,6 @@ func (p *PaymentService) CreatePaymentByPurchaseId(request models.CreatePaymentP
 	}
 
 	updates := map[string]interface{}{
-		"purchase_date":    request.PurchaseDate,
 		"remaining_amount": remainingAmount,
 		"payment_status":   paymentStatus,
 		"paid_amount":      paidAmount,
@@ -330,7 +330,6 @@ func (p *PaymentService) CreatePaymentBySalesId(request models.CreatePaymentSale
 	}
 
 	updates := map[string]interface{}{
-		"purchase_date":    request.SalesDate,
 		"remaining_amount": remainingAmount,
 		"payment_status":   paymentStatus,
 		"paid_amount":      paidAmount,
