@@ -3,8 +3,9 @@ package service
 import (
 	"dashboard-app/pkg/apperror"
 	"fmt"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/google/uuid"
 
@@ -282,7 +283,7 @@ func (p *PurchaseService) GetAllPurchases(filter models.PurchaseFilter) (*models
 
 		lastPayment := ""
 		if pur.LastPaymentDate != nil {
-			lastPayment = pur.LastPaymentDate.Format(time.RFC3339)
+			lastPayment = pur.LastPaymentDate.UTC().Format(time.RFC3339)
 		}
 
 		// Get total from batch results
@@ -513,7 +514,7 @@ func (p *PurchaseService) GetPurchaseById(purchaseId string) (*models.PurchaseDa
 
 	lastPayment := ""
 	if detail.LastPaymentDate != nil {
-		lastPayment = detail.LastPaymentDate.Format(time.RFC3339)
+		lastPayment = detail.LastPaymentDate.UTC().Format(time.RFC3339)
 	}
 
 	response := &models.PurchaseDataResponse{
