@@ -177,7 +177,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                         />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatDate(item.last_payment)}
+                                        {formatDateRawUTC(item.last_payment)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2">
