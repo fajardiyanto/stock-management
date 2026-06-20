@@ -22,6 +22,7 @@ type FiberAllocation struct {
 	ID          int       `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
 	Uuid        string    `json:"uuid" gorm:"column:uuid;unique;not null;type:varchar(36)"`
 	FiberId     string    `json:"fiber_id" gorm:"column:fiber_id"`
+	SaleId      string    `json:"sale_id" gorm:"column:sale_id;type:varchar(36)"`
 	Weight      int       `json:"weight" gorm:"column:weight"`
 	StockSortId string    `json:"stock_sort_id" gorm:"column:stock_sort_id"`
 	Deleted     bool      `json:"deleted" gorm:"column:deleted"`
